@@ -73,7 +73,7 @@ test('responsável cadastra profissional, abre expediente e preserva reserva ao 
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.getByRole('button', { name: 'Salvar cadastro e horários', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Salvar cadastro e horários', exact: true })).toBeDisabled();
-  await page.getByRole('button', { name: 'Ver página de reservas', exact: true }).click();
+  await page.getByRole('button', { name: 'Nova reserva', exact: true }).click();
   await page.getByRole('button', { name: new RegExp(name + '.*Profissional') }).click();
   await page.getByRole('button', { name: '09:00', exact: true }).click();
   await page.getByLabel('Seu nome', { exact: true }).fill(customer);
