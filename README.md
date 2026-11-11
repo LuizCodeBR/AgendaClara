@@ -197,4 +197,4 @@ Para usar um PostgreSQL próprio, configure `SPRING_PROFILES_ACTIVE=postgres`, `
 3. Recuperação de acesso e comunicação real de confirmação/cancelamento.
 4. Persistência operacional, proteção contra abuso e revisão antes de receber clientes reais.
 
-O histórico de validação desta entrega está em [VALIDACAO.md](docs/VALIDACAO.md).
+Os resultados e as evidências desta entrega estão em [VALIDACAO-0.2.0.md](docs/VALIDACAO-0.2.0.md). O histórico da primeira versão está em [VALIDACAO.md](docs/VALIDACAO.md).

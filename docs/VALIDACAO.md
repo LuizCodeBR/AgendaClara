@@ -1,5 +1,7 @@
 # Validação da entrega 0.1.0
 
+Este documento registra a primeira versão. A validação atual está em [VALIDACAO-0.2.0.md](VALIDACAO-0.2.0.md).
+
 Data: 11/11/2026.
 
 ## Resultado
