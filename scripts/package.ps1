@@ -6,6 +6,7 @@ if (-not (Test-Path -LiteralPath $jar)) { throw 'Compile o projeto antes de empa
 if (-not (Get-Command git -ErrorAction SilentlyContinue)) { throw 'Git é necessário para selecionar os arquivos de código-fonte.' }
 $destination = Join-Path ([System.IO.Path]::GetFullPath($OutputDirectory)) ('AgendaClara-' + (Get-Date -Format 'yyyyMMdd-HHmmss'))
 [System.IO.Directory]::CreateDirectory($destination) | Out-Null
+Add-Type -AssemblyName System.IO.Compression
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $sourceZip = Join-Path $destination 'AgendaClara-0.1.0-fonte.zip'
 $archive = [System.IO.Compression.ZipFile]::Open($sourceZip,[System.IO.Compression.ZipArchiveMode]::Create)
