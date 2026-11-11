@@ -3,6 +3,8 @@ package br.com.luizcode.agenda.scheduling;
 import static br.com.luizcode.agenda.catalog.CatalogModels.*;
 import static br.com.luizcode.agenda.scheduling.ScheduleModels.*;
 import br.com.luizcode.agenda.catalog.CatalogRepository;
+import br.com.luizcode.agenda.catalog.WorkingWindow;
+import br.com.luizcode.agenda.catalog.WorkingHoursPolicy;
 import br.com.luizcode.agenda.shared.BusinessException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -82,6 +84,7 @@ public class ScheduleService {
                 throw BusinessException.conflict("Essa reserva foi cancelada. Faça uma nova solicitação.");
             return new BookingOutcome(existing.get().receipt(), false);
         }
+        catalog.professional(business.id(), request.professionalId());
         var service = catalog.service(business.id(), request.serviceId());
         Instant start = request.startsAt().toInstant();
         Instant end = start.plusSeconds(service.durationMinutes() * 60L);
@@ -134,6 +137,7 @@ public class ScheduleService {
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public BlockView block(Business business, BlockRequest request) {
         catalog.lockProfessional(business.id(), request.professionalId());
+        catalog.professional(business.id(), request.professionalId());
         Instant start = request.startsAt().toInstant();
         Instant end = request.endsAt().toInstant();
         ZoneId zone = ZoneId.of(business.zoneId());
@@ -154,6 +158,7 @@ public class ScheduleService {
     }
 
     private void requireFree(Business business, UUID professionalId, Instant start, Instant end, UUID excludedId) {
+        catalog.professional(business.id(), professionalId);
         ZoneId zone = ZoneId.of(business.zoneId());
         validateDate(start.atZone(zone).toLocalDate(), zone);
         if (!start.isAfter(clock.instant()))
@@ -165,19 +170,8 @@ public class ScheduleService {
             throw BusinessException.conflict("Esse horário acabou de ser ocupado. Escolha outro.");
     }
 
-    private boolean validWindow(Instant start, Instant end, ZoneId zone,
-                                List<CatalogRepository.WorkingWindow> windows) {
-        ZonedDateTime local = start.atZone(zone);
-        ZonedDateTime localEnd = end.atZone(zone);
-        if (!local.toLocalDate().equals(localEnd.toLocalDate())
-                || local.getSecond() != 0 || local.getNano() != 0
-                || !local.getOffset().equals(localEnd.getOffset())
-                || zone.getRules().getValidOffsets(local.toLocalDateTime()).size() != 1
-                || zone.getRules().getValidOffsets(localEnd.toLocalDateTime()).size() != 1) return false;
-        return windows.stream().anyMatch(window ->
-                !local.toLocalTime().isBefore(window.opensAt())
-                        && !localEnd.toLocalTime().isAfter(window.closesAt())
-                        && Duration.between(window.opensAt(), local.toLocalTime()).toMinutes() % 15 == 0);
+    private boolean validWindow(Instant start, Instant end, ZoneId zone, List<WorkingWindow> windows) {
+        return WorkingHoursPolicy.contains(start, end, zone, windows);
     }
 
     private void validateDate(LocalDate date, ZoneId zone) {

@@ -98,10 +98,10 @@ Disponibilidade pública contém horários livres, sem nomes, telefones ou ident
 
 O manifesto fornece nome, ícones e modo standalone. O service worker mantém somente a página de reconexão e ícones. Não há cache de API, fila de reservas ou confirmação sem comunicação com o servidor.
 
-Instalação no navegador não cria um serviço nativo em segundo plano. Na demonstração, o Java precisa continuar aberto. Instalação em aparelhos diferentes será tratada após hospedagem HTTPS.
+Instalação no navegador não cria um serviço nativo em segundo plano. Na demonstração, o Java precisa continuar aberto. A URL pública HTTPS permite instalar a PWA em aparelhos diferentes.
 
 ## Evolução planejada
 
-O expediente e os profissionais começam com dados fictícios. A gestão desses cadastros exige política para reservas existentes quando um expediente mudar. Essa regra será definida antes da implementação.
+A gestão de profissionais e expediente foi implementada na versão 0.2.0. Perfil e semana são salvos em uma única transação; atendimentos confirmados futuros ou em andamento precisam caber no novo expediente. Inativação é recusada enquanto existirem esses compromissos. Reservas e configuração usam o mesmo bloqueio de linha; o campo version recusa edições desatualizadas. A migração V2 acrescenta active e version sem apagar cadastros. Consulte [PROFISSIONAIS.md](PROFISSIONAIS.md).
 
 Uma entrega para clientes reais também exige contas sem credenciais de demonstração, recuperação de acesso, limites contra abuso, hospedagem HTTPS, persistência e operação. O Compose atual é uma opção local, com configurações fictícias.

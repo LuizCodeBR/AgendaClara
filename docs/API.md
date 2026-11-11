@@ -1,4 +1,4 @@
-# API — versão 0.1.0
+# API — versão 0.2.0
 
 A interface e a API usam a mesma origem. Datas de consulta usam ISO `YYYY-MM-DD`; instantes enviados usam ISO com offset, como `2030-06-04T09:00:00-03:00`.
 
@@ -53,6 +53,9 @@ Todas as rotas abaixo exigem sessão. O estabelecimento é obtido do usuário au
 | POST | /api/admin/blocks | professionalId, startsAt, endsAt e reason |
 | DELETE | /api/admin/blocks/{id} | remove um bloqueio |
 | POST | /api/admin/services | name, description, durationMinutes e priceCents |
+| GET | /api/admin/professionals | todos os profissionais do próprio negócio, inclusive inativos; versão e semana |
+| POST | /api/admin/professionals | name e specialty; retorna 201, ativo sem expediente |
+| PUT | /api/admin/professionals/{id} | name, specialty, active, version e hours; substituição atômica |
 
 Duração de serviços: 15 a 240 minutos, em múltiplos de 15. Preço: 0 a 1.000.000 centavos. Telefones: 8 a 15 dígitos após normalização. Remarcação mantém profissional, duração e preço originais.
 
@@ -65,3 +68,24 @@ Duração de serviços: 15 a 240 minutos, em múltiplos de 15. Preço: 0 a 1.000
 409: sobreposição, repetição incompatível ou recurso sendo atualizado.
 
 Erros de regras usam Problem Details com `status`, `title` e `detail`. Erros de validação podem incluir a lista `errors`. O cliente deve consultar novamente os horários após um conflito, sem presumir que a disponibilidade exibida anteriormente continua válida.
+
+## Configuração de profissionais (0.2.0)
+
+Exemplo de PUT, usando id e version obtidos no GET administrativo:
+
+```json
+{
+  "name": "Ana Exemplo",
+  "specialty": "Cortes e barba",
+  "active": true,
+  "version": 0,
+  "hours": [
+    { "weekday": 1, "opensAt": "09:00", "closesAt": "12:00" },
+    { "weekday": 1, "opensAt": "13:00", "closesAt": "18:00" }
+  ]
+}
+```
+
+weekday usa 1=segunda a 7=domingo. Dia omitido fica fechado. Limite: 4 intervalos/dia e 28 entradas; horários no mesmo dia, em múltiplos de 15 minutos. Sobreposição: 400. Intervalos adjacentes são unidos. O retorno inclui a versão incrementada e horários normalizados.
+
+Versão desatualizada, inativação com compromissos ou expediente incompatível com reserva confirmada futura/em andamento: 409, sem gravação parcial. Catálogo público lista somente ativos. Sem horas, não há disponibilidade. Consulte PROFISSIONAIS.md.

@@ -2,7 +2,7 @@
 
 **Site:** https://agenda-clara-luizcodebr.onrender.com
 
-**Downloads:** https://github.com/LuizCodeBR/AgendaClara/releases/tag/v0.1.0
+**Downloads:** https://github.com/LuizCodeBR/AgendaClara/releases/tag/v0.2.0
 
 ## Três formas de acesso
 
@@ -57,6 +57,9 @@ Atualizações automáticas estão desligadas na configuração inicial. Uma nov
 
 ## Evolução para utilização real
 
-A API possui configuração para PostgreSQL. Antes de um negócio usar dados reais, a próxima entrega precisa concluir provisionamento de empresas e contas próprias, recuperação de acesso, gestão do expediente/profissionais, comunicação ao cliente e operação com persistência e proteção contra abuso.
+A API possui configuração para PostgreSQL. Antes de um negócio usar dados reais, a próxima entrega precisa concluir provisionamento de empresas e contas próprias, recuperação de acesso, comunicação ao cliente e operação com persistência e proteção contra abuso.
 
 A hospedagem e o banco persistente devem ser escolhidos conforme os limites e custos reais do provedor, sem converter automaticamente esta demonstração em um serviço pago.
+
+## Equipe e horários (0.2.0)
+O painel permite cadastrar profissionais e configurar a semana pelo site, celular ou PWA. As alterações são feitas online e entram na disponibilidade pública após salvar. O download local contém o mesmo painel. Consulte [PROFISSIONAIS.md](PROFISSIONAIS.md).

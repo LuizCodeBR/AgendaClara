@@ -33,7 +33,7 @@ public class CatalogRepository {
     }
 
     public List<Professional> professionals(UUID businessId) {
-        return jdbc.query("select * from professional where business_id = ? order by name",
+        return jdbc.query("select * from professional where business_id = ? and active = TRUE order by name",
                 (rs, row) -> new Professional(rs.getObject("id", UUID.class), rs.getString("name"),
                         rs.getString("specialty")), businessId);
     }
@@ -71,7 +71,6 @@ public class CatalogRepository {
         return service(businessId, id);
     }
 
-    public record WorkingWindow(LocalTime opensAt, LocalTime closesAt) {}
 
     public List<WorkingWindow> hours(UUID businessId, UUID professionalId, int weekday) {
         return jdbc.query("select opens_at, closes_at from weekly_hours where business_id = ? and professional_id = ? and weekday = ? order by opens_at",

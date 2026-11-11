@@ -2,9 +2,9 @@
 
 Agendamento para pequenos negócios com página pública de reservas, painel do responsável e interface instalável pelo navegador.
 
-**Versão 0.1.0 — primeira entrega funcional de portfólio.** A demonstração utiliza dois estabelecimentos fictícios. Cadastro público de empresas, edição de profissionais e edição do expediente estão previstos para as próximas etapas.
+**Versão 0.2.0 — equipe e horários.** O responsável pode cadastrar e editar profissionais e configurar o expediente semanal. A demonstração usa dois estabelecimentos fictícios; cadastro público de empresas continua planejado.
 
-**Acessos:** [Abrir o site](https://agenda-clara-luizcodebr.onrender.com) · [Baixar a demonstração](https://github.com/LuizCodeBR/AgendaClara/releases/tag/v0.1.0) · [Testes automáticos](https://github.com/LuizCodeBR/AgendaClara/actions)
+**Acessos:** [Abrir o site](https://agenda-clara-luizcodebr.onrender.com) · [Baixar a demonstração](https://github.com/LuizCodeBR/AgendaClara/releases/tag/v0.2.0) · [Testes automáticos](https://github.com/LuizCodeBR/AgendaClara/actions)
 
 ## Site, app mobile e versão local
 
@@ -57,14 +57,14 @@ As dependências precisam de internet no primeiro download. Depois de compilado,
 
 ### Demonstração compilada — somente Java
 
-O pacote de demonstração contém `agenda-clara-0.1.0.jar`, instruções e iniciadores. Ele exige **Java 21 a 27**, sem Node, Maven, Docker ou banco instalado.
+O pacote de demonstração contém `agenda-clara.jar`, instruções e iniciadores. Ele exige **Java 21 a 27**, sem Node, Maven, Docker ou banco instalado.
 
 Extraia-o em uma pasta gravável e execute `iniciar-demo.cmd` no Windows, ou `bash iniciar-demo.sh` no Linux/macOS.
 
 Também é possível iniciar diretamente:
 
 ```bash
-java -jar agenda-clara-0.1.0.jar --spring.profiles.active=demo
+java -jar agenda-clara.jar --spring.profiles.active=demo
 ```
 
 ## Usar como aplicativo
@@ -73,7 +73,7 @@ Abra a demonstração no **Chrome ou Edge**. Use **Instalar app**, ou a opção 
 
 Essa é uma **PWA**, e não um executável nativo com servidor embutido. O servidor Java continua necessário. A instalação não instala Java nem inicia o servidor automaticamente.
 
-Em outro aparelho, `localhost` aponta para esse próprio aparelho, não para o computador que iniciou o servidor. Para acesso compartilhado e instalação no celular, a próxima etapa é uma hospedagem com **HTTPS**. A execução local escuta somente no computador local. A versão hospedada usa uma URL HTTPS própria.
+Em outro aparelho, `localhost` aponta para esse próprio aparelho, não para o computador que iniciou o servidor. Para acesso compartilhado e instalação no celular, use o site publicado com **HTTPS**. A execução local escuta somente no computador local. A versão hospedada usa uma URL HTTPS própria.
 
 Quando o servidor fica indisponível, a tela de reconexão é exibida. Disponibilidade, dados de clientes e alterações de reserva não são armazenados nem enviados posteriormente pelo service worker.
 
@@ -100,6 +100,8 @@ Todos os dados são exemplos. O perfil de demonstração não deve ser usado par
 - Agenda diária, filtro de status, cancelamento e remarcação.
 - Bloqueio e liberação de períodos.
 - Inclusão de novos serviços no catálogo.
+- Cadastro, edição, ativação e inativação de profissionais.
+- Expediente semanal por profissional, com intervalos, dias fechados e proteção das reservas existentes. Consulte [PROFISSIONAIS.md](docs/PROFISSIONAIS.md).
 - Interface responsiva, manifesto de instalação e tela de reconexão.
 - Banco local persistente e migração versionada do esquema.
 
@@ -190,10 +192,9 @@ Para usar um PostgreSQL próprio, configure `SPRING_PROFILES_ACTIVE=postgres`, `
 
 ## Próximas etapas
 
-1. Evoluir a demonstração validada para gestão completa de profissionais e expediente.
-2. Cadastro e gestão de profissionais, expedientes e exceções por data.
-3. Cadastro de empresas e provisionamento de contas sem usuários de demonstração.
-4. Recuperação de acesso e comunicação real de confirmação/cancelamento.
-5. Hospedagem HTTPS, persistência operacional, proteção contra abuso e revisão antes de receber clientes reais.
+1. Exceções de expediente por data, feriados e ausências.
+2. Cadastro público de empresas e provisionamento de contas próprias.
+3. Recuperação de acesso e comunicação real de confirmação/cancelamento.
+4. Persistência operacional, proteção contra abuso e revisão antes de receber clientes reais.
 
 O histórico de validação desta entrega está em [VALIDACAO.md](docs/VALIDACAO.md).

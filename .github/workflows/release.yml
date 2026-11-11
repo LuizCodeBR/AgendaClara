@@ -9,6 +9,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
+      - name: Identificar a versão da entrega
+        run: echo "RELEASE_VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
       - uses: actions/checkout@v7
       - uses: actions/setup-java@v6
         with:
@@ -31,7 +33,7 @@ jobs:
       - name: Verificar o JAR antes de distribuir
         run: |
           export AGENDA_DATA_DIR="$GITHUB_WORKSPACE/.cache/release-data"
-          java -jar target/agenda-clara-0.1.0.jar --spring.profiles.active=demo > .cache/release-server.log 2>&1 &
+          java -jar target/agenda-clara-${RELEASE_VERSION}.jar --spring.profiles.active=demo > .cache/release-server.log 2>&1 &
           APP_PID=$!
           trap 'kill "$APP_PID" 2>/dev/null || true' EXIT
           for attempt in $(seq 1 60); do
@@ -42,19 +44,19 @@ jobs:
       - name: Montar os pacotes portáteis
         run: |
           mkdir -p .cache/release/AgendaClara-demo
-          cp target/agenda-clara-0.1.0.jar .cache/release/AgendaClara-demo/
+          cp target/agenda-clara-${RELEASE_VERSION}.jar .cache/release/AgendaClara-demo/agenda-clara.jar
           cp scripts/distribution/iniciar-demo.cmd scripts/distribution/iniciar-demo.sh scripts/distribution/LEIA-ME.md .cache/release/AgendaClara-demo/
-          (cd .cache/release && zip -r AgendaClara-0.1.0-demo.zip AgendaClara-demo)
-          git archive --format=zip --prefix=AgendaClara/ -o .cache/release/AgendaClara-0.1.0-fonte.zip HEAD
-          (cd .cache/release && sha256sum AgendaClara-0.1.0-demo.zip AgendaClara-0.1.0-fonte.zip > SHA256SUMS.txt)
+          (cd .cache/release && zip -r AgendaClara-${RELEASE_VERSION}-demo.zip AgendaClara-demo)
+          git archive --format=zip --prefix=AgendaClara/ -o .cache/release/AgendaClara-${RELEASE_VERSION}-fonte.zip HEAD
+          (cd .cache/release && sha256sum AgendaClara-${RELEASE_VERSION}-demo.zip AgendaClara-${RELEASE_VERSION}-fonte.zip > SHA256SUMS.txt)
       - name: Publicar os downloads da demonstração
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "$GITHUB_REF_NAME" \
-            --title "Agenda Clara 0.1.0 — web, mobile e local" \
-            --notes-file docs/RELEASE-0.1.0.md \
+            --title "Agenda Clara ${RELEASE_VERSION} — web, mobile e local" \
+            --notes-file docs/RELEASE-${RELEASE_VERSION}.md \
             --prerelease \
-            .cache/release/AgendaClara-0.1.0-demo.zip \
-            .cache/release/AgendaClara-0.1.0-fonte.zip \
+            .cache/release/AgendaClara-${RELEASE_VERSION}-demo.zip \
+            .cache/release/AgendaClara-${RELEASE_VERSION}-fonte.zip \
             .cache/release/SHA256SUMS.txt

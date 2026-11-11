@@ -1,4 +1,4 @@
-# Agenda Clara — demonstração 0.1.0
+# Agenda Clara — demonstração 0.2.0
 
 1. Instale Java 21 ou mais recente até a versão 27, caso ainda não possua.
 2. Extraia todos os arquivos deste ZIP em uma pasta gravável.
@@ -23,6 +23,6 @@ Se a porta 8080 estiver ocupada:
 
 Depois abra http://localhost:8081.
 
-O sistema escuta no computador local. A instalação em outro aparelho exige uma hospedagem com HTTPS, prevista para uma etapa posterior.
+O sistema local escuta apenas neste computador. Para instalar em outro aparelho, use o site publicado: https://agenda-clara-luizcodebr.onrender.com
 
-Esta versão inclui reservas, bloqueios, remarcação, cancelamento, inclusão de serviços e isolamento dos dois estabelecimentos. Gestão de profissionais/expedientes, cadastro de empresas, mensagens e recuperação de acesso são etapas futuras.
+Esta versão inclui reservas, bloqueios, remarcação, cancelamento, serviços, cadastro e edição de profissionais e expediente semanal, com isolamento entre estabelecimentos. Para configurar a equipe, entre em Meu negócio e abra Equipe e horários. Novos profissionais precisam de horários configurados antes de receber reservas. Cadastro de empresas, mensagens e recuperação de acesso são etapas futuras.

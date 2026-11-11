@@ -6,6 +6,8 @@ import { Message, Modal } from './components';
 import { dayLabel, initials, money, plusDays, time, todayInZone } from './format';
 import type { Appointment, Business, Catalog, CurrentUser, DayAgenda } from './types';
 import Login from './Login';
+import ProfessionalsPanel from './ProfessionalsPanel';
+import './team.css';
 import { BlockDialog, RescheduleDialog } from './AdminDialogs';
 
 export default function AdminPage({ user, onUser, demo, online, onBook }: { user: CurrentUser | null; onUser: (user: CurrentUser | null) => void; demo: boolean; online: boolean; onBook: (business: Business) => void }) {
@@ -16,7 +18,8 @@ function Dashboard({ user, onUser, online, onBook }: { user: CurrentUser; onUser
   const [catalog, setCatalog] = useState<Catalog | null>(null);
   const [date, setDate] = useState('');
   const [agenda, setAgenda] = useState<DayAgenda | null>(null);
-  const [tab, setTab] = useState<'agenda' | 'services'>('agenda');
+  const [tab, setTab] = useState<'agenda' | 'services' | 'team'>('agenda');
+  const [teamDirty, setTeamDirty] = useState(false);
   const [filter, setFilter] = useState('all');
   const [error, setError] = useState(''); const [success, setSuccess] = useState('');
   const [refresh, setRefresh] = useState(0); const [loading, setLoading] = useState(true);
@@ -57,13 +60,13 @@ function Dashboard({ user, onUser, online, onBook }: { user: CurrentUser; onUser
 
   return <div className="admin-layout">
     <aside className="admin-sidebar"><span className="eyebrow">ESPAÇO DO NEGÓCIO</span><div className="admin-business-icon"><Scissors size={26} /></div><h2>{user.business.name}</h2><span className="business-category">{user.business.category}</span>
-      <nav aria-label="Painel do negócio"><button className={tab === 'agenda' ? 'active' : ''} onClick={() => setTab('agenda')}><LayoutDashboard size={18} /> Minha agenda</button><button className={tab === 'services' ? 'active' : ''} onClick={() => setTab('services')}><Scissors size={18} /> Serviços</button></nav>
-      <button className="public-link" onClick={() => onBook(user.business)}>Ver página de reservas <ExternalLink size={14} /></button>
-      <div className="admin-account"><span className="initial-avatar">{initials(user.name)}</span><div><strong>{user.name}</strong><small>Responsável</small></div><button aria-label="Sair do painel" className="icon-button" disabled={pending} onClick={() => void run(async () => { await api('/api/auth/logout', { method: 'POST' }); onUser(null); }, '')}><LogOut size={18} /></button></div>
+      <nav aria-label="Painel do negócio"><button className={tab === 'agenda' ? 'active' : ''} disabled={teamDirty} onClick={() => setTab('agenda')}><LayoutDashboard size={18} /> Minha agenda</button><button className={tab === 'services' ? 'active' : ''} disabled={teamDirty} onClick={() => setTab('services')}><Scissors size={18} /> Serviços</button><button className={tab === 'team' ? 'active' : ''} onClick={() => setTab('team')}><Users size={18} /> Equipe e horários</button></nav>
+      <button className="public-link" disabled={teamDirty} onClick={() => onBook(user.business)}>Ver página de reservas <ExternalLink size={14} /></button>
+      <div className="admin-account"><span className="initial-avatar">{initials(user.name)}</span><div><strong>{user.name}</strong><small>Responsável</small></div><button aria-label="Sair do painel" className="icon-button" disabled={pending || teamDirty} onClick={() => void run(async () => { await api('/api/auth/logout', { method: 'POST' }); onUser(null); }, '')}><LogOut size={18} /></button></div>
     </aside>
-    <div className="admin-content"><div className="admin-page-title"><div><span className="eyebrow">OLÁ, {user.name.toUpperCase()}</span><h1>{tab === 'agenda' ? 'Seu dia, com clareza.' : 'Cuidado em cada serviço.'}</h1><p>{tab === 'agenda' ? 'Organize os atendimentos e abra espaço para o que importa.' : 'Seu catálogo aparece na página de reservas do estabelecimento.'}</p></div><button className="button secondary" onClick={() => onBook(user.business)}>Nova reserva <ArrowRight size={16} /></button></div>
+    <div className="admin-content"><div className="admin-page-title"><div><span className="eyebrow">OLÁ, {user.name.toUpperCase()}</span><h1>{tab === 'agenda' ? 'Seu dia, com clareza.' : tab === 'team' ? 'Pessoas e tempo bem cuidados.' : 'Cuidado em cada serviço.'}</h1><p>{tab === 'agenda' ? 'Organize os atendimentos e abra espaço para o que importa.' : tab === 'team' ? 'Organize a equipe e os horários disponíveis para seus clientes.' : 'Seu catálogo aparece na página de reservas do estabelecimento.'}</p></div><button className="button secondary" disabled={teamDirty} onClick={() => onBook(user.business)}>Nova reserva <ArrowRight size={16} /></button></div>
       {error && <Message>{error}</Message>}{success && <Message kind="success">{success}</Message>}
-      {tab === 'services' ? catalog && <ServicesPanel catalog={catalog} online={online} onSaved={() => reload('Serviço adicionado ao catálogo.')} /> : <>
+      {tab === 'team' ? <ProfessionalsPanel online={online} zoneId={zone} onDirty={setTeamDirty} onUpdated={() => reload('Cadastro e expediente atualizados.')} /> : tab === 'services' ? catalog && <ServicesPanel catalog={catalog} online={online} onSaved={() => reload('Serviço adicionado ao catálogo.')} /> : <>
         <div className="stats-grid"><div className="stat-card"><span><CalendarDays size={16} /> Agendamentos</span><strong>{confirmed.length.toString().padStart(2, '0')}</strong><small>confirmados para o dia</small></div><div className="stat-card"><span><Users size={16} /> Profissionais</span><strong>{catalog?.professionals.length.toString().padStart(2, '0') ?? '—'}</strong><small>na sua equipe</small></div><div className="stat-card revenue"><span><Check size={16} /> Valor previsto</span><strong>{money(confirmed.reduce((sum, item) => sum + item.priceCents, 0))}</strong><small>nos serviços confirmados</small></div></div>
         <section className="agenda-panel"><div className="agenda-toolbar"><div><span className="eyebrow">SUA AGENDA</span><h2>{date ? dayLabel(date) : 'Carregando…'}</h2></div><div className="agenda-date-controls"><button className="icon-button" aria-label="Dia anterior" onClick={() => setDate(plusDays(date, -1))} disabled={!date}><ChevronLeft size={18} /></button><input type="date" aria-label="Data da agenda" value={date} onChange={event => { if (event.target.value) setDate(event.target.value); }} /><button className="icon-button" aria-label="Próximo dia" onClick={() => setDate(plusDays(date, 1))} disabled={!date}><ChevronRight size={18} /></button></div></div>
           <div className="agenda-filters"><div className="filter-tabs" aria-label="Filtrar agendamentos">{[{ value: 'all', label: 'Todos' }, { value: 'BOOKED', label: 'Confirmados' }, { value: 'CANCELLED', label: 'Cancelados' }].map(item => <button key={item.value} className={filter === item.value ? 'active' : ''} aria-pressed={filter === item.value} onClick={() => setFilter(item.value)}>{item.label}</button>)}</div><button className="button quiet" onClick={() => setBlockOpen(true)} disabled={!catalog || !date || date < todayInZone(zone) || !online}><Plus size={15} /> Bloquear período</button></div>
