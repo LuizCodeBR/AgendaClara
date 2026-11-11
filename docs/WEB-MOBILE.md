@@ -1,5 +1,9 @@
 # Site online, app mobile e versão local
 
+**Site:** https://agenda-clara-luizcodebr.onrender.com
+
+**Downloads:** https://github.com/LuizCodeBR/AgendaClara/releases/tag/v0.1.0
+
 ## Três formas de acesso
 
 A tela inicial permite entrar no site, instalar a PWA no aparelho ou abrir as instruções da versão local.

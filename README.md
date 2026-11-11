@@ -4,6 +4,8 @@ Agendamento para pequenos negócios com página pública de reservas, painel do 
 
 **Versão 0.1.0 — primeira entrega funcional de portfólio.** A demonstração utiliza dois estabelecimentos fictícios. Cadastro público de empresas, edição de profissionais e edição do expediente estão previstos para as próximas etapas.
 
+**Acessos:** [Abrir o site](https://agenda-clara-luizcodebr.onrender.com) · [Baixar a demonstração](https://github.com/LuizCodeBR/AgendaClara/releases/tag/v0.1.0) · [Testes automáticos](https://github.com/LuizCodeBR/AgendaClara/actions)
+
 ## Site, app mobile e versão local
 
 A tela inicial apresenta as três opções. O site hospedado e a PWA usam o mesmo servidor; a cópia local tem um banco próprio. A publicação gratuita é uma demonstração com dados descartáveis. Consulte [WEB-MOBILE.md](docs/WEB-MOBILE.md).
@@ -188,7 +190,7 @@ Para usar um PostgreSQL próprio, configure `SPRING_PROFILES_ACTIVE=postgres`, `
 
 ## Próximas etapas
 
-1. Validar o fluxo automático em um novo repositório no GitHub, incluindo PostgreSQL, Docker e navegador.
+1. Evoluir a demonstração validada para gestão completa de profissionais e expediente.
 2. Cadastro e gestão de profissionais, expedientes e exceções por data.
 3. Cadastro de empresas e provisionamento de contas sem usuários de demonstração.
 4. Recuperação de acesso e comunicação real de confirmação/cancelamento.
