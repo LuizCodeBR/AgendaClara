@@ -1,0 +1,36 @@
+spring:
+  application:
+    name: agenda-clara
+  profiles:
+    default: demo
+  datasource:
+    hikari:
+      maximum-pool-size: 10
+      transaction-isolation: TRANSACTION_READ_COMMITTED
+  flyway:
+    locations: classpath:db/migration
+server:
+  address: ${SERVER_ADDRESS:127.0.0.1}
+  port: ${PORT:8080}
+  error:
+    include-message: never
+    include-stacktrace: never
+  servlet:
+    session:
+      timeout: 30m
+      cookie:
+        http-only: true
+        same-site: lax
+        secure: ${COOKIE_SECURE:false}
+app:
+  demo:
+    enabled: ${APP_DEMO_ENABLED:false}
+    public: ${APP_PUBLIC_DEMO:false}
+  distribution:
+    source-url: ${SOURCE_URL:}
+    download-url: ${DEMO_DOWNLOAD_URL:}
+  booking:
+    horizon-days: 60
+logging:
+  level:
+    org.springframework.security: WARN

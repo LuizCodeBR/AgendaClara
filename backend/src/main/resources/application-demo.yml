@@ -1,0 +1,8 @@
+spring:
+  datasource:
+    url: jdbc:h2:file:${AGENDA_DATA_DIR:./data}/agenda;DB_CLOSE_ON_EXIT=FALSE;LOCK_TIMEOUT=10000
+    username: sa
+    password: ""
+app:
+  demo:
+    enabled: true

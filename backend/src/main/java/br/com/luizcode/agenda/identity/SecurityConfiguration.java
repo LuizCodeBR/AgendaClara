@@ -1,0 +1,62 @@
+package br.com.luizcode.agenda.identity;
+
+import java.util.Locale;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+
+@Configuration
+public class SecurityConfiguration {
+    @Bean
+    PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    UserDetailsService userDetailsService(JdbcTemplate jdbc) {
+        return email -> jdbc.query("select * from app_user where email = ?", (rs, row) ->
+                new AgendaUser(rs.getObject("id", java.util.UUID.class), rs.getObject("business_id", java.util.UUID.class),
+                        rs.getString("display_name"), rs.getString("email"), rs.getString("password_hash")),
+                email.strip().toLowerCase(Locale.ROOT)).stream().findFirst()
+                .orElseThrow(() -> new UsernameNotFoundException("Credenciais inválidas."));
+    }
+
+    @Bean
+    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http.csrf(Customizer.withDefaults())
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/api/public/**", "/api/auth/csrf", "/api/auth/login").permitAll()
+                .requestMatchers("/api/admin/**", "/api/auth/me").hasRole("OWNER")
+                .requestMatchers("/api/**").denyAll()
+                .anyRequest().permitAll())
+            .requestCache(cache -> cache.disable())
+            .formLogin(form -> form.loginProcessingUrl("/api/auth/login")
+                .successHandler((request, response, auth) -> response.setStatus(204))
+                .failureHandler((request, response, exception) ->
+                    writeError(response, 401, "E-mail ou senha inválidos.")))
+            .logout(logout -> logout.logoutUrl("/api/auth/logout").deleteCookies("JSESSIONID")
+                .logoutSuccessHandler((request, response, auth) -> response.setStatus(204)))
+            .exceptionHandling(errors -> errors
+                .authenticationEntryPoint((request, response, exception) ->
+                    writeError(response, 401, "Entre para acessar o painel."))
+                .accessDeniedHandler((request, response, exception) ->
+                    writeError(response, 403, "A sessão expirou ou a operação não foi autorizada. Atualize a página.")))
+            .headers(headers -> headers.contentSecurityPolicy(csp -> csp.policyDirectives(
+                "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'")));
+        return http.build();
+    }
+
+    private static void writeError(jakarta.servlet.http.HttpServletResponse response, int status, String detail)
+            throws java.io.IOException {
+        response.setStatus(status);
+        response.setContentType("application/problem+json;charset=UTF-8");
+        response.getWriter().write("{\"status\":" + status + ",\"detail\":\"" + detail + "\"}");
+    }
+}

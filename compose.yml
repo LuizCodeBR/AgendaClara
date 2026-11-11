@@ -1,0 +1,30 @@
+services:
+  database:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: agenda
+      POSTGRES_USER: agenda
+      POSTGRES_PASSWORD: local-demo-only
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agenda -d agenda"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+  app:
+    build: .
+    ports:
+      - "127.0.0.1:8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: postgres
+      APP_DEMO_ENABLED: "true"
+      SERVER_ADDRESS: 0.0.0.0
+      DB_URL: jdbc:postgresql://database:5432/agenda
+      DB_USER: agenda
+      DB_PASSWORD: local-demo-only
+    depends_on:
+      database:
+        condition: service_healthy
+volumes:
+  postgres-data:

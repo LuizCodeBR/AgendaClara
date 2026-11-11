@@ -1,0 +1,107 @@
+# Arquitetura — Agenda Clara
+
+## Decisão principal
+
+A primeira versão é um **monólito organizado por funcionalidades**, em um repositório. A interface e a API são desenvolvidas separadamente, mas o resultado da interface entra no mesmo JAR do servidor.
+
+Isso reduz os passos para experimentar o projeto: uma URL, um processo Java e um banco local. Os módulos podem evoluir sem exigir microsserviços ou infraestrutura distribuída na primeira entrega.
+
+```mermaid
+flowchart LR
+    U[Cliente / responsável] --> W[React e PWA]
+    W -->|mesma origem /api| API[Spring Boot]
+    API --> C[Catálogo]
+    API --> I[Acesso e sessão]
+    API --> S[Agendamento]
+    S --> T[Transação e bloqueio do profissional]
+    C --> DB[(H2 demo / PostgreSQL)]
+    I --> DB
+    T --> DB
+    F[Flyway] --> DB
+```
+
+## Responsabilidades
+
+| Pacote | Responsabilidade |
+| --- | --- |
+| catalog | Estabelecimentos, serviços, profissionais e expediente |
+| identity | Login, sessão, CSRF e identificação do responsável |
+| scheduling | Disponibilidade, reservas, remarcações, cancelamentos e bloqueios |
+| bootstrap | Dados fictícios ativados explicitamente pela configuração de demonstração |
+| shared | Respostas de erro e políticas comuns da API |
+
+Os controladores traduzem HTTP. O serviço de agendamento coordena as regras e a transação. Os repositórios executam consultas SQL com parâmetros. DTOs públicos não expõem o modelo interno nem hashes.
+
+## Modelo de dados
+
+- business: identificação pública e fuso do estabelecimento.
+- app_user: responsável vinculado a um estabelecimento.
+- professional: profissional pertencente ao estabelecimento.
+- service_offering: serviço, duração e preço em centavos.
+- weekly_hours: janelas de expediente por profissional e dia da semana.
+- appointment: reserva, estado, cliente, valores e dados de repetição segura.
+- time_block: indisponibilidade explícita por profissional.
+
+Chaves estrangeiras compostas validam os pares `(professional_id, business_id)` e `(service_id, business_id)`. Assim, o banco rejeita relações entre empresas diferentes mesmo se uma chamada tentar misturá-las.
+
+## Reserva e concorrência
+
+Disponibilidade é uma consulta informativa: entre exibir um horário e confirmar, outra pessoa pode ocupá-lo.
+
+A confirmação revalida tudo, dentro de uma transação em **READ COMMITTED**:
+
+1. Localiza e bloqueia a linha do profissional, com `SELECT ... FOR UPDATE`, já filtrada pelo estabelecimento.
+2. Procura uma requisição anterior com a mesma chave.
+3. Obtém a duração e o preço no servidor.
+4. Verifica data, antecedência, grade e expediente.
+5. Procura sobreposição com reservas confirmadas e bloqueios.
+6. Grava a reserva e confirma a transação.
+
+Todas as alterações da agenda — inclusive bloqueio, cancelamento e remarcação — seguem o mesmo bloqueio por profissional. A serialização é realizada pelo banco e funciona entre processos diferentes conectados ao mesmo banco. Profissionais diferentes podem ser atendidos em paralelo.
+
+Os intervalos são tratados como `[início, fim)`: um atendimento que termina às 10h permite outro começando às 10h.
+
+A regra de sobreposição é `inícioA < fimB && fimA > inícioB`. Alterar o horário inicial não permite atravessar uma reserva já existente.
+
+**Limite da garantia:** a regra depende de todos os escritores usarem esse protocolo. Uma alteração manual diretamente nas tabelas não passa pelo serviço. Não há uma restrição de exclusão temporal específica do PostgreSQL nesta versão.
+
+## Repetição segura
+
+Cada tentativa de confirmação usa um UUID gerado pela interface. Uma assinatura SHA-256 representa profissional, serviço, instante e contato normalizado. A chave é única dentro do estabelecimento.
+
+- Mesma chave e mesmos dados: devolve a mesma reserva.
+- Mesma chave e dados diferentes: conflito 409.
+- Repetição de uma reserva já cancelada: conflito; não é apresentada como confirmada.
+- Nova confirmação após escolher novamente: nova chave.
+
+A interface mantém a chave após falha de conexão, porque a reserva pode ter sido gravada antes de a resposta se perder.
+
+## Datas e valores
+
+Instantes são armazenados em UTC com tipo SQL que inclui fuso/offset. Expediente e dias são interpretados no fuso do estabelecimento. Na demonstração, ambos usam `America/Sao_Paulo`.
+
+O servidor rejeita inícios fora da grade de 15 minutos. Horários locais inexistentes ou ambíguos em transições de fuso não são oferecidos. A versão não permite expediente atravessando a meia-noite.
+
+Preços são inteiros em centavos. A reserva guarda nome do serviço, preço e duração efetivamente contratados para preservar seu histórico.
+
+## Acesso
+
+O cliente reserva sem criar conta. O responsável entra no painel com uma sessão do Spring Security. O cookie de sessão é HttpOnly e SameSite=Lax. As senhas são guardadas com BCrypt.
+
+Sessão foi escolhida porque a primeira versão é uma aplicação de mesma origem. Evita guardar tokens de acesso em localStorage e simplifica o encerramento da sessão. Uma API para aplicativos externos pode exigir outra decisão futuramente.
+
+Alterações exigem CSRF. A interface busca o token antes de enviar cada alteração, inclusive login e reserva pública. O identificador da empresa no painel vem do usuário autenticado; não é aceito como autorização pelo corpo da requisição.
+
+Disponibilidade pública contém horários livres, sem nomes, telefones ou identificadores das reservas. Respostas da API usam `Cache-Control: no-store`.
+
+## PWA e limites
+
+O manifesto fornece nome, ícones e modo standalone. O service worker mantém somente a página de reconexão e ícones. Não há cache de API, fila de reservas ou confirmação sem comunicação com o servidor.
+
+Instalação no navegador não cria um serviço nativo em segundo plano. Na demonstração, o Java precisa continuar aberto. Instalação em aparelhos diferentes será tratada após hospedagem HTTPS.
+
+## Evolução planejada
+
+O expediente e os profissionais começam com dados fictícios. A gestão desses cadastros exige política para reservas existentes quando um expediente mudar. Essa regra será definida antes da implementação.
+
+Uma entrega para clientes reais também exige contas sem credenciais de demonstração, recuperação de acesso, limites contra abuso, hospedagem HTTPS, persistência e operação. O Compose atual é uma opção local, com configurações fictícias.
