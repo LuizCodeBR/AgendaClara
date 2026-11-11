@@ -26,5 +26,9 @@ try {
         [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($archive,(Join-Path $PSScriptRoot ('distribution/' + $name)),('AgendaClara-demo/' + $name),[System.IO.Compression.CompressionLevel]::Optimal) | Out-Null
     }
 } finally { $archive.Dispose() }
-Get-Item -LiteralPath $sourceZip,$demoZip | Select-Object FullName,Length
-Get-FileHash -LiteralPath $sourceZip,$demoZip -Algorithm SHA256 | Select-Object Path,Hash
+$artifacts = foreach ($filePath in @($sourceZip, $demoZip)) {
+    $item = Get-Item -LiteralPath $filePath
+    $digest = Get-FileHash -LiteralPath $filePath -Algorithm SHA256
+    [pscustomobject]@{ Path = $item.FullName; Length = $item.Length; Sha256 = $digest.Hash }
+}
+$artifacts | ConvertTo-Json
