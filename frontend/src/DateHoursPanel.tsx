@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useId, useState } from 'react';
 import type { FormEvent } from 'react';
 import { CalendarDays, Plus, Save, Trash2 } from 'lucide-react';
 import { api, ApiError, errorMessage } from './api';
@@ -24,6 +24,7 @@ const contents = (draft: Draft) => ({ reason: draft.reason, hours: draft.closed 
 export default function DateHoursPanel({ online, zoneId, onDirty, onUpdated }: {
   online: boolean; zoneId: string; onDirty: (dirty: boolean) => void; onUpdated: () => void;
 }) {
+  const professionalSelectId = useId();
   const [people, setPeople] = useState<ProfessionalConfiguration[]>([]);
   const [selected, setSelected] = useState('');
   const [locked, setLocked] = useState(false);
@@ -44,7 +45,7 @@ export default function DateHoursPanel({ online, zoneId, onDirty, onUpdated }: {
   if (!people.length) return <Message kind="info">Cadastre um profissional em Equipe e horários para configurar folgas e horários especiais.</Message>;
   return <section className="date-hours-section" aria-label="Folgas e horários especiais">
     <div className="team-heading"><div><h2>Folgas e horários especiais</h2><p>Feche uma data ou defina um expediente diferente. Cada exceção vale apenas para o profissional escolhido, no fuso {zoneId}.</p></div></div>
-    <label className="date-person-label">Profissional da exceção<select value={selected} disabled={locked} onChange={event => setSelected(event.target.value)}>{people.map(person => <option key={person.id} value={person.id}>{person.name}{person.active ? '' : ' · inativo'}</option>)}</select></label>
+    <div className="date-person-label"><label htmlFor={professionalSelectId}>Profissional da exceção</label><select id={professionalSelectId} value={selected} disabled={locked} onChange={event => setSelected(event.target.value)}>{people.map(person => <option key={person.id} value={person.id}>{person.name}{person.active ? '' : ' · inativo'}</option>)}</select></div>
     {selected && <DateHoursEditor key={selected} professionalId={selected} online={online} onDirty={lock} onUpdated={onUpdated} />}
   </section>;
 }

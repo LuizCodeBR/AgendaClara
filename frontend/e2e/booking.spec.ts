@@ -159,6 +159,7 @@ test('rascunho permanece na navegação e Escape não fecha um cadastro enquanto
 
 test('folga fecha a data; horário especial permite reservar; alterações preservam o atendimento', async ({ page }, testInfo) => {
   test.setTimeout(60000);
+  page.setDefaultTimeout(10000);
   const name = 'Exceções E2E ' + testInfo.project.name + ' ' + Date.now();
   const customer = 'Cliente das exceções ' + testInfo.project.name;
   await page.goto('/');
