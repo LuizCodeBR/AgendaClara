@@ -114,3 +114,15 @@ Um filtro dentro da cadeia de segurança, antes de CSRF e autenticação, limita
 Catálogo, disponibilidade e agenda diária passam a usar transações somente de leitura em REPEATABLE READ. A gravação continua em READ COMMITTED com bloqueio por profissional. Busca por um identificador usa SQL direto e parametrizado; a equipe completa utiliza duas consultas por estabelecimento, sem uma consulta adicional para cada profissional.
 
 A interface web/PWA compartilha a mesma comunicação com a API, inclusive mensagens de espera e limites. Nenhuma nova dependência ou migração de banco foi necessária. Consulte o [relatório de revisão](REVISAO-SEGURANCA-0.2.1.md).
+
+## Folgas e expediente por data (0.3.0)
+
+O módulo hours acrescenta date_hours e date_hours_window pela migração V3. A chave diária é única por estabelecimento, profissional e data; as relações possuem chaves compostas para impedir mistura entre empresas.
+
+EffectiveHours resolve os intervalos da data: uma exceção substitui a semana; uma exceção sem intervalos fecha o dia. Disponibilidade, confirmação e remarcação usam o mesmo serviço. Os bloqueios continuam sendo descontados.
+
+Alterações diárias e semanais compartilham o bloqueio da linha do profissional com as reservas. A versão otimista também é compartilhada. Antes de gravar ou remover uma exceção, o serviço verifica os atendimentos confirmados futuros e em andamento. Editar a semana respeita os horários específicos das datas dos compromissos.
+
+O GET administrativo retorna versão, limites de datas, semana e exceções dentro de uma transação de leitura. A consulta das exceções é limitada ao período configurável; a validação da semana busca as exceções dos compromissos em uma consulta, evitando uma busca por agendamento.
+
+O H2 foi atualizado de 2.4.240 para 2.5.252 após um teste reproduzir o defeito de validação de CHECK ao trocar conexões. A regressão permanece coberta, e uma atualização real de arquivo V2 para V3 foi conferida com dados fictícios. Consulte [EXCECOES.md](EXCECOES.md).

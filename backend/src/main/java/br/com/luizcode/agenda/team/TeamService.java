@@ -2,15 +2,17 @@ package br.com.luizcode.agenda.team;
 
 import static br.com.luizcode.agenda.team.TeamModels.*;
 import br.com.luizcode.agenda.catalog.CatalogRepository;
+import br.com.luizcode.agenda.catalog.EffectiveHours;
+import br.com.luizcode.agenda.hours.DateHoursRepository;
+import java.time.LocalDate;
+import java.util.Map;
 import br.com.luizcode.agenda.catalog.WorkingHoursPolicy;
 import br.com.luizcode.agenda.catalog.WorkingWindow;
 import br.com.luizcode.agenda.shared.BusinessException;
 import java.time.Clock;
-import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
@@ -22,8 +24,9 @@ public class TeamService {
     private final TeamRepository team;
     private final CatalogRepository catalog;
     private final Clock clock;
-    public TeamService(TeamRepository team, CatalogRepository catalog, Clock clock) {
-        this.team = team; this.catalog = catalog; this.clock = clock;
+    private final EffectiveHours effectiveHours;
+    public TeamService(TeamRepository team, CatalogRepository catalog, Clock clock, EffectiveHours effectiveHours) {
+        this.team = team; this.catalog = catalog; this.clock = clock; this.effectiveHours=effectiveHours;
     }
 
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
@@ -46,10 +49,16 @@ public class TeamService {
         if (!request.active() && !commitments.isEmpty())
             throw BusinessException.conflict("Há atendimentos confirmados futuros ou em andamento. Remarque ou cancele antes de inativar o profissional.");
         ZoneId zone = ZoneId.of(catalog.business(businessId).zoneId());
+        Map<LocalDate,DateHoursRepository.DateHours> exceptions=Map.of();
+        if(!commitments.isEmpty()) exceptions=effectiveHours.exceptions(businessId,id,
+                commitments.getFirst().startsAt().atZone(zone).toLocalDate(),
+                commitments.getLast().startsAt().atZone(zone).toLocalDate());
         for (var commitment : commitments) {
-            var windows = hours.stream()
-                    .filter(window -> window.weekday() == commitment.startsAt().atZone(zone).getDayOfWeek().getValue())
-                    .map(window -> new WorkingWindow(window.opensAt(), window.closesAt())).toList();
+            LocalDate date=commitment.startsAt().atZone(zone).toLocalDate();
+            var special=exceptions.get(date);
+            var windows = special==null ? hours.stream()
+                    .filter(window -> window.weekday() == date.getDayOfWeek().getValue())
+                    .map(window -> new WorkingWindow(window.opensAt(), window.closesAt())).toList() : special.hours();
             if (!WorkingHoursPolicy.contains(commitment.startsAt(), commitment.endsAt(), zone, windows)) {
                 String when = DateTimeFormatter.ofPattern("dd/MM/yyyy 'às' HH:mm").format(commitment.startsAt().atZone(zone));
                 throw BusinessException.conflict("O agendamento " + commitment.reference() + ", em " + when
@@ -61,34 +70,14 @@ public class TeamService {
     }
 
     private List<WeeklyWindow> normalized(List<WeeklyWindow> input) {
-        List<WeeklyWindow> sorted = input.stream().sorted(Comparator.comparingInt(WeeklyWindow::weekday)
-                .thenComparing(WeeklyWindow::opensAt)).toList();
-        List<WeeklyWindow> result = new ArrayList<>();
-        for (int weekday = 1; weekday <= 7; weekday++) {
-            int day = weekday;
-            if (sorted.stream().filter(window -> window.weekday() == day).count() > 4)
-                throw BusinessException.invalid("Use até quatro intervalos por dia.");
-        }
-        for (var window : sorted) {
-            if (!grid(window.opensAt()) || !grid(window.closesAt()) || !window.opensAt().isBefore(window.closesAt()))
-                throw BusinessException.invalid("Cada intervalo deve começar antes de terminar, no mesmo dia e em múltiplos de 15 minutos.");
-            if (!result.isEmpty()) {
-                var previous = result.getLast();
-                if (previous.weekday() == window.weekday()) {
-                    if (window.opensAt().isBefore(previous.closesAt()))
-                        throw BusinessException.invalid("Os intervalos de um mesmo dia não podem se sobrepor.");
-                    if (window.opensAt().equals(previous.closesAt())) {
-                        result.set(result.size() - 1, new WeeklyWindow(previous.weekday(), previous.opensAt(), window.closesAt()));
-                        continue;
-                    }
-                }
-            }
-            result.add(window);
+        List<WeeklyWindow> result=new ArrayList<>();
+        for(int weekday=1;weekday<=7;weekday++) {
+            int day=weekday;
+            var windows=input.stream().filter(window->window.weekday()==day)
+                    .map(window->new WorkingWindow(window.opensAt(),window.closesAt())).toList();
+            for(var window:WorkingHoursPolicy.normalize(windows))
+                result.add(new WeeklyWindow(day,window.opensAt(),window.closesAt()));
         }
         return List.copyOf(result);
-    }
-
-    private boolean grid(LocalTime value) {
-        return value.getSecond() == 0 && value.getNano() == 0 && value.getMinute() % 15 == 0;
     }
 }

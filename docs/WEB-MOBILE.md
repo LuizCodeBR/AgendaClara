@@ -2,7 +2,7 @@
 
 **Site:** https://agenda-clara-luizcodebr.onrender.com
 
-**Downloads:** https://github.com/LuizCodeBR/AgendaClara/releases/tag/v0.2.2
+**Downloads:** https://github.com/LuizCodeBR/AgendaClara/releases/tag/v0.3.0
 
 ## Três formas de acesso
 

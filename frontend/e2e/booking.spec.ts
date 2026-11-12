@@ -156,3 +156,88 @@ test('rascunho permanece na navegação e Escape não fecha um cadastro enquanto
     await expect(page.getByRole('button', { name: new RegExp(name + '.*Inativo') })).toBeVisible();
   } finally { release(); await page.unrouteAll({ behavior: 'wait' }); }
 });
+
+test('folga fecha a data; horário especial permite reservar; alterações preservam o atendimento', async ({ page }, testInfo) => {
+  test.setTimeout(60000);
+  const name = 'Exceções E2E ' + testInfo.project.name + ' ' + Date.now();
+  const customer = 'Cliente das exceções ' + testInfo.project.name;
+  await page.goto('/');
+  await openAdmin(page);
+  await page.getByRole('button', { name: 'Barbearia Horizonte Marina · responsável' }).click();
+  await page.getByRole('button', { name: 'Entrar no painel', exact: true }).click();
+  await page.getByRole('button', { name: 'Equipe e horários', exact: true }).click();
+  await page.getByRole('button', { name: 'Cadastrar profissional', exact: true }).click();
+  await page.getByLabel('Nome do novo profissional', { exact: true }).fill(name);
+  await page.getByLabel('Especialidade do novo profissional', { exact: true }).fill('Atendimento especial');
+  await page.getByRole('button', { name: 'Cadastrar e configurar horários', exact: true }).click();
+  await expect(page.getByLabel('Nome do profissional', { exact: true })).toHaveValue(name);
+  const catalog = await (await page.request.get('/api/admin/catalog')).json();
+  const target = catalog.suggestedDate;
+  const dayIndex = (new Date(target + 'T12:00:00Z').getUTCDay() + 6) % 7;
+  const day = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo'][dayIndex];
+  await page.getByRole('checkbox', { name: 'Atende ' + day, exact: true }).check();
+  await page.getByRole('button', { name: 'Remover intervalo 2 de ' + day, exact: true }).click();
+  await page.getByRole('button', { name: 'Salvar cadastro e horários', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Salvar cadastro e horários', exact: true })).toBeDisabled();
+
+  async function openDate() {
+    await page.getByRole('button', { name: 'Folgas e horários especiais', exact: true }).click();
+    await page.getByLabel('Profissional da exceção', { exact: true }).selectOption({ label: name });
+    await page.getByLabel('Data da exceção', { exact: true }).fill(target);
+  }
+  async function openPublic() {
+    await page.getByRole('button', { name: 'Nova reserva', exact: true }).click();
+    await page.getByRole('button', { name: new RegExp(name + '.*Profissional') }).click();
+  }
+  await openDate();
+  await page.getByLabel('Motivo da exceção', { exact: true }).fill('Folga E2E');
+  await page.getByRole('button', { name: 'Salvar exceção', exact: true }).click();
+  await expect(page.getByText('Exceção cadastrada', { exact: true })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await openPublic();
+  await expect(page.getByText('Sem horários disponíveis neste dia.', { exact: true })).toBeVisible();
+
+  await openAdmin(page);
+  await openDate();
+  await page.getByRole('checkbox', { name: 'Não atender nesta data', exact: true }).uncheck();
+  await page.getByLabel('Exceção início 1', { exact: true }).fill('19:00');
+  await page.getByLabel('Exceção fim 1', { exact: true }).fill('20:00');
+  await page.getByLabel('Motivo da exceção', { exact: true }).fill('Atendimento excepcional E2E');
+  await page.getByRole('button', { name: 'Salvar exceção', exact: true }).click();
+  await expect(page.getByText('Exceção cadastrada', { exact: true })).toBeVisible();
+  await openPublic();
+  await page.getByRole('button', { name: '19:00', exact: true }).click();
+  await page.getByLabel('Seu nome', { exact: true }).fill(customer);
+  await page.getByLabel('Telefone de contato', { exact: true }).fill('11999991234');
+  await page.getByRole('button', { name: 'Confirmar agendamento', exact: true }).click();
+  await expect(page.getByRole('heading', { name: /Seu horário.*está reservado/ })).toBeVisible();
+
+  await openAdmin(page);
+  await openDate();
+  await page.getByRole('checkbox', { name: 'Não atender nesta data', exact: true }).check();
+  await page.getByRole('button', { name: 'Salvar exceção', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('ficaria fora do expediente');
+  await expect(page.getByRole('checkbox', { name: 'Não atender nesta data', exact: true })).toBeChecked();
+  await page.getByRole('button', { name: 'Descartar alterações da exceção', exact: true }).click();
+  await page.getByRole('button', { name: 'Remover exceção e usar expediente semanal', exact: true }).click();
+  await page.getByRole('button', { name: 'Confirmar remoção da exceção', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('ficaria fora do expediente');
+
+  await page.getByRole('button', { name: 'Minha agenda', exact: true }).click();
+  await page.getByRole('button', { name: 'Cancelar ' + customer, exact: true }).click();
+  await page.getByRole('button', { name: 'Sim, cancelar', exact: true }).click();
+  await expect(page.locator('article').filter({ hasText: customer }).getByText('Cancelado', { exact: true })).toBeVisible();
+  await openDate();
+  await page.getByRole('button', { name: 'Remover exceção e usar expediente semanal', exact: true }).click();
+  await page.getByRole('button', { name: 'Confirmar remoção da exceção', exact: true }).click();
+  await expect(page.getByText('Esta data segue o expediente semanal', { exact: true })).toBeVisible();
+  await openPublic();
+  await expect(page.getByRole('button', { name: '09:00', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: '19:00', exact: true })).toHaveCount(0);
+  await openAdmin(page);
+  await page.getByRole('button', { name: 'Equipe e horários', exact: true }).click();
+  await page.getByRole('button', { name: new RegExp(name + '.*Atendimento especial') }).click();
+  await page.getByRole('checkbox', { name: 'Profissional ativo para reservas', exact: true }).uncheck();
+  await page.getByRole('button', { name: 'Salvar cadastro e horários', exact: true }).click();
+  await expect(page.getByRole('button', { name: new RegExp(name + '.*Inativo') })).toBeVisible();
+});

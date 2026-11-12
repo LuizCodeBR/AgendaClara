@@ -76,6 +76,22 @@ public class TeamRepository {
                 """, UUID.randomUUID(), businessId, id, window.weekday(), window.opensAt(), window.closesAt());
     }
 
+    public void advanceVersion(UUID businessId, UUID id, int version) {
+        int changed=jdbc.update("update professional set version=version+1 where business_id=? and id=? and version=?",
+                businessId,id,version);
+        if(changed!=1) throw BusinessException.conflict("Os dados foram alterados em outra sessão. Recarregue antes de salvar.");
+    }
+
+    public List<Commitment> upcomingOnDate(UUID businessId, UUID professionalId, Instant now, Instant start, Instant end) {
+        return jdbc.query("""
+                select starts_at, ends_at, reference from appointment
+                where business_id=? and professional_id=? and status='BOOKED' and ends_at>?
+                  and starts_at<? and ends_at>? order by starts_at
+                """,(rs,row)->new Commitment(rs.getObject(1,OffsetDateTime.class).toInstant(),
+                        rs.getObject(2,OffsetDateTime.class).toInstant(),rs.getString(3)),
+                businessId,professionalId,now.atOffset(ZoneOffset.UTC),end.atOffset(ZoneOffset.UTC),start.atOffset(ZoneOffset.UTC));
+    }
+
     public record Commitment(Instant startsAt, Instant endsAt, String reference) {}
     public List<Commitment> upcoming(UUID businessId, UUID professionalId, Instant now) {
         return jdbc.query("""

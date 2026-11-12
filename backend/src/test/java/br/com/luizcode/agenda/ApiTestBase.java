@@ -42,6 +42,8 @@ abstract class ApiTestBase {
     @Autowired ScheduleService schedule;
 
     @BeforeEach void cleanCalendar() {
+        jdbc.update("delete from date_hours_window");
+        jdbc.update("delete from date_hours");
         jdbc.update("delete from appointment");
         jdbc.update("delete from time_block");
     }

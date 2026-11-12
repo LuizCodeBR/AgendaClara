@@ -1,4 +1,4 @@
-# API — versão 0.2.1
+# API — versão 0.3.0
 
 A interface e a API usam a mesma origem. Datas de consulta usam ISO `YYYY-MM-DD`; instantes enviados usam ISO com offset, como `2030-06-04T09:00:00-03:00`.
 
@@ -96,3 +96,11 @@ JSON tem limite de 16 KiB pelos bytes efetivamente recebidos, inclusive sem Cont
 Cotas por instância/minuto: API 1200, login global 120, e-mail normalizado 20, reservas 60 e alterações administrativas 120. Uma chamada consome as cotas aplicáveis. Excesso retorna 429, Retry-After em segundos e detail com orientação de espera. Não repetir alterações automaticamente; preservar a chave da reserva se houver dúvida sobre uma confirmação anterior.
 
 As cotas usam janelas fixas, são compartilhadas pelos visitantes e reiniciam com o processo. Configuração, cobertura dos testes e limitações estão em [REVISAO-SEGURANCA-0.2.1.md](REVISAO-SEGURANCA-0.2.1.md).
+
+## Exceções de expediente por data (0.3.0)
+
+GET, PUT e DELETE em /api/admin/professionals/{id}/exceptions exigem responsável autenticado; alterações exigem CSRF. PUT e DELETE usam a data no caminho; DELETE exige version na consulta. O corpo do PUT contém version, reason e hours; hours vazio fecha o dia.
+
+O GET retorna version, firstDate, lastDate, weeklyHours e exceptions. A versão pertence à configuração do profissional e é compartilhada com a edição da semana. Alteração desatualizada ou que invalide atendimento confirmado retorna 409. Data ou intervalos inválidos retornam 400. Profissional de outro estabelecimento retorna 404.
+
+A exceção substitui a semana na consulta, confirmação e remarcação. Os detalhes, exemplos e limites estão em [EXCECOES.md](EXCECOES.md).

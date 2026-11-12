@@ -2,9 +2,9 @@
 
 Agendamento para pequenos negócios com página pública de reservas, painel do responsável e interface instalável pelo navegador.
 
-**Versão 0.2.2 — revisão de uso e confiabilidade.** O responsável pode cadastrar e editar profissionais e configurar o expediente semanal. A demonstração usa dois estabelecimentos fictícios; cadastro público de empresas continua planejado.
+**Versão 0.3.0 — folgas e horários especiais.** O responsável pode cadastrar e editar profissionais e configurar o expediente semanal. A demonstração usa dois estabelecimentos fictícios; cadastro público de empresas continua planejado.
 
-**Acessos:** [Abrir o site](https://agenda-clara-luizcodebr.onrender.com) · [Baixar a demonstração](https://github.com/LuizCodeBR/AgendaClara/releases/tag/v0.2.2) · [Testes automáticos](https://github.com/LuizCodeBR/AgendaClara/actions)
+**Acessos:** [Abrir o site](https://agenda-clara-luizcodebr.onrender.com) · [Baixar a demonstração](https://github.com/LuizCodeBR/AgendaClara/releases/tag/v0.3.0) · [Testes automáticos](https://github.com/LuizCodeBR/AgendaClara/actions)
 
 ## Site, app mobile e versão local
 
@@ -102,6 +102,7 @@ Todos os dados são exemplos. O perfil de demonstração não deve ser usado par
 - Inclusão de novos serviços no catálogo.
 - Cadastro, edição, ativação e inativação de profissionais.
 - Expediente semanal por profissional, com intervalos, dias fechados e proteção das reservas existentes. Consulte [PROFISSIONAIS.md](docs/PROFISSIONAIS.md).
+- Folgas, feriados e horários especiais por profissional e data, com proteção dos atendimentos. Consulte [EXCECOES.md](docs/EXCECOES.md).
 - Interface responsiva, manifesto de instalação e tela de reconexão.
 - Banco local persistente e migração versionada do esquema.
 
@@ -192,9 +193,8 @@ Para usar um PostgreSQL próprio, configure `SPRING_PROFILES_ACTIVE=postgres`, `
 
 ## Próximas etapas
 
-1. Exceções de expediente por data, feriados e ausências.
-2. Cadastro público de empresas e provisionamento de contas próprias.
-3. Recuperação de acesso e comunicação real de confirmação/cancelamento.
-4. Persistência operacional e ampliação da proteção contra abuso antes de receber clientes reais.
+1. Cadastro público de empresas e provisionamento de contas próprias.
+2. Recuperação de acesso e comunicação real de confirmação/cancelamento.
+3. Persistência operacional e ampliação da proteção contra abuso antes de receber clientes reais.
 
-A revisão atual está em [REVISAO-USO-0.2.2.md](docs/REVISAO-USO-0.2.2.md), com resultados em [VALIDACAO-0.2.2.md](docs/VALIDACAO-0.2.2.md). A revisão de segurança anterior está em [REVISAO-SEGURANCA-0.2.1.md](docs/REVISAO-SEGURANCA-0.2.1.md). Históricos: [0.2.0](docs/VALIDACAO-0.2.0.md) e [primeira versão](docs/VALIDACAO.md).
+A funcionalidade atual está em [EXCECOES.md](docs/EXCECOES.md), com resultados em [VALIDACAO-0.3.0.md](docs/VALIDACAO-0.3.0.md). A revisão de uso anterior está em [REVISAO-USO-0.2.2.md](docs/REVISAO-USO-0.2.2.md). A revisão de segurança anterior está em [REVISAO-SEGURANCA-0.2.1.md](docs/REVISAO-SEGURANCA-0.2.1.md). Históricos: [0.2.0](docs/VALIDACAO-0.2.0.md) e [primeira versão](docs/VALIDACAO.md).

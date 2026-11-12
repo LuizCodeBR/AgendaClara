@@ -3,6 +3,7 @@ package br.com.luizcode.agenda.scheduling;
 import static br.com.luizcode.agenda.catalog.CatalogModels.*;
 import static br.com.luizcode.agenda.scheduling.ScheduleModels.*;
 import br.com.luizcode.agenda.catalog.CatalogRepository;
+import br.com.luizcode.agenda.catalog.EffectiveHours;
 import br.com.luizcode.agenda.catalog.WorkingWindow;
 import br.com.luizcode.agenda.catalog.WorkingHoursPolicy;
 import br.com.luizcode.agenda.shared.BusinessException;
@@ -23,13 +24,15 @@ import org.springframework.transaction.annotation.Transactional;
 public class ScheduleService {
     private static final UUID NO_APPOINTMENT = new UUID(0, 0);
     private final CatalogRepository catalog;
+    private final EffectiveHours hours;
     private final ScheduleRepository schedule;
     private final Clock clock;
     private final int horizonDays;
 
-    public ScheduleService(CatalogRepository catalog, ScheduleRepository schedule, Clock clock,
+    public ScheduleService(CatalogRepository catalog, ScheduleRepository schedule, Clock clock, EffectiveHours hours,
                            @Value("${app.booking.horizon-days:60}") int horizonDays) {
         this.catalog = catalog;
+        this.hours = hours;
         this.schedule = schedule;
         this.clock = clock;
         this.horizonDays = horizonDays;
@@ -53,7 +56,7 @@ public class ScheduleService {
         Instant dayEnd = date.plusDays(1).atStartOfDay(zone).toInstant();
         List<Slot> occupied = schedule.occupied(business.id(), professionalId, dayStart, dayEnd);
         List<Slot> slots = new ArrayList<>();
-        var windows = catalog.hours(business.id(), professionalId, date.getDayOfWeek().getValue());
+        var windows = hours.onDate(business.id(), professionalId, date);
         for (var window : windows) {
             LocalDateTime close = date.atTime(window.closesAt());
             for (LocalDateTime cursor = date.atTime(window.opensAt());
@@ -166,7 +169,7 @@ public class ScheduleService {
         validateDate(start.atZone(zone).toLocalDate(), zone);
         if (!start.isAfter(clock.instant()))
             throw BusinessException.invalid("Escolha um horário futuro.");
-        var windows = catalog.hours(business.id(), professionalId, start.atZone(zone).getDayOfWeek().getValue());
+        var windows = hours.onDate(business.id(), professionalId, start.atZone(zone).toLocalDate());
         if (!validWindow(start, end, zone, windows))
             throw BusinessException.invalid("O horário não cabe no expediente. Use os horários disponíveis.");
         if (schedule.overlaps(business.id(), professionalId, start, end, excludedId))

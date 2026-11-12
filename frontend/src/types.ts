@@ -12,3 +12,7 @@ export interface CurrentUser { name: string; email: string; business: Business }
 
 export interface WeeklyWindow { weekday: number; opensAt: string; closesAt: string }
 export interface ProfessionalConfiguration extends Professional { active: boolean; version: number; hours: WeeklyWindow[] }
+
+export interface DayWindow { opensAt: string; closesAt: string }
+export interface DateException { date: string; reason: string; hours: DayWindow[] }
+export interface DateCalendar { version: number; firstDate: string; lastDate: string; exceptions: DateException[]; weeklyHours: WeeklyWindow[] }

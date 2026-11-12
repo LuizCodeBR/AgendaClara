@@ -75,7 +75,7 @@ jobs:
           chmod +x mvnw
           mkdir -p .cache/tmp
           ./mvnw -B -ntp -DskipTests package
-          java -jar target/agenda-clara-0.2.2.jar --spring.profiles.active=demo > .cache/e2e-server.log 2>&1 &
+          java -jar target/agenda-clara-0.3.0.jar --spring.profiles.active=demo > .cache/e2e-server.log 2>&1 &
           APP_PID=$!
           trap 'kill "$APP_PID" 2>/dev/null || true; cat "$GITHUB_WORKSPACE/.cache/e2e-server.log"' EXIT
           for attempt in $(seq 1 60); do
@@ -84,6 +84,7 @@ jobs:
           done
           curl --fail --silent http://127.0.0.1:8080/api/public/config
           node scripts/smoke.mjs http://127.0.0.1:8080
+          node scripts/date-hours-smoke.mjs http://127.0.0.1:8080
           cd frontend
           npm run test:e2e
   docker:
@@ -104,3 +105,4 @@ jobs:
             sleep 1
           done
           node scripts/smoke.mjs http://127.0.0.1:8080
+          node scripts/date-hours-smoke.mjs http://127.0.0.1:8080
