@@ -55,7 +55,7 @@ function CreateProfessional({ online, onClose, onSaved }: { online: boolean; onC
     try { onSaved(await api<ProfessionalConfiguration>(endpoint, { method: 'POST', body: JSON.stringify({ name, specialty }) })); }
     catch (error) { setError(errorMessage(error)); } finally { setPending(false); }
   }
-  return <Modal title="Cadastrar profissional" onClose={() => { if (!pending) onClose(); }}><p className="modal-description">Este é um cadastro para receber agendamentos. O acesso ao painel continua sendo do responsável. Depois de cadastrar, configure os horários para liberar reservas.</p><form className="stack-form" onSubmit={event => void submit(event)}><fieldset disabled={pending}>
+  return <Modal title="Cadastrar profissional" busy={pending} onClose={() => { if (!pending) onClose(); }}><p className="modal-description">Este é um cadastro para receber agendamentos. O acesso ao painel continua sendo do responsável. Depois de cadastrar, configure os horários para liberar reservas.</p><form className="stack-form" onSubmit={event => void submit(event)}><fieldset disabled={pending}>
     <label>Nome do novo profissional<input required maxLength={100} value={name} onChange={event => setName(event.target.value)} /></label>
     <label>Especialidade do novo profissional<input required maxLength={160} value={specialty} onChange={event => setSpecialty(event.target.value)} /></label>
     {error && <Message>{error}</Message>}<div className="modal-actions"><button type="button" className="button secondary" onClick={onClose}>Voltar</button><button className="button primary" disabled={!online}>{pending ? 'Cadastrando…' : 'Cadastrar e configurar horários'}</button></div>

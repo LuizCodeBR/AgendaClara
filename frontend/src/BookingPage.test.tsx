@@ -63,3 +63,22 @@ it('impede confirmação quando o navegador está sem conexão', async () => {
   expect(screen.getByRole('button', { name: 'Confirmar agendamento' })).toBeDisabled();
   expect(mocked.mock.calls.some(([, options]) => options?.method === 'POST')).toBe(false);
 });
+
+it('mostra no comprovante a data local de um atendimento noturno, mesmo quando UTC já está no dia seguinte', async () => {
+  const night = { startsAt: '2030-06-05T01:00:00Z', endsAt: '2030-06-05T01:30:00Z' };
+  mocked.mockImplementation(async (path, options) => {
+    if (path.endsWith('/catalog')) return catalog;
+    if (path.includes('/availability?')) return { slots: [night] };
+    if (options?.method === 'POST') return { ...receipt, ...night };
+    throw new Error('Unexpected: ' + path);
+  });
+  mount();
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole('button', { name: '22:00' }));
+  await user.type(screen.getByLabelText('Seu nome'), 'Cliente da noite');
+  await user.type(screen.getByLabelText('Telefone de contato'), '11999991234');
+  await user.click(screen.getByRole('button', { name: 'Confirmar agendamento' }));
+  await screen.findByRole('heading', { name: /Seu horário.*está reservado/ });
+  expect(document.getElementById('booking-receipt')).toHaveTextContent('4 de junho');
+  expect(document.getElementById('booking-receipt')).not.toHaveTextContent('5 de junho');
+});

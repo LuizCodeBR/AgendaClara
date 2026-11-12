@@ -1,10 +1,11 @@
 export const money = (cents: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cents / 100);
 export const time = (value: string, zone: string) => new Intl.DateTimeFormat('pt-BR', { timeZone: zone, hour: '2-digit', minute: '2-digit' }).format(new Date(value));
 export const dayLabel = (date: string, short = false) => new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC', weekday: short ? 'short' : 'long', day: 'numeric', month: short ? undefined : 'long' }).format(new Date(date + 'T12:00:00Z'));
-export function todayInZone(zone: string): string {
-  const parts = new Intl.DateTimeFormat('en-US', { timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date());
+export function dateInZone(value: string | Date, zone: string): string {
+  const parts = new Intl.DateTimeFormat('en-US', { timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date(value));
   return ['year', 'month', 'day'].map(type => parts.find(part => part.type === type)?.value).join('-');
 }
+export const todayInZone = (zone: string) => dateInZone(new Date(), zone);
 export function plusDays(date: string, amount: number) {
   const result = new Date(date + 'T12:00:00Z');
   result.setUTCDate(result.getUTCDate() + amount);

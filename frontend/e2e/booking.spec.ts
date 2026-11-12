@@ -99,3 +99,56 @@ test('responsável cadastra profissional, abre expediente e preserva reserva ao 
   await page.getByRole('button', { name: 'Salvar cadastro e horários', exact: true }).click();
   await expect(page.getByRole('button', { name: new RegExp(name + '.*Inativo') })).toBeVisible();
 });
+
+test('links inválidos permitem voltar ao início sem selecionar outra empresa silenciosamente', async ({ page }) => {
+  await page.goto('/#/agendar/%E0%A4%A');
+  await expect(page.getByRole('heading', { name: 'Página não encontrada', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Voltar ao início', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Começar meu agendamento', exact: true })).toBeVisible();
+  await page.goto('/#/agendar/empresa-inexistente');
+  await expect(page.getByRole('heading', { name: 'Estabelecimento não encontrado', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Confirmar agendamento', exact: true })).toHaveCount(0);
+});
+
+test('rascunho permanece na navegação e Escape não fecha um cadastro enquanto ele está sendo gravado', async ({ page }, testInfo) => {
+  await page.goto('/');
+  await openAdmin(page);
+  await page.getByRole('button', { name: 'Barbearia Horizonte Marina · responsável' }).click();
+  await page.getByRole('button', { name: 'Entrar no painel', exact: true }).click();
+  await page.getByRole('button', { name: 'Equipe e horários', exact: true }).click();
+  const specialty = page.getByLabel('Especialidade', { exact: true });
+  await expect(specialty).toBeVisible();
+  const original = await specialty.inputValue();
+  await specialty.fill(original + ' rascunho');
+  await expect(page.getByRole('button', { name: 'Agendar um horário', exact: true })).toBeDisabled();
+  await page.evaluate(() => { window.location.hash = '/inicio'; });
+  await expect(page).toHaveURL(/#\/painel$/);
+  await expect(specialty).toHaveValue(original + ' rascunho');
+  await page.getByRole('button', { name: 'Descartar alterações', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Agendar um horário', exact: true })).toBeEnabled();
+
+  let release!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  await page.route('**/api/admin/professionals', async route => {
+    if (route.request().method() === 'POST') await gate;
+    await route.continue();
+  });
+  try {
+    const name = 'Janela E2E ' + testInfo.project.name + ' ' + Date.now();
+    await page.getByRole('button', { name: 'Cadastrar profissional', exact: true }).click();
+    const dialog = page.getByRole('dialog');
+    await dialog.getByLabel('Nome do novo profissional').fill(name);
+    await dialog.getByLabel('Especialidade do novo profissional').fill('Teste de gravação');
+    await dialog.getByRole('button', { name: 'Cadastrar e configurar horários', exact: true }).click();
+    await expect(dialog.getByRole('button', { name: 'Cadastrando…', exact: true })).toBeDisabled();
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'Fechar', exact: true })).toBeDisabled();
+    release();
+    await expect(dialog).toHaveCount(0);
+    await expect(page.getByLabel('Nome do profissional', { exact: true })).toHaveValue(name);
+    await page.getByRole('checkbox', { name: 'Profissional ativo para reservas', exact: true }).uncheck();
+    await page.getByRole('button', { name: 'Salvar cadastro e horários', exact: true }).click();
+    await expect(page.getByRole('button', { name: new RegExp(name + '.*Inativo') })).toBeVisible();
+  } finally { release(); await page.unrouteAll({ behavior: 'wait' }); }
+});

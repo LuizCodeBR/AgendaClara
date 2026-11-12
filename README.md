@@ -2,9 +2,9 @@
 
 Agendamento para pequenos negócios com página pública de reservas, painel do responsável e interface instalável pelo navegador.
 
-**Versão 0.2.1 — revisão de segurança e arquitetura.** O responsável pode cadastrar e editar profissionais e configurar o expediente semanal. A demonstração usa dois estabelecimentos fictícios; cadastro público de empresas continua planejado.
+**Versão 0.2.2 — revisão de uso e confiabilidade.** O responsável pode cadastrar e editar profissionais e configurar o expediente semanal. A demonstração usa dois estabelecimentos fictícios; cadastro público de empresas continua planejado.
 
-**Acessos:** [Abrir o site](https://agenda-clara-luizcodebr.onrender.com) · [Baixar a demonstração](https://github.com/LuizCodeBR/AgendaClara/releases/tag/v0.2.1) · [Testes automáticos](https://github.com/LuizCodeBR/AgendaClara/actions)
+**Acessos:** [Abrir o site](https://agenda-clara-luizcodebr.onrender.com) · [Baixar a demonstração](https://github.com/LuizCodeBR/AgendaClara/releases/tag/v0.2.2) · [Testes automáticos](https://github.com/LuizCodeBR/AgendaClara/actions)
 
 ## Site, app mobile e versão local
 
@@ -197,4 +197,4 @@ Para usar um PostgreSQL próprio, configure `SPRING_PROFILES_ACTIVE=postgres`, `
 3. Recuperação de acesso e comunicação real de confirmação/cancelamento.
 4. Persistência operacional e ampliação da proteção contra abuso antes de receber clientes reais.
 
-A revisão e suas limitações estão em [REVISAO-SEGURANCA-0.2.1.md](docs/REVISAO-SEGURANCA-0.2.1.md). Resultados da entrega: [VALIDACAO-0.2.1.md](docs/VALIDACAO-0.2.1.md). Históricos: [0.2.0](docs/VALIDACAO-0.2.0.md) e [primeira versão](docs/VALIDACAO.md).
+A revisão atual está em [REVISAO-USO-0.2.2.md](docs/REVISAO-USO-0.2.2.md), com resultados em [VALIDACAO-0.2.2.md](docs/VALIDACAO-0.2.2.md). A revisão de segurança anterior está em [REVISAO-SEGURANCA-0.2.1.md](docs/REVISAO-SEGURANCA-0.2.1.md). Históricos: [0.2.0](docs/VALIDACAO-0.2.0.md) e [primeira versão](docs/VALIDACAO.md).
