@@ -16,7 +16,7 @@ Os bloqueios da agenda continuam sendo descontados. Um profissional inativo perm
 
 ## Limites
 
-- Configuração de hoje até 365 dias adiante, conforme o fuso do estabelecimento.
+- Configuração de hoje até 365 dias adiante, conforme o fuso do estabelecimento. A página pública oferece reservas dentro do horizonte configurado, de 60 dias na demonstração.
 - Até quatro intervalos, com início e fim em passos de 15 minutos, no mesmo dia.
 - Intervalos sobrepostos são recusados; intervalos contíguos são unidos ao salvar.
 - O motivo fica no painel do estabelecimento; não aparece na disponibilidade pública.
