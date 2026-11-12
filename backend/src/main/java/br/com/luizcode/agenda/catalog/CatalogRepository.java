@@ -6,41 +6,45 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
 @Repository
 public class CatalogRepository {
     private final JdbcTemplate jdbc;
+    private static final RowMapper<Business> BUSINESS = (rs, row) ->
+            new Business(rs.getObject("id", UUID.class), rs.getString("slug"), rs.getString("name"),
+                    rs.getString("category"), rs.getString("zone_id"), rs.getString("address"));
+    private static final RowMapper<Professional> PROFESSIONAL = (rs, row) ->
+            new Professional(rs.getObject("id", UUID.class), rs.getString("name"), rs.getString("specialty"));
+    private static final RowMapper<Service> SERVICE = (rs, row) ->
+            new Service(rs.getObject("id", UUID.class), rs.getString("name"),
+                    rs.getString("description"), rs.getInt("duration_minutes"), rs.getInt("price_cents"));
 
-    public CatalogRepository(JdbcTemplate jdbc) {
-        this.jdbc = jdbc;
-    }
+    public CatalogRepository(JdbcTemplate jdbc) { this.jdbc = jdbc; }
 
     public List<Business> businesses() {
-        return jdbc.query("select * from business order by name", (rs, row) ->
-                new Business(rs.getObject("id", UUID.class), rs.getString("slug"), rs.getString("name"),
-                        rs.getString("category"), rs.getString("zone_id"), rs.getString("address")));
+        return jdbc.query("select * from business order by name", BUSINESS);
     }
 
     public Business business(String slug) {
-        return businesses().stream().filter(item -> item.slug().equals(slug))
-                .findFirst().orElseThrow(BusinessException::notFound);
+        return jdbc.query("select * from business where slug = ?", BUSINESS, slug)
+                .stream().findFirst().orElseThrow(BusinessException::notFound);
     }
 
     public Business business(UUID id) {
-        return businesses().stream().filter(item -> item.id().equals(id))
-                .findFirst().orElseThrow(BusinessException::notFound);
+        return jdbc.query("select * from business where id = ?", BUSINESS, id)
+                .stream().findFirst().orElseThrow(BusinessException::notFound);
     }
 
     public List<Professional> professionals(UUID businessId) {
         return jdbc.query("select * from professional where business_id = ? and active = TRUE order by name",
-                (rs, row) -> new Professional(rs.getObject("id", UUID.class), rs.getString("name"),
-                        rs.getString("specialty")), businessId);
+                PROFESSIONAL, businessId);
     }
 
     public Professional professional(UUID businessId, UUID id) {
-        return professionals(businessId).stream().filter(item -> item.id().equals(id))
-                .findFirst().orElseThrow(BusinessException::notFound);
+        return jdbc.query("select * from professional where business_id = ? and id = ? and active = TRUE",
+                PROFESSIONAL, businessId, id).stream().findFirst().orElseThrow(BusinessException::notFound);
     }
 
     public void lockProfessional(UUID businessId, UUID id) {
@@ -51,14 +55,12 @@ public class CatalogRepository {
 
     public List<Service> services(UUID businessId) {
         return jdbc.query("select * from service_offering where business_id = ? order by duration_minutes, name",
-                (rs, row) -> new Service(rs.getObject("id", UUID.class), rs.getString("name"),
-                        rs.getString("description"), rs.getInt("duration_minutes"), rs.getInt("price_cents")),
-                businessId);
+                SERVICE, businessId);
     }
 
     public Service service(UUID businessId, UUID id) {
-        return services(businessId).stream().filter(item -> item.id().equals(id))
-                .findFirst().orElseThrow(BusinessException::notFound);
+        return jdbc.query("select * from service_offering where business_id = ? and id = ?",
+                SERVICE, businessId, id).stream().findFirst().orElseThrow(BusinessException::notFound);
     }
 
     public Service createService(UUID businessId, CreateService request) {
@@ -70,7 +72,6 @@ public class CatalogRepository {
                 request.priceCents());
         return service(businessId, id);
     }
-
 
     public List<WorkingWindow> hours(UUID businessId, UUID professionalId, int weekday) {
         return jdbc.query("select opens_at, closes_at from weekly_hours where business_id = ? and professional_id = ? and weekday = ? order by opens_at",

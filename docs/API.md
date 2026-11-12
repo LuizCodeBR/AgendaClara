@@ -1,4 +1,4 @@
-# API — versão 0.2.0
+# API — versão 0.2.1
 
 A interface e a API usam a mesma origem. Datas de consulta usam ISO `YYYY-MM-DD`; instantes enviados usam ISO com offset, como `2030-06-04T09:00:00-03:00`.
 
@@ -89,3 +89,10 @@ Exemplo de PUT, usando id e version obtidos no GET administrativo:
 weekday usa 1=segunda a 7=domingo. Dia omitido fica fechado. Limite: 4 intervalos/dia e 28 entradas; horários no mesmo dia, em múltiplos de 15 minutos. Sobreposição: 400. Intervalos adjacentes são unidos. O retorno inclui a versão incrementada e horários normalizados.
 
 Versão desatualizada, inativação com compromissos ou expediente incompatível com reserva confirmada futura/em andamento: 409, sem gravação parcial. Catálogo público lista somente ativos. Sem horas, não há disponibilidade. Consulte PROFISSIONAIS.md.
+## Limites de entrada e frequência (0.2.1)
+
+JSON tem limite de 16 KiB pelos bytes efetivamente recebidos, inclusive sem Content-Length; excesso retorna 413. Formulários também têm limite de 16 KiB no servidor HTTP. Login aceita e-mail de até 180 caracteres e senha de até 72 bytes UTF-8.
+
+Cotas por instância/minuto: API 1200, login global 120, e-mail normalizado 20, reservas 60 e alterações administrativas 120. Uma chamada consome as cotas aplicáveis. Excesso retorna 429, Retry-After em segundos e detail com orientação de espera. Não repetir alterações automaticamente; preservar a chave da reserva se houver dúvida sobre uma confirmação anterior.
+
+As cotas usam janelas fixas, são compartilhadas pelos visitantes e reiniciam com o processo. Configuração, cobertura dos testes e limitações estão em [REVISAO-SEGURANCA-0.2.1.md](REVISAO-SEGURANCA-0.2.1.md).

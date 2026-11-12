@@ -24,3 +24,35 @@ describe('comunicação com o servidor', () => {
     await expect(api('/api/public/test/availability')).rejects.toMatchObject({ status: 409, message: 'Horário ocupado.' });
   });
 });
+
+describe('falhas antes de enviar uma alteração', () => {
+  it('mostra a orientação de espera se a preparação atingir o limite, sem repetir automaticamente', async () => {
+    const fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify({ detail: 'Aguarde 30 segundos e tente novamente.' }), { status: 429 }));
+    vi.stubGlobal('fetch', fetch);
+    await expect(api('/api/admin/professionals', { method: 'POST', body: '{}' }))
+      .rejects.toMatchObject({ status: 429, message: 'Aguarde 30 segundos e tente novamente.' });
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+  it('trata a perda de conexão também durante a preparação', async () => {
+    const fetch = vi.fn().mockRejectedValue(new TypeError('Failed to fetch'));
+    vi.stubGlobal('fetch', fetch);
+    await expect(api('/api/admin/professionals', { method: 'POST', body: '{}' }))
+      .rejects.toMatchObject({ status: 0, message: expect.stringContaining('Confira sua conexão') });
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+  it('preserva o cancelamento do navegador durante a preparação', async () => {
+    const aborted = new DOMException('aborted', 'AbortError');
+    const fetch = vi.fn().mockRejectedValue(aborted);
+    vi.stubGlobal('fetch', fetch);
+    await expect(api('/api/admin/professionals', { method: 'POST', body: '{}' })).rejects.toBe(aborted);
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+  it('mostra limite de tamanho da alteração sem reenviar o conteúdo', async () => {
+    const fetch = vi.fn().mockResolvedValueOnce(new Response(JSON.stringify({ token: 'token', headerName: 'X-CSRF-TOKEN' })))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ detail: 'A solicitação excede o tamanho permitido.' }), { status: 413 }));
+    vi.stubGlobal('fetch', fetch);
+    await expect(api('/api/admin/professionals', { method: 'POST', body: '{}' }))
+      .rejects.toMatchObject({ status: 413, message: 'A solicitação excede o tamanho permitido.' });
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
+});

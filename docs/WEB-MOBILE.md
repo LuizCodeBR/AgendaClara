@@ -2,7 +2,7 @@
 
 **Site:** https://agenda-clara-luizcodebr.onrender.com
 
-**Downloads:** https://github.com/LuizCodeBR/AgendaClara/releases/tag/v0.2.0
+**Downloads:** https://github.com/LuizCodeBR/AgendaClara/releases/tag/v0.2.1
 
 ## Três formas de acesso
 
@@ -63,3 +63,7 @@ A hospedagem e o banco persistente devem ser escolhidos conforme os limites e cu
 
 ## Equipe e horários (0.2.0)
 O painel permite cadastrar profissionais e configurar a semana pelo site, celular ou PWA. As alterações são feitas online e entram na disponibilidade pública após salvar. O download local contém o mesmo painel. Consulte [PROFISSIONAIS.md](PROFISSIONAIS.md).
+
+## Proteções de uso (0.2.1)
+
+Web, PWA instalada e cópia local usam o mesmo código de proteção da API. Repetições muito rápidas podem retornar uma orientação para aguardar; a interface não confirma nem reenvia a alteração automaticamente. Falha de conexão durante a preparação da operação também recebe uma mensagem clara. Atualize/reabra a página para carregar a interface publicada mais recente.

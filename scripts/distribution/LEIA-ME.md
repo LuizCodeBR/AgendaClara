@@ -1,4 +1,4 @@
-# Agenda Clara — demonstração 0.2.0
+# Agenda Clara — demonstração 0.2.1
 
 1. Instale Java 21 ou mais recente até a versão 27, caso ainda não possua.
 2. Extraia todos os arquivos deste ZIP em uma pasta gravável.

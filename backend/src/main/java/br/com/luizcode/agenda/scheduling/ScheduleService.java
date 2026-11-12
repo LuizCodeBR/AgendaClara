@@ -35,6 +35,7 @@ public class ScheduleService {
         this.horizonDays = horizonDays;
     }
 
+    @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public Catalog catalog(Business business) {
         LocalDate suggested = LocalDate.now(clock.withZone(ZoneId.of(business.zoneId()))).plusDays(1);
         if (suggested.getDayOfWeek() == DayOfWeek.SUNDAY) suggested = suggested.plusDays(1);
@@ -42,6 +43,7 @@ public class ScheduleService {
                 suggested, horizonDays);
     }
 
+    @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public Availability availability(Business business, UUID professionalId, UUID serviceId, LocalDate date) {
         catalog.professional(business.id(), professionalId);
         var service = catalog.service(business.id(), serviceId);
@@ -94,6 +96,7 @@ public class ScheduleService {
         return new BookingOutcome(saved.receipt(), true);
     }
 
+    @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public DayAgenda day(Business business, LocalDate date) {
         ZoneId zone = ZoneId.of(business.zoneId());
         LocalDate today = LocalDate.now(clock.withZone(zone));

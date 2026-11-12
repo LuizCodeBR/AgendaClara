@@ -7,6 +7,9 @@ import java.time.OffsetDateTime;
 import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.UUID;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -22,8 +25,18 @@ public class TeamRepository {
     public TeamRepository(JdbcTemplate jdbc) { this.jdbc = jdbc; }
 
     public List<ProfessionalConfiguration> list(UUID businessId) {
-        return jdbc.query("select * from professional where business_id = ? order by active desc, name, id",
-                PROFILE, businessId).stream().map(profile -> configuration(businessId, profile)).toList();
+        var profiles = jdbc.query("select * from professional where business_id = ? order by active desc, name, id",
+                PROFILE, businessId);
+        Map<UUID, List<WeeklyWindow>> hours = new HashMap<>();
+        jdbc.query("""
+                select professional_id, weekday, opens_at, closes_at from weekly_hours
+                where business_id = ? order by professional_id, weekday, opens_at
+                """, rs -> {
+                    hours.computeIfAbsent(rs.getObject(1, UUID.class), key -> new ArrayList<>())
+                            .add(new WeeklyWindow(rs.getInt(2), rs.getObject(3, LocalTime.class), rs.getObject(4, LocalTime.class)));
+                }, businessId);
+        return profiles.stream().map(profile -> new ProfessionalConfiguration(profile.id(), profile.name(),
+                profile.specialty(), profile.active(), profile.version(), List.copyOf(hours.getOrDefault(profile.id(), List.of())))).toList();
     }
 
     public ProfessionalConfiguration find(UUID businessId, UUID id) {

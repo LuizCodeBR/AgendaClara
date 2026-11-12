@@ -25,7 +25,8 @@ flowchart LR
 | Pacote | Responsabilidade |
 | --- | --- |
 | catalog | Estabelecimentos, serviços, profissionais e expediente |
-| identity | Login, sessão, CSRF e identificação do responsável |
+| identity | Login, sessão, CSRF, limites de requisições e identificação do responsável |
+| team | Cadastro e configuração transacional de profissionais e expediente |
 | scheduling | Disponibilidade, reservas, remarcações, cancelamentos e bloqueios |
 | bootstrap | Dados fictícios ativados explicitamente pela configuração de demonstração |
 | shared | Respostas de erro e políticas comuns da API |
@@ -104,4 +105,12 @@ Instalação no navegador não cria um serviço nativo em segundo plano. Na demo
 
 A gestão de profissionais e expediente foi implementada na versão 0.2.0. Perfil e semana são salvos em uma única transação; atendimentos confirmados futuros ou em andamento precisam caber no novo expediente. Inativação é recusada enquanto existirem esses compromissos. Reservas e configuração usam o mesmo bloqueio de linha; o campo version recusa edições desatualizadas. A migração V2 acrescenta active e version sem apagar cadastros. Consulte [PROFISSIONAIS.md](PROFISSIONAIS.md).
 
-Uma entrega para clientes reais também exige contas sem credenciais de demonstração, recuperação de acesso, limites contra abuso, hospedagem HTTPS, persistência e operação. O Compose atual é uma opção local, com configurações fictícias.
+Uma entrega para clientes reais também exige contas sem credenciais de demonstração, recuperação de acesso, ampliação dos limites contra abuso, hospedagem HTTPS, persistência e operação. O Compose atual é uma opção local, com configurações fictícias.
+
+## Revisão 0.2.1
+
+Um filtro dentro da cadeia de segurança, antes de CSRF e autenticação, limita frequência e tamanho das requisições. O controle tem memória limitada e utiliza tempo monotônico, sem confiar em cookies ou cabeçalhos de IP para decidir cotas globais. O usuário autenticado implementa remoção de credenciais após login.
+
+Catálogo, disponibilidade e agenda diária passam a usar transações somente de leitura em REPEATABLE READ. A gravação continua em READ COMMITTED com bloqueio por profissional. Busca por um identificador usa SQL direto e parametrizado; a equipe completa utiliza duas consultas por estabelecimento, sem uma consulta adicional para cada profissional.
+
+A interface web/PWA compartilha a mesma comunicação com a API, inclusive mensagens de espera e limites. Nenhuma nova dependência ou migração de banco foi necessária. Consulte o [relatório de revisão](REVISAO-SEGURANCA-0.2.1.md).

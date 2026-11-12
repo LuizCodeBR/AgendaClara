@@ -29,7 +29,17 @@ public class SecurityConfiguration {
     }
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    RequestLimits requestLimits() { return new RequestLimits(); }
+
+    @Bean
+    SecurityFilterChain securityFilterChain(HttpSecurity http, RequestLimits limits,
+            @org.springframework.beans.factory.annotation.Value("${app.protection.api-per-minute:1200}") int apiLimit,
+            @org.springframework.beans.factory.annotation.Value("${app.protection.login-per-minute:120}") int loginLimit,
+            @org.springframework.beans.factory.annotation.Value("${app.protection.account-per-minute:20}") int accountLimit,
+            @org.springframework.beans.factory.annotation.Value("${app.protection.booking-per-minute:60}") int bookingLimit,
+            @org.springframework.beans.factory.annotation.Value("${app.protection.write-per-minute:120}") int writeLimit) throws Exception {
+        http.addFilterBefore(new RequestGuardFilter(limits, apiLimit, loginLimit, accountLimit, bookingLimit, writeLimit),
+                org.springframework.security.web.csrf.CsrfFilter.class);
         http.csrf(Customizer.withDefaults())
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/public/**", "/api/auth/csrf", "/api/auth/login").permitAll()

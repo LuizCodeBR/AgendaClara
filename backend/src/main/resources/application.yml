@@ -10,6 +10,10 @@ spring:
   flyway:
     locations: classpath:db/migration
 server:
+  tomcat:
+    max-http-form-post-size: 16KB
+    max-swallow-size: 16KB
+    connection-timeout: 20s
   address: ${SERVER_ADDRESS:127.0.0.1}
   port: ${PORT:8080}
   error:
@@ -23,6 +27,12 @@ server:
         same-site: lax
         secure: ${COOKIE_SECURE:false}
 app:
+  protection:
+    api-per-minute: ${API_REQUESTS_PER_MINUTE:1200}
+    login-per-minute: ${LOGIN_REQUESTS_PER_MINUTE:120}
+    account-per-minute: ${ACCOUNT_REQUESTS_PER_MINUTE:20}
+    booking-per-minute: ${BOOKING_REQUESTS_PER_MINUTE:60}
+    write-per-minute: ${WRITE_REQUESTS_PER_MINUTE:120}
   demo:
     enabled: ${APP_DEMO_ENABLED:false}
     public: ${APP_PUBLIC_DEMO:false}
