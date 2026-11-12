@@ -120,12 +120,16 @@ test('rascunho permanece na navegação e Escape não fecha um cadastro enquanto
   await expect(specialty).toBeVisible();
   const original = await specialty.inputValue();
   await specialty.fill(original + ' rascunho');
+  const openMenu = page.getByRole('button', { name: 'Abrir menu', exact: true });
+  if (await openMenu.isVisible()) await openMenu.click();
   await expect(page.getByRole('button', { name: 'Agendar um horário', exact: true })).toBeDisabled();
   await page.evaluate(() => { window.location.hash = '/inicio'; });
   await expect(page).toHaveURL(/#\/painel$/);
   await expect(specialty).toHaveValue(original + ' rascunho');
   await page.getByRole('button', { name: 'Descartar alterações', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Agendar um horário', exact: true })).toBeEnabled();
+  const closeMenu = page.getByRole('button', { name: 'Fechar menu', exact: true });
+  if (await closeMenu.isVisible()) await closeMenu.click();
 
   let release!: () => void;
   const gate = new Promise<void>(resolve => { release = resolve; });
