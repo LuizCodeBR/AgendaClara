@@ -68,7 +68,7 @@ Validação local: **77 casos Java** aprovados, sem falhas ou casos ignorados; *
 
 Os novos casos cobrem cotas concorrentes, expiração, capacidade limitada, normalização do e-mail, troca de sessão/cookies/cabeçalhos, limites de senha e corpo, JSON e formulário sem tamanho declarado, rotação de sessão, remoção do hash e tratamento de falhas no navegador.
 
-Os fluxos existentes continuam cobrindo isolamento, concorrência e regras de agenda. A matriz remota testa Java 21/26 com H2/PostgreSQL, seis cenários de navegador em desktop/celular e Docker/PostgreSQL. Resultados finais e links da execução serão registrados em VALIDACAO-0.2.1.md.
+Os fluxos existentes continuam cobrindo isolamento, concorrência e regras de agenda. A matriz remota testa Java 21/26 com H2/PostgreSQL, seis cenários de navegador em desktop/celular e Docker/PostgreSQL. Resultados finais e links das execuções aprovadas estão em [VALIDACAO-0.2.1.md](VALIDACAO-0.2.1.md).
 
 Dependências consultadas em 11/11/2026 (12/11 em UTC):
 - npm audit: zero alertas nos níveis informativo, baixo, moderado, alto e crítico.
