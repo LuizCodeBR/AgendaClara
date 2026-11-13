@@ -40,20 +40,30 @@ public class MailDispatcher {
     public void dispatchPending() {
         if(!enabled) return;
         try {
-            Instant now=clock.instant();
-            if(maintained.plusSeconds(30).isBefore(now)) { outbox.maintain(); maintained=now; }
+            checkHealth();
             if(settings.mode().equals("resend")) for(int i=0;i<10;i++) {
+                checkHealth();
                 var next=outbox.claim("resend"); if(next.isEmpty()) break;
                 Job job=next.get(); Delivery result;
                 try { Payload payload=cipher.decrypt(job.aad(),job.payload()); result=transport.send(job.id(),payload); }
                 catch(IllegalStateException ex) { result=Delivery.failed("ENCRYPTION",false,0); }
                 outbox.finish(job,result);
+                checkHealth();
                 if(!result.accepted()) LoggerFactory.getLogger(MailDispatcher.class).warn("Fila de e-mails: tentativa concluída sem aceitação; motivo={}.",result.code());
             }
-            if(checked.plusSeconds(15).isBefore(now)) { outbox.heartbeat(instance,settings.mode(),null); checked=now; }
         } catch(RuntimeException ex) {
             LoggerFactory.getLogger(MailDispatcher.class).error("Fila de e-mails: processamento interrompido. Consulte o monitor e a configuração.");
             try { outbox.heartbeat(instance,settings.mode(),"INTERNAL"); } catch(RuntimeException ignored) { /* Next poll retries; leases remain durable. */ }
         }
     }
+
+    private void checkHealth() {
+        if(!maintained.plusSeconds(30).isAfter(clock.instant())) {
+            outbox.maintain(); maintained=clock.instant();
+        }
+        if(!checked.plusSeconds(15).isAfter(clock.instant())) {
+            outbox.heartbeat(instance,settings.mode(),null); checked=clock.instant();
+        }
+    }
+
 }

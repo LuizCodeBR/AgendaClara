@@ -1,4 +1,4 @@
-# Fila persistente e monitoramento — 0.6.0
+# Fila persistente e monitoramento — 0.6.1
 
 ## Como experimentar
 1. Cadastre uma empresa fictícia no site, PWA ou pacote local.
@@ -30,12 +30,12 @@ A aquisição usa bloqueio de linha e SKIP LOCKED. Um identificador de concessã
 
 São até três tentativas automáticas por ciclo. Falhas transitórias aguardam 30 e 60 segundos; um Retry-After válido do provedor pode ampliar a espera. Falhas de autorização, rejeição ou conflito não são repetidas automaticamente. Depois da terceira tentativa interrompida, a falha fica visível em vez de permanecer presa em processamento.
 
-O responsável pode agendar **um novo ciclo manual** de até três tentativas para uma falha elegível da própria empresa. A ação exige sessão, CSRF, validade e conteúdo preservados, modo resend e link ainda utilizável. Não reenvia mensagens já aceitas. Corrigir uma chave de acesso/um remetente inválido é responsabilidade do operador.
+O responsável pode agendar **um novo ciclo manual** de até três tentativas para uma falha elegível da própria empresa. A ação exige sessão, CSRF, validade e conteúdo preservados, modo resend, link ainda utilizável e término da espera solicitada pelo provedor. Essa espera permanece registrada mesmo quando o ciclo automático termina em falha; a interface identifica Espera do serviço até. Não reenvia mensagens já aceitas. Corrigir uma chave de acesso/um remetente inválido é responsabilidade do operador.
 
 A mesma mensagem preserva identificador e conteúdo em todas as tentativas. O Resend mantém deduplicação por 24 horas; o sistema limita a janela de tentativa a 23 horas desde a criação e à validade original do link, o que ocorrer primeiro. Não existe promessa de entrega exatamente uma vez: há tentativas recuperáveis e deduplicação dentro desse limite.
 
 ## Monitoramento
-O painel mostra contagens dos últimos sete dias e até 50 registros recentes, com filtro, datas, tentativas e motivos resumidos. O processador registra uma verificação aproximadamente a cada 15 segundos; processamento demorado pode aumentar esse intervalo.
+O painel mostra contagens dos últimos sete dias e até 50 registros recentes, com filtro, datas, tentativas e motivos resumidos. O processador confere a necessidade de registrar sua atividade antes e durante o lote, aproximadamente a cada 15 segundos. Uma chamada HTTP em andamento pode ampliar esse intervalo até retornar ou atingir seu limite de tempo.
 
 O estado pede atenção quando falta uma verificação recente por mais de 90 segundos, há erro do processador, falhas da empresa ou mensagem pendente há mais de cinco minutos. A caixa simulada e o envio desativado são identificados separadamente. O sinal do processador é compartilhado pela instalação; os históricos e totais são separados por empresa.
 
@@ -51,7 +51,7 @@ Logs registram códigos de falha sem credenciais, destinatários ou links. Não 
 | AGENDA_DATA_DIR | pasta local; o padrão é ./data |
 | MAIL_WORKER_ENABLED | true por padrão; false desliga processamento, manutenção e verificação periódica |
 
-Na demonstração, a primeira inicialização gera data/mail-outbox.key. O arquivo tem acesso restrito ao proprietário e não é versionado. No Windows, mantenha projeto e extração em D: para que dados, chave e temporários do projeto também fiquem nesse disco. Uma chave configurada por variável tem prioridade sobre o arquivo.
+Na demonstração, a primeira inicialização gera data/mail-outbox.key. O arquivo tem acesso restrito ao proprietário e não é versionado. Sua criação/leitura no modo demo é coordenada por mail-outbox.key.lock, inclusive entre processos. As permissões são aplicadas antes de escrever o segredo. O arquivo de coordenação é automático; não o remova com instâncias em funcionamento. No Windows, mantenha projeto e extração em D: para que dados, chave e temporários do projeto também fiquem nesse disco. Uma chave configurada por variável tem prioridade sobre o arquivo.
 
 **Preserve o banco e a chave original juntos no plano de backup, com acesso restrito e cópia protegida da chave.** Para copiar o H2, pare o servidor e copie a pasta data completa. Não copie o arquivo do banco em uso como se fosse um backup consistente. Para PostgreSQL, use backup consistente do banco e preserve a chave separadamente em armazenamento protegido.
 
@@ -68,7 +68,7 @@ A persistência resiste ao reinício da aplicação quando o armazenamento é pr
 - Operação real: PostgreSQL durável, chave estável, backups, remetente autorizado, credenciais privadas, HTTPS e validação externa de entrega ainda precisam ser configurados.
 
 ## Validação e referências
-Veja [VALIDACAO-0.6.0.md](VALIDACAO-0.6.0.md) e [EMAIL-ACESSO.md](EMAIL-ACESSO.md).
+Veja [REVISAO-SEGURANCA-0.6.1.md](REVISAO-SEGURANCA-0.6.1.md), [VALIDACAO-0.6.1.md](VALIDACAO-0.6.1.md) e [EMAIL-ACESSO.md](EMAIL-ACESSO.md).
 
 - [Resend: deduplicação por 24 horas](https://resend.com/docs/dashboard/emails/idempotency-keys).
 - [Resend: códigos de erro](https://resend.com/docs/api-reference/errors).

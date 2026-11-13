@@ -72,3 +72,6 @@ Web, PWA instalada e cópia local usam o mesmo código de proteção da API. Rep
 O cadastro e a publicação funcionam pela mesma interface no site, celular/PWA e instalação local. Consulte [CADASTRO-EMPRESAS.md](CADASTRO-EMPRESAS.md) para o fluxo, persistência e limites.
 ## Fila e acompanhamento (0.6.0)
 A aba E-mails e envios está disponível no site, PWA e pacote local. Usa o mesmo servidor, com atualização enquanto a tela está visível e conectada. Não há armazenamento do histórico privado no service worker. O pacote local mantém banco e chave em data; a hospedagem gratuita continua efêmera. Consulte [FILA-EMAILS.md](FILA-EMAILS.md).
+
+## Revisão 0.6.1
+Site, PWA e download local incluem as correções de espera manual, monitor em lotes lentos e chave concorrente. A interface diferencia espera do serviço de tentativa automaticamente agendada. Veja [REVISAO-SEGURANCA-0.6.1.md](REVISAO-SEGURANCA-0.6.1.md).

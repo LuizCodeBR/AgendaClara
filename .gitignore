@@ -13,3 +13,4 @@
 *.tsbuildinfo
 
 **/mail-outbox.key
+**/mail-outbox.key.lock

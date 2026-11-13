@@ -1,4 +1,4 @@
-# API — versão 0.6.0
+# API — versão 0.6.1
 
 A interface e a API usam a mesma origem. Datas de consulta usam ISO `YYYY-MM-DD`; instantes enviados usam ISO com offset, como `2030-06-04T09:00:00-03:00`.
 
@@ -140,4 +140,4 @@ Detalhes de validade, limites, transporte, migração e preparação do provedor
 
 O status aceita PENDING, PROCESSING, ACCEPTED, FAILED, EXPIRED ou CANCELLED; outro valor retorna 400. A empresa é obtida da sessão, sem parâmetro de autorização por estabelecimento. A consulta inclui mode, counts, oldestPendingAt, lastCheckAt, health e messages. Itens incluem identificador, finalidade, modo, situação, tentativas, reagendamentos, datas, lastError resumido e canRetry.
 
-O painel não retorna destinatário, corpo, assunto, link, chave nem payload criptografado. A repetição exige falha elegível da própria empresa; outra empresa recebe 404 e estado incompatível recebe 409. Uma mensagem permite somente um ciclo manual, mantendo seu identificador e conteúdo. ACCEPTED indica aceitação pelo provedor; no modo demo indica disponibilidade na caixa simulada. Não comprova recebimento externo. Consulte [FILA-EMAILS.md](FILA-EMAILS.md).
+O painel não retorna destinatário, corpo, assunto, link, chave nem payload criptografado. A repetição exige falha elegível da própria empresa; outra empresa recebe 404 e estado incompatível recebe 409. Uma mensagem permite somente um ciclo manual, mantendo seu identificador e conteúdo. Na versão 0.6.1, nextAttemptAt também informa a espera solicitada pelo provedor quando status=FAILED; isso não agenda uma tentativa automática. Antes desse prazo, canRetry=false e a API recusa antecipação. ACCEPTED indica aceitação pelo provedor; no modo demo indica disponibilidade na caixa simulada. Não comprova recebimento externo. Consulte [FILA-EMAILS.md](FILA-EMAILS.md).

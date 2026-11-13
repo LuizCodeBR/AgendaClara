@@ -1,4 +1,4 @@
-# Confirmação de e-mail e recuperação de senha — 0.6.0
+# Confirmação de e-mail e recuperação de senha — 0.6.1
 
 ## Testar sem serviço de e-mail
 A demonstração usa uma **caixa de e-mails de teste privada**. Nenhuma mensagem é enviada a um endereço real. Isso permite avaliar web, celular/PWA e pacote local sem criar conta em um provedor.
@@ -85,4 +85,4 @@ O plano gratuito online continua com banco temporário e pode perder contas, tok
 - [API de envio Resend](https://resend.com/docs/api-reference/emails/send-email).
 - [Idempotência Resend](https://resend.com/docs/dashboard/emails/idempotency-keys).
 - [Limitações do Render gratuito](https://render.com/docs/free).
-- [Validação desta entrega](VALIDACAO-0.6.0.md).
+- [Validação desta entrega](VALIDACAO-0.6.1.md).

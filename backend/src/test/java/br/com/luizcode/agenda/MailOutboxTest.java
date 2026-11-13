@@ -199,4 +199,46 @@ class MailOutboxTest extends ApiTestBase {
         mvc.perform(post("/api/admin/emails/"+id+"/retry").with(user(otherUser)).with(csrf())).andExpect(status().isNotFound());
         mvc.perform(post("/api/admin/emails/"+id+"/retry").with(user(user))).andExpect(status().isForbidden());
     }
+
+    @Test void providerCooldownAlsoAppliesToTheManualRetryAfterTheLastAutomaticAttempt() {
+        Owner owner=ownerAccount(); UUID id=enqueue(owner,"resend");
+        for(int i=0;i<2;i++) { due(id); outbox.finish(outbox.claim("resend").orElseThrow(),Delivery.failed("TEMPORARY",true,0)); }
+        due(id); outbox.finish(outbox.claim("resend").orElseThrow(),Delivery.failed("RATE_LIMIT",true,120));
+        assertThat(state(id)).isEqualTo("FAILED");
+        assertThat(outbox.monitor(owner.business(),"resend",null).messages().getFirst().canRetry()).isFalse();
+        assertThatThrownBy(()->outbox.retry(owner.business(),id,"resend")).isInstanceOf(br.com.luizcode.agenda.shared.BusinessException.class);
+        due(id);
+        assertThat(outbox.monitor(owner.business(),"resend",null).messages().getFirst().canRetry()).isTrue();
+        outbox.retry(owner.business(),id,"resend");
+        assertThat(state(id)).isEqualTo("PENDING");
+    }
+    @Test void providerWaitBeyondTheLinkDeadlineCannotBeOverriddenManually() {
+        Owner owner=ownerAccount(); UUID id=enqueue(owner,"resend");
+        outbox.finish(outbox.claim("resend").orElseThrow(),Delivery.failed("RATE_LIMIT",true,3600));
+        assertThat(state(id)).isEqualTo("FAILED");
+        assertThat(outbox.monitor(owner.business(),"resend",null).messages().getFirst().canRetry()).isFalse();
+        assertThatThrownBy(()->outbox.retry(owner.business(),id,"resend")).isInstanceOf(br.com.luizcode.agenda.shared.BusinessException.class);
+    }
+    @Test void concurrentManualRetriesAllowOnlyOneNewCycle() throws Exception {
+        Owner owner=ownerAccount(); UUID id=enqueue(owner,"resend");
+        outbox.finish(outbox.claim("resend").orElseThrow(),Delivery.failed("AUTH",false,0));
+        var start=new CountDownLatch(1);
+        try(var workers=Executors.newFixedThreadPool(2)) {
+            var results=new ArrayList<Future<Boolean>>();
+            for(int i=0;i<2;i++) results.add(workers.submit(()->{
+                start.await();
+                try { outbox.retry(owner.business(),id,"resend"); return true; }
+                catch(br.com.luizcode.agenda.shared.BusinessException ex) {
+                    assertThat(ex.status()).isEqualTo(org.springframework.http.HttpStatus.CONFLICT); return false;
+                }
+            }));
+            start.countDown();
+            var outcomes=new ArrayList<Boolean>();
+            for(var result:results) outcomes.add(result.get(15,TimeUnit.SECONDS));
+            assertThat(outcomes).containsExactlyInAnyOrder(true,false);
+        }
+        assertThat(jdbc.queryForObject("select manual_retries from mail_outbox where id=?",Integer.class,id)).isEqualTo(1);
+        assertThat(state(id)).isEqualTo("PENDING");
+    }
+
 }

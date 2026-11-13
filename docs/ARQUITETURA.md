@@ -144,3 +144,6 @@ AES-256-GCM protege o snapshot da mensagem, com nonce aleatório e AAD vinculand
 Mensagens reais aceitas descartam o conteúdo; mensagens de teste/falhas têm conteúdo limpo na validade. Metadados expiram após sete dias e heartbeat antigo é removido. O H2 local usa WRITE_DELAY=0. Compose preserva a chave em volume próprio junto à persistência do PostgreSQL.
 
 O monitor usa leitura REPEATABLE READ, filtra por empresa da sessão e retorna somente metadados, 50 registros e totais. Falha, atraso ou ausência de verificação recente geram atenção no painel. Não há alerta externo nem confirmação de recebimento por webhook. Consulte [FILA-EMAILS.md](FILA-EMAILS.md).
+
+## Revisão de concorrência (0.6.1)
+A espera do provedor permanece em next_attempt_at após falha definitiva do ciclo e é validada também na repetição manual. O processador confere atividade e manutenção entre mensagens. A leitura/criação da chave local de demonstração usa coordenação na JVM e bloqueio de arquivo entre processos, com permissões antes de escrever e sincronização do conteúdo. Não houve migração de esquema. Consulte [a revisão](REVISAO-SEGURANCA-0.6.1.md).

@@ -2,6 +2,8 @@ package br.com.luizcode.agenda.mail;
 
 import br.com.luizcode.agenda.identity.MailSettings;
 import java.nio.charset.StandardCharsets;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.file.*;
 import java.nio.file.attribute.*;
 import java.security.*;
@@ -34,17 +36,10 @@ public class MailPayloadCipher {
         try {
             Path path=Path.of(keyFile).toAbsolutePath().normalize();
             if(!configured.isBlank()) bytes=Base64.getDecoder().decode(configured.strip());
+            else if(settings.demo()) bytes=localDemoKey(path,!existing.isEmpty()||!identity.isEmpty());
             else if(Files.exists(path)) bytes=Base64.getDecoder().decode(Files.readString(path).strip());
             else if(!existing.isEmpty()||!identity.isEmpty()) throw new IllegalStateException("Restaure a chave de criptografia da fila antes de iniciar.");
-            else if(settings.demo()) {
-                Files.createDirectories(path.getParent());
-                byte[] generated=new byte[32]; RANDOM.nextBytes(generated);
-                try {
-                    Files.writeString(path,Base64.getEncoder().encodeToString(generated),StandardOpenOption.CREATE_NEW,StandardOpenOption.WRITE);
-                    restrict(path);
-                } catch(FileAlreadyExistsException race) { /* Another process generated the shared key. */ }
-                bytes=Base64.getDecoder().decode(Files.readString(path).strip());
-            } else if(settings.available()) throw new IllegalStateException("Configure MAIL_ENCRYPTION_KEY com 32 bytes em Base64 para preservar a fila.");
+            else if(settings.available()) throw new IllegalStateException("Configure MAIL_ENCRYPTION_KEY com 32 bytes em Base64 para preservar a fila.");
             if(bytes!=null && bytes.length!=32) throw new IllegalArgumentException("A chave da fila precisa ter 32 bytes em Base64.");
             key=bytes==null?null:new SecretKeySpec(bytes,"AES");
             keyId=bytes==null?null:HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes));
@@ -89,4 +84,29 @@ public class MailPayloadCipher {
             return mapper.readValue(cipher.doFinal(Arrays.copyOfRange(bytes,12,bytes.length)),MailQueueModels.Payload.class);
         } catch(Exception ex) { throw new IllegalStateException("O conteúdo protegido do e-mail não pôde ser validado."); }
     }
+
+    private static byte[] localDemoKey(Path path,boolean restoreRequired) throws java.io.IOException {
+        // JVM coordination avoids overlapping Java locks; the file lock coordinates other processes.
+        synchronized(MailPayloadCipher.class) {
+            if(!Files.exists(path)&&restoreRequired)
+                throw new IllegalStateException("Restaure a chave de criptografia da fila antes de iniciar.");
+            Files.createDirectories(path.getParent());
+            Path guard=path.resolveSibling(path.getFileName()+".lock");
+            try(var channel=FileChannel.open(guard,StandardOpenOption.CREATE,StandardOpenOption.WRITE);
+                    var ignored=channel.lock()) {
+                if(Files.exists(path)) return Base64.getDecoder().decode(Files.readString(path).strip());
+                if(restoreRequired) throw new IllegalStateException("Restaure a chave de criptografia da fila antes de iniciar.");
+                byte[] generated=new byte[32]; RANDOM.nextBytes(generated);
+                Files.createFile(path);
+                restrict(path); // No secret is written until owner-only permissions are in place.
+                try(var output=FileChannel.open(path,StandardOpenOption.WRITE)) {
+                    ByteBuffer bytes=StandardCharsets.UTF_8.encode(Base64.getEncoder().encodeToString(generated));
+                    while(bytes.hasRemaining()) output.write(bytes);
+                    output.force(true);
+                }
+                return generated;
+            }
+        }
+    }
+
 }

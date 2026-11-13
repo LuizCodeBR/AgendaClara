@@ -41,3 +41,11 @@ it('não consulta nem tenta enviar enquanto está sem conexão', async () => {
   mount(false);
   expect(await screen.findByText(/Reconecte para consultar/)).toBeVisible(); expect(mocked).not.toHaveBeenCalled();
 });
+
+it('mostra o prazo da tentativa manual sem sugerir um envio automático para uma falha', async () => {
+  mocked.mockResolvedValue({ ...state, mode: 'resend', health: 'ATTENTION', messages: [{ ...state.messages[0], mode: 'resend', status: 'FAILED', attempts: 3, nextAttemptAt: '2030-06-03T10:02:00Z', lastError: 'RATE_LIMIT', canRetry: false }] });
+  mount();
+  expect(await screen.findByText('Espera do serviço até')).toBeVisible();
+  expect(screen.queryByText('Próxima tentativa')).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Tentar este envio novamente' })).not.toBeInTheDocument();
+});

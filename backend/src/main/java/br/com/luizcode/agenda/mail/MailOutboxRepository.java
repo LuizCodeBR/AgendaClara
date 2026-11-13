@@ -90,7 +90,7 @@ public class MailOutboxRepository {
         return jdbc.update("""
                 update mail_outbox set status=?,next_attempt_at=?,lease_until=null,lease_token=null,last_error=?
                 where id=? and status='PROCESSING' and lease_token=?
-                """,retry?"PENDING":"FAILED",retry?utc(next):null,result.code(),job.id(),job.leaseToken())==1;
+                """,retry?"PENDING":"FAILED",(retry || (result.retryable() && "RATE_LIMIT".equals(result.code())))?utc(next):null,result.code(),job.id(),job.leaseToken())==1;
     }
     @Transactional
     public void maintain() {
@@ -134,7 +134,8 @@ public class MailOutboxRepository {
     }
     private Item item(Job job,String mode) {
         boolean retry=mode.equals("resend")&&job.status().equals("FAILED")&&job.manualRetries()==0&&job.payload()!=null&&job.mode().equals(mode)
-                &&job.expiresAt().isAfter(clock.instant())&&job.sendDeadline().isAfter(clock.instant())&&!"ENCRYPTION".equals(job.lastError());
+                &&job.expiresAt().isAfter(clock.instant())&&job.sendDeadline().isAfter(clock.instant())
+                &&(job.nextAttemptAt()==null||!job.nextAttemptAt().isAfter(clock.instant()))&&!"ENCRYPTION".equals(job.lastError());
         return new Item(job.id(),job.purpose(),job.mode(),job.status(),job.attempts(),job.manualRetries(),job.createdAt(),job.expiresAt(),
                 job.nextAttemptAt(),job.acceptedAt(),job.lastError(),retry);
     }

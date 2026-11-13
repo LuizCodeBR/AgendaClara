@@ -1,4 +1,4 @@
-# Agenda Clara — demonstração 0.6.0
+# Agenda Clara — demonstração 0.6.1
 
 1. Instale Java 21 ou mais recente até a versão 27, caso ainda não possua.
 2. Extraia todos os arquivos deste ZIP em uma pasta gravável.
@@ -32,3 +32,5 @@ Abra E-mails e envios no painel para acompanhar as mensagens de acesso da sua em
 Banco e mensagens protegidas são preservados na pasta data, que inclui a chave mail-outbox.key. Para backup, encerre o servidor e copie a pasta data completa para um local protegido. Não apague nem substitua a chave: sem a original, a aplicação não consegue recuperar os conteúdos. Ao atualizar de uma versão anterior, preserve data. Consulte docs/FILA-EMAILS.md no repositório para detalhes.
 
 Para manter arquivos desta cópia no D:, extraia o pacote nesse disco. Não é necessária extensão do VS Code.
+
+A versão 0.6.1 corrige a espera de tentativas manuais, a atualização do monitor durante envios lentos e a leitura concorrente da chave. Encerre a cópia local anterior antes de atualizar e preserve data. O arquivo mail-outbox.key.lock é gerenciado automaticamente para coordenar inicializações; não o remova enquanto o aplicativo estiver em execução.
