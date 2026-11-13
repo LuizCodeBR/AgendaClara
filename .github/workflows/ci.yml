@@ -73,6 +73,9 @@ jobs:
           npm test
           npm run build
           npx playwright install --with-deps chromium
+      - name: Verificar leitor privado PowerShell
+        shell: pwsh
+        run: ./scripts/test-private-reader.ps1
       - name: Testar o pacote real no navegador
         run: |
           chmod +x mvnw

@@ -26,7 +26,7 @@ function Read-PrivateFile([string]$path, [long]$maximum = 4096) {
         }
         if ($total -gt $maximum) { throw 'Arquivo privado maior que o limite.' }
         $text = [Text.UTF8Encoding]::new($false, $true).GetString($bytes, 0, $total)
-        if ($text.StartsWith([string][char]0xFEFF)) { $text = $text.Substring(1) }
+        if ($text.StartsWith([string][char]0xFEFF, [StringComparison]::Ordinal)) { $text = $text.Substring(1) }
         return $text.TrimEnd([char[]]@(13,10))
     }
     finally { $stream.Dispose(); if ($bytes) { [Array]::Clear($bytes, 0, $bytes.Length) } }
