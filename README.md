@@ -2,9 +2,9 @@
 
 Agendamento para pequenos negócios com página pública de reservas, painel do responsável e interface instalável pelo navegador.
 
-**Versão 0.3.0 — folgas e horários especiais.** O responsável pode cadastrar e editar profissionais e configurar o expediente semanal. A demonstração usa dois estabelecimentos fictícios; cadastro público de empresas continua planejado.
+**Versão 0.4.0 — empresas e contas próprias.** Cadastre sua empresa e seu acesso, prepare serviços, equipe e horários e publique sua página de reservas. Na hospedagem gratuita, novas contas são de teste e podem ser apagadas quando o servidor reiniciar. A cópia local preserva o banco em arquivo.
 
-**Acessos:** [Abrir o site](https://agenda-clara-luizcodebr.onrender.com) · [Baixar a demonstração](https://github.com/LuizCodeBR/AgendaClara/releases/tag/v0.3.0) · [Testes automáticos](https://github.com/LuizCodeBR/AgendaClara/actions)
+**Acessos:** [Abrir o site](https://agenda-clara-luizcodebr.onrender.com) · [Baixar a demonstração](https://github.com/LuizCodeBR/AgendaClara/releases/tag/v0.4.0) · [Testes automáticos](https://github.com/LuizCodeBR/AgendaClara/actions)
 
 ## Site, app mobile e versão local
 
@@ -96,6 +96,7 @@ Todos os dados são exemplos. O perfil de demonstração não deve ser usado par
 - Grade de início a cada 15 minutos e horizonte de 60 dias.
 - Impedimento de sobreposição, inclusive entre horários de início diferentes.
 - Repetição segura de uma mesma confirmação após falha de conexão.
+- Cadastro de empresa e responsável, página em rascunho e publicação controlada. Consulte [CADASTRO-EMPRESAS.md](docs/CADASTRO-EMPRESAS.md).
 - Login, logout e painel exclusivo do estabelecimento.
 - Agenda diária, filtro de status, cancelamento e remarcação.
 - Bloqueio e liberação de períodos.
@@ -189,12 +190,12 @@ Para encerrar preservando os dados:
 docker compose down
 ```
 
-Para usar um PostgreSQL próprio, configure `SPRING_PROFILES_ACTIVE=postgres`, `DB_URL` (JDBC), `DB_USER` e `DB_PASSWORD`. Os exemplos só são criados quando `APP_DEMO_ENABLED=true`. Sem esse sinalizador, não há contas ou empresas automáticas; o cadastro inicial de produção é uma etapa futura.
+Para usar um PostgreSQL próprio, configure `SPRING_PROFILES_ACTIVE=postgres`, `DB_URL` (JDBC), `DB_USER` e `DB_PASSWORD`. Os exemplos só são criados quando `APP_DEMO_ENABLED=true`. Sem esse sinalizador, não há contas ou empresas automáticas. A primeira conta pode ser criada pela interface quando REGISTRATION_ENABLED=true. Uso comercial ainda requer as medidas descritas em CADASTRO-EMPRESAS.md.
 
 ## Próximas etapas
 
-1. Cadastro público de empresas e provisionamento de contas próprias.
+1. Verificação de e-mail e gestão de acesso às contas.
 2. Recuperação de acesso e comunicação real de confirmação/cancelamento.
 3. Persistência operacional e ampliação da proteção contra abuso antes de receber clientes reais.
 
-A funcionalidade atual está em [EXCECOES.md](docs/EXCECOES.md), com resultados em [VALIDACAO-0.3.0.md](docs/VALIDACAO-0.3.0.md). A revisão de uso anterior está em [REVISAO-USO-0.2.2.md](docs/REVISAO-USO-0.2.2.md). A revisão de segurança anterior está em [REVISAO-SEGURANCA-0.2.1.md](docs/REVISAO-SEGURANCA-0.2.1.md). Históricos: [0.2.0](docs/VALIDACAO-0.2.0.md) e [primeira versão](docs/VALIDACAO.md).
+A funcionalidade atual está em [CADASTRO-EMPRESAS.md](docs/CADASTRO-EMPRESAS.md), com resultados em [VALIDACAO-0.4.0.md](docs/VALIDACAO-0.4.0.md). Folgas e horários especiais: [EXCECOES.md](docs/EXCECOES.md), com resultados anteriores em [VALIDACAO-0.3.0.md](docs/VALIDACAO-0.3.0.md). A revisão de uso anterior está em [REVISAO-USO-0.2.2.md](docs/REVISAO-USO-0.2.2.md). A revisão de segurança anterior está em [REVISAO-SEGURANCA-0.2.1.md](docs/REVISAO-SEGURANCA-0.2.1.md). Históricos: [0.2.0](docs/VALIDACAO-0.2.0.md) e [primeira versão](docs/VALIDACAO.md).

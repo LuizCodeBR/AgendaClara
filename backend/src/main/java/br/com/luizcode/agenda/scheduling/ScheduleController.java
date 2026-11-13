@@ -19,19 +19,21 @@ public class ScheduleController {
     private final CatalogRepository catalog;
     private final ScheduleService schedule;
     private final boolean demo;
+    private final boolean registrationEnabled;
     private final boolean publicDemo;
     private final String sourceUrl;
     private final String downloadUrl;
     public ScheduleController(CatalogRepository catalog, ScheduleService schedule,
                               @Value("${app.demo.enabled:false}") boolean demo,
+                              @Value("${app.registration.enabled:true}") boolean registrationEnabled,
                               @Value("${app.demo.public:false}") boolean publicDemo,
                               @Value("${app.distribution.source-url:}") String sourceUrl,
                               @Value("${app.distribution.download-url:}") String downloadUrl) {
-        this.catalog = catalog; this.schedule = schedule; this.demo = demo;
+        this.catalog = catalog; this.schedule = schedule; this.demo = demo; this.registrationEnabled=registrationEnabled;
         this.publicDemo = publicDemo; this.sourceUrl = sourceUrl; this.downloadUrl = downloadUrl;
     }
     @GetMapping("/api/public/config")
-    Map<String, Object> config() { return Map.of("demo", demo, "publicDemo", publicDemo, "version", "0.3.0",
+    Map<String, Object> config() { return Map.of("demo", demo, "publicDemo", publicDemo, "registrationEnabled", registrationEnabled, "version", "0.4.0",
             "distribution", Map.of("sourceUrl", sourceUrl, "downloadUrl", downloadUrl)); }
     @GetMapping("/api/public/businesses")
     List<Business> businesses() { return catalog.businesses(); }

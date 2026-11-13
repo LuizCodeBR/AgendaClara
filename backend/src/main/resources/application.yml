@@ -27,7 +27,10 @@ server:
         same-site: lax
         secure: ${COOKIE_SECURE:false}
 app:
+  registration:
+    enabled: ${REGISTRATION_ENABLED:true}
   protection:
+    registration-per-minute: ${REGISTRATION_REQUESTS_PER_MINUTE:5}
     api-per-minute: ${API_REQUESTS_PER_MINUTE:1200}
     login-per-minute: ${LOGIN_REQUESTS_PER_MINUTE:120}
     account-per-minute: ${ACCOUNT_REQUESTS_PER_MINUTE:20}

@@ -1,4 +1,4 @@
-# Agenda Clara — demonstração 0.3.0
+# Agenda Clara — demonstração 0.4.0
 
 1. Instale Java 21 ou mais recente até a versão 27, caso ainda não possua.
 2. Extraia todos os arquivos deste ZIP em uma pasta gravável.
@@ -25,4 +25,4 @@ Depois abra http://localhost:8081.
 
 O sistema local escuta apenas neste computador. Para instalar em outro aparelho, use o site publicado: https://agenda-clara-luizcodebr.onrender.com
 
-Esta versão inclui reservas, bloqueios, remarcação, cancelamento, serviços, cadastro e edição de profissionais e expediente semanal, com isolamento entre estabelecimentos. Para configurar a equipe, entre em Meu negócio e abra Equipe e horários. Novos profissionais precisam de horários configurados antes de receber reservas. Cadastro de empresas, mensagens e recuperação de acesso são etapas futuras.
+Esta versão inclui reservas, bloqueios, remarcação, cancelamento, serviços, cadastro e edição de profissionais e expediente semanal, com isolamento entre estabelecimentos. Para configurar a equipe, entre em Meu negócio e abra Equipe e horários. Novos profissionais precisam de horários configurados antes de receber reservas. Para criar uma empresa e conta próprias, escolha Cadastrar meu negócio. Configure serviços, equipe e horários e publique em Página de reservas. A cópia local preserva esses cadastros na pasta data; a demonstração online tem contas temporárias. Verificação de e-mail, mensagens e recuperação de acesso são etapas futuras. Use senha exclusiva para testes.

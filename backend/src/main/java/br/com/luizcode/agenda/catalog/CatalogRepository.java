@@ -24,11 +24,11 @@ public class CatalogRepository {
     public CatalogRepository(JdbcTemplate jdbc) { this.jdbc = jdbc; }
 
     public List<Business> businesses() {
-        return jdbc.query("select * from business order by name", BUSINESS);
+        return jdbc.query("select * from business where public_booking_enabled=true order by name", BUSINESS);
     }
 
     public Business business(String slug) {
-        return jdbc.query("select * from business where slug = ?", BUSINESS, slug)
+        return jdbc.query("select * from business where slug = ? and public_booking_enabled=true", BUSINESS, slug)
                 .stream().findFirst().orElseThrow(BusinessException::notFound);
     }
 

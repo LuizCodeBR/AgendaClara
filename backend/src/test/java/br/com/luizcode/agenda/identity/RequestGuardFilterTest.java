@@ -10,7 +10,7 @@ import org.springframework.mock.web.*;
 
 class RequestGuardFilterTest {
     private RequestGuardFilter filter(int api, int login, int account, int booking, int write) {
-        return new RequestGuardFilter(new RequestLimits(() -> 0, 100), api, login, account, booking, write);
+        return new RequestGuardFilter(new RequestLimits(() -> 0, 100), api, login, account, booking, write, 5);
     }
     private MockHttpServletRequest request(String method, String path) {
         return new MockHttpServletRequest(method, path);
@@ -21,6 +21,17 @@ class RequestGuardFilterTest {
         return response;
     }
 
+    @Test void registrationQuotaCannotBeBypassedWithNewCookiesOrForwardedAddresses() throws Exception {
+        var filter = new RequestGuardFilter(new RequestLimits(() -> 0, 100), 100,100,100,100,100,2);
+        for(int i=0;i<3;i++) {
+            var request=request("POST","/api/auth/register");
+            request.setCookies(new Cookie("JSESSIONID","session-"+i));
+            request.addHeader("X-Forwarded-For","192.0.2."+i);
+            var response=execute(filter,request);
+            assertThat(response.getStatus()).isEqualTo(i<2?204:429);
+            if(i==2) assertThat(response.getHeader("Retry-After")).isNotEmpty();
+        }
+    }
     @Test void rejectsDeclaredOversizeBeforePassingToApplication() throws Exception {
         var request=request("POST", "/api/public/test/bookings");
         request.setContentType("application/json");

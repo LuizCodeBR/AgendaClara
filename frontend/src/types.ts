@@ -8,6 +8,7 @@ export interface Receipt extends Slot { reference: string; serviceName: string; 
 export interface Appointment extends Receipt { id: string; professionalId: string; serviceId: string; customerName: string; customerPhone: string; status: 'BOOKED' | 'CANCELLED' }
 export interface Block extends Slot { id: string; professionalId: string; reason: string }
 export interface DayAgenda { date: string; zoneId: string; appointments: Appointment[]; blocks: Block[] }
+export interface BusinessSetup { business: Business; published: boolean; version: number; services: number; professionals: number; hasHours: boolean; ready: boolean }
 export interface CurrentUser { name: string; email: string; business: Business }
 
 export interface WeeklyWindow { weekday: number; opensAt: string; closesAt: string }

@@ -105,7 +105,7 @@ Instalação no navegador não cria um serviço nativo em segundo plano. Na demo
 
 A gestão de profissionais e expediente foi implementada na versão 0.2.0. Perfil e semana são salvos em uma única transação; atendimentos confirmados futuros ou em andamento precisam caber no novo expediente. Inativação é recusada enquanto existirem esses compromissos. Reservas e configuração usam o mesmo bloqueio de linha; o campo version recusa edições desatualizadas. A migração V2 acrescenta active e version sem apagar cadastros. Consulte [PROFISSIONAIS.md](PROFISSIONAIS.md).
 
-Uma entrega para clientes reais também exige contas sem credenciais de demonstração, recuperação de acesso, ampliação dos limites contra abuso, hospedagem HTTPS, persistência e operação. O Compose atual é uma opção local, com configurações fictícias.
+Uma entrega para clientes reais também exige verificação de e-mail, recuperação de acesso, ampliação dos limites contra abuso, hospedagem HTTPS, persistência e operação. O Compose atual é uma opção local, com configurações fictícias.
 
 ## Revisão 0.2.1
 
@@ -126,3 +126,6 @@ Alterações diárias e semanais compartilham o bloqueio da linha do profissiona
 O GET administrativo retorna versão, limites de datas, semana e exceções dentro de uma transação de leitura. A consulta das exceções é limitada ao período configurável; a validação da semana busca as exceções dos compromissos em uma consulta, evitando uma busca por agendamento.
 
 O H2 foi atualizado de 2.4.240 para 2.5.252 após um teste reproduzir o defeito de validação de CHECK ao trocar conexões. A regressão permanece coberta, e uma atualização real de arquivo V2 para V3 foi conferida com dados fictícios. Consulte [EXCECOES.md](EXCECOES.md).
+
+## Empresas e contas (0.4.0)
+O cadastro e a publicação funcionam pela mesma interface no site, celular/PWA e instalação local. Consulte [CADASTRO-EMPRESAS.md](CADASTRO-EMPRESAS.md) para o fluxo, persistência e limites.

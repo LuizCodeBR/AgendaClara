@@ -22,7 +22,7 @@ public class DemoData implements ApplicationRunner {
     }
     @Override @Transactional
     public void run(ApplicationArguments args) {
-        if (jdbc.queryForObject("select count(*) from business", Integer.class) > 0) return;
+
         seed("barbearia-horizonte", "Barbearia Horizonte", "Barbearia", "Rua das Palmeiras, 120 · Centro",
                 "Marina", "marina@demo.agendaclara.dev", new String[]{"Lucas Almeida", "Bruno Costa"},
                 new String[]{"Corte clássico", "Barba & acabamento", "Corte + barba"}, new int[]{45, 30, 60},
@@ -31,10 +31,11 @@ public class DemoData implements ApplicationRunner {
                 "Rafael", "rafael@demo.agendaclara.dev", new String[]{"Ana Lima", "Clara Santos"},
                 new String[]{"Design de sobrancelhas", "Manicure", "Ritual de cuidados"}, new int[]{30, 45, 60},
                 new int[]{4000, 4500, 9000});
-        System.out.println("DEMONSTRAÇÃO: dados e contas são fictícios. Não exponha esta configuração na internet.");
+        System.out.println("DEMONSTRAÇÃO: dados e contas são fictícios. Contas compartilhadas para testes; não use dados reais.");
     }
     private void seed(String slug, String name, String category, String address, String owner, String email,
                       String[] professionals, String[] services, int[] durations, int[] prices) {
+        if (jdbc.queryForObject("select count(*) from business where slug=?",Integer.class,slug)>0) return;
         UUID businessId = id(slug);
         jdbc.update("insert into business (id, slug, name, category, zone_id, address) values (?, ?, ?, ?, ?, ?)",
                 businessId, slug, name, category, "America/Sao_Paulo", address);

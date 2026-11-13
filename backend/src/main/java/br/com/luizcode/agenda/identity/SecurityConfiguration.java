@@ -37,12 +37,13 @@ public class SecurityConfiguration {
             @org.springframework.beans.factory.annotation.Value("${app.protection.login-per-minute:120}") int loginLimit,
             @org.springframework.beans.factory.annotation.Value("${app.protection.account-per-minute:20}") int accountLimit,
             @org.springframework.beans.factory.annotation.Value("${app.protection.booking-per-minute:60}") int bookingLimit,
-            @org.springframework.beans.factory.annotation.Value("${app.protection.write-per-minute:120}") int writeLimit) throws Exception {
-        http.addFilterBefore(new RequestGuardFilter(limits, apiLimit, loginLimit, accountLimit, bookingLimit, writeLimit),
+            @org.springframework.beans.factory.annotation.Value("${app.protection.write-per-minute:120}") int writeLimit,
+            @org.springframework.beans.factory.annotation.Value("${app.protection.registration-per-minute:5}") int registrationLimit) throws Exception {
+        http.addFilterBefore(new RequestGuardFilter(limits, apiLimit, loginLimit, accountLimit, bookingLimit, writeLimit, registrationLimit),
                 org.springframework.security.web.csrf.CsrfFilter.class);
         http.csrf(Customizer.withDefaults())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/public/**", "/api/auth/csrf", "/api/auth/login").permitAll()
+                .requestMatchers("/api/public/**", "/api/auth/csrf", "/api/auth/login", "/api/auth/register").permitAll()
                 .requestMatchers("/api/admin/**", "/api/auth/me").hasRole("OWNER")
                 .requestMatchers("/api/**").denyAll()
                 .anyRequest().permitAll())

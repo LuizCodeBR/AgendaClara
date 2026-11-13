@@ -14,12 +14,12 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public final class RequestGuardFilter extends OncePerRequestFilter {
     public static final int MAX_BODY = 16 * 1024;
     private final RequestLimits limits;
-    private final int apiLimit, loginLimit, accountLimit, bookingLimit, writeLimit;
-    public RequestGuardFilter(RequestLimits limits, int apiLimit, int loginLimit, int accountLimit, int bookingLimit, int writeLimit) {
-        if (Math.min(Math.min(apiLimit, loginLimit), Math.min(accountLimit, Math.min(bookingLimit, writeLimit))) < 1)
+    private final int apiLimit, loginLimit, accountLimit, bookingLimit, writeLimit, registrationLimit;
+    public RequestGuardFilter(RequestLimits limits, int apiLimit, int loginLimit, int accountLimit, int bookingLimit, int writeLimit, int registrationLimit) {
+        if (registrationLimit < 1 || Math.min(Math.min(apiLimit, loginLimit), Math.min(accountLimit, Math.min(bookingLimit, writeLimit))) < 1)
             throw new IllegalArgumentException("Request limits must be positive");
         this.limits=limits; this.apiLimit=apiLimit; this.loginLimit=loginLimit;
-        this.accountLimit=accountLimit; this.bookingLimit=bookingLimit; this.writeLimit=writeLimit;
+        this.accountLimit=accountLimit; this.bookingLimit=bookingLimit; this.writeLimit=writeLimit; this.registrationLimit=registrationLimit;
     }
     @Override protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
@@ -45,6 +45,8 @@ public final class RequestGuardFilter extends OncePerRequestFilter {
             // Independent of cookies and forwarded IP headers; never keep raw identifiers or passwords.
             if (!admit(response, "account:" + digest(username.strip().toLowerCase(Locale.ROOT)), accountLimit)) return;
         }
+        if ("POST".equals(request.getMethod()) && path.equals("/api/auth/register")
+                && !admit(response, "registration", registrationLimit)) return;
         String contentType = request.getContentType();
         if (contentType != null && (contentType.toLowerCase(Locale.ROOT).contains("/json")
                 || contentType.toLowerCase(Locale.ROOT).contains("+json"))) {
