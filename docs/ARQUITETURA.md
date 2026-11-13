@@ -129,3 +129,7 @@ O H2 foi atualizado de 2.4.240 para 2.5.252 após um teste reproduzir o defeito 
 
 ## Empresas e contas (0.4.0)
 O cadastro e a publicação funcionam pela mesma interface no site, celular/PWA e instalação local. Consulte [CADASTRO-EMPRESAS.md](CADASTRO-EMPRESAS.md) para o fluxo, persistência e limites.
+## Confirmação e recuperação (0.5.0)
+A migração V5 acrescenta tokens de uso único, confirmação real/simulada separadas, prova de caixa de teste e versão das credenciais. Emissão e consumo bloqueiam o usuário e mensagens só são entregues após commit. O filtro CredentialVersionFilter recusa sessões anteriores à recuperação, usando o caminho canônico e uma consulta por chamada autenticada à API. Catálogo público e publicação respeitam a confirmação exigida para contas novas no modo atual. A interface remove tokens da barra de endereço e exige confirmação explícita.
+
+O envio externo usa HTTP para Resend e fila limitada em memória, com idempotência e três tentativas; não é uma outbox durável. O modo demo não dispara e-mails e sua caixa privada tem cookie separado da sessão de login. Consulte [EMAIL-ACESSO.md](EMAIL-ACESSO.md).

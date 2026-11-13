@@ -2,7 +2,7 @@
 
 **Site:** https://agenda-clara-luizcodebr.onrender.com
 
-**Downloads:** https://github.com/LuizCodeBR/AgendaClara/releases/tag/v0.4.0
+**Downloads:** https://github.com/LuizCodeBR/AgendaClara/releases/tag/v0.5.0
 
 ## Três formas de acesso
 
@@ -57,7 +57,7 @@ Atualizações automáticas estão desligadas na configuração inicial. Uma nov
 
 ## Evolução para utilização real
 
-A API possui configuração para PostgreSQL. Antes de um negócio usar dados reais, a aplicação precisa concluir verificação de e-mail, recuperação de acesso, comunicação ao cliente e operação com persistência e proteção contra abuso. O cadastro próprio para avaliação está disponível desde 0.4.0; na hospedagem gratuita os cadastros são temporários.
+A API possui configuração para PostgreSQL. Antes de um negócio usar dados reais, a aplicação precisa configurar e validar o envio real de e-mails, entrega persistente, comunicação ao cliente e operação com persistência e proteção contra abuso. Confirmação e recuperação estão disponíveis para teste desde 0.5.0. O cadastro próprio para avaliação está disponível desde 0.4.0; na hospedagem gratuita os cadastros são temporários.
 
 A hospedagem e o banco persistente devem ser escolhidos conforme os limites e custos reais do provedor, sem converter automaticamente esta demonstração em um serviço pago.
 
@@ -68,5 +68,5 @@ O painel permite cadastrar profissionais e configurar a semana pelo site, celula
 
 Web, PWA instalada e cópia local usam o mesmo código de proteção da API. Repetições muito rápidas podem retornar uma orientação para aguardar; a interface não confirma nem reenvia a alteração automaticamente. Falha de conexão durante a preparação da operação também recebe uma mensagem clara. Atualize/reabra a página para carregar a interface publicada mais recente.
 
-## Empresas e contas (0.4.0)
+## Empresas e contas (0.5.0)
 O cadastro e a publicação funcionam pela mesma interface no site, celular/PWA e instalação local. Consulte [CADASTRO-EMPRESAS.md](CADASTRO-EMPRESAS.md) para o fluxo, persistência e limites.

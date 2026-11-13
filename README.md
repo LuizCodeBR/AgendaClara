@@ -2,9 +2,9 @@
 
 Agendamento para pequenos negócios com página pública de reservas, painel do responsável e interface instalável pelo navegador.
 
-**Versão 0.4.0 — empresas e contas próprias.** Cadastre sua empresa e seu acesso, prepare serviços, equipe e horários e publique sua página de reservas. Na hospedagem gratuita, novas contas são de teste e podem ser apagadas quando o servidor reiniciar. A cópia local preserva o banco em arquivo.
+**Versão 0.5.0 — confirmação de e-mail e recuperação de senha.** A demonstração inclui uma caixa de e-mails de teste privada; o adaptador de envio real está pronto para configuração. Consulte [EMAIL-ACESSO.md](docs/EMAIL-ACESSO.md). Cadastre sua empresa e seu acesso, prepare serviços, equipe e horários e publique sua página de reservas. Na hospedagem gratuita, novas contas são de teste e podem ser apagadas quando o servidor reiniciar. A cópia local preserva o banco em arquivo.
 
-**Acessos:** [Abrir o site](https://agenda-clara-luizcodebr.onrender.com) · [Baixar a demonstração](https://github.com/LuizCodeBR/AgendaClara/releases/tag/v0.4.0) · [Testes automáticos](https://github.com/LuizCodeBR/AgendaClara/actions)
+**Acessos:** [Abrir o site](https://agenda-clara-luizcodebr.onrender.com) · [Baixar a demonstração](https://github.com/LuizCodeBR/AgendaClara/releases/tag/v0.5.0) · [Testes automáticos](https://github.com/LuizCodeBR/AgendaClara/actions)
 
 ## Site, app mobile e versão local
 
@@ -194,8 +194,8 @@ Para usar um PostgreSQL próprio, configure `SPRING_PROFILES_ACTIVE=postgres`, `
 
 ## Próximas etapas
 
-1. Verificação de e-mail e gestão de acesso às contas.
-2. Recuperação de acesso e comunicação real de confirmação/cancelamento.
+1. Configuração e validação do remetente real e entrega persistente de e-mails.
+2. Gestão de contas e comunicação real de confirmação/cancelamento de reservas.
 3. Persistência operacional e ampliação da proteção contra abuso antes de receber clientes reais.
 
-A funcionalidade atual está em [CADASTRO-EMPRESAS.md](docs/CADASTRO-EMPRESAS.md), com resultados em [VALIDACAO-0.4.0.md](docs/VALIDACAO-0.4.0.md). Folgas e horários especiais: [EXCECOES.md](docs/EXCECOES.md), com resultados anteriores em [VALIDACAO-0.3.0.md](docs/VALIDACAO-0.3.0.md). A revisão de uso anterior está em [REVISAO-USO-0.2.2.md](docs/REVISAO-USO-0.2.2.md). A revisão de segurança anterior está em [REVISAO-SEGURANCA-0.2.1.md](docs/REVISAO-SEGURANCA-0.2.1.md). Históricos: [0.2.0](docs/VALIDACAO-0.2.0.md) e [primeira versão](docs/VALIDACAO.md).
+A funcionalidade atual está em [EMAIL-ACESSO.md](docs/EMAIL-ACESSO.md), com resultados em [VALIDACAO-0.5.0.md](docs/VALIDACAO-0.5.0.md). Cadastro de empresas: [CADASTRO-EMPRESAS.md](docs/CADASTRO-EMPRESAS.md), com validação anterior em [VALIDACAO-0.4.0.md](docs/VALIDACAO-0.4.0.md). Folgas e horários especiais: [EXCECOES.md](docs/EXCECOES.md), com resultados anteriores em [VALIDACAO-0.3.0.md](docs/VALIDACAO-0.3.0.md). A revisão de uso anterior está em [REVISAO-USO-0.2.2.md](docs/REVISAO-USO-0.2.2.md). A revisão de segurança anterior está em [REVISAO-SEGURANCA-0.2.1.md](docs/REVISAO-SEGURANCA-0.2.1.md). Históricos: [0.2.0](docs/VALIDACAO-0.2.0.md) e [primeira versão](docs/VALIDACAO.md).

@@ -37,7 +37,7 @@ public class RegistrationService {
         String slug=prefix + "-" + businessId.toString().replace("-", "");
         jdbc.update("insert into business (id,slug,name,category,zone_id,address,public_booking_enabled) values (?,?,?,?,?,?,false)",
                 businessId,slug,request.businessName(),request.category(),request.zoneId(),request.address());
-        jdbc.update("insert into app_user (id,business_id,email,password_hash,display_name,registration_key) values (?,?,?,?,?,?)",
+        jdbc.update("insert into app_user (id,business_id,email,password_hash,display_name,registration_key,email_verification_required) values (?,?,?,?,?,?,true)",
                 UUID.randomUUID(),businessId,request.email(),passwords.encode(request.password()),request.ownerName(),request.requestKey());
         return new RegistrationOutcome(new RegistrationReceipt(businessId,request.businessName(),slug,request.email()), true);
     }
@@ -72,9 +72,7 @@ public class RegistrationService {
         if (publicDemo && !request.demoAcknowledged())
             throw BusinessException.invalid("Confirme que usará apenas dados fictícios nesta demonstração temporária.");
         if (!ZONES.contains(request.zoneId())) throw BusinessException.invalid("Escolha um dos fusos horários disponíveis.");
-        String password=request.password();
-        if (password.codePointCount(0,password.length())<15 || password.getBytes(StandardCharsets.UTF_8).length>72)
-            throw BusinessException.invalid("A senha precisa ter pelo menos 15 caracteres e até 72 bytes em UTF-8. Acentos e emojis ocupam mais de um byte.");
+        PasswordPolicy.validate(request.password());
         if (request.email().endsWith("@demo.agendaclara.dev"))
             throw BusinessException.invalid("O domínio das contas de demonstração é reservado.");
     }

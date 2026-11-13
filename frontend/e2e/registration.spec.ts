@@ -24,7 +24,11 @@ test('responsável cria empresa, configura atendimento, publica, recebe reserva 
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.getByRole('button', { name: 'Criar empresa e conta', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Sua conta foi criada.', exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Entrar no meu painel', exact: true }).click();
+  await page.getByRole('link', { name: 'Abrir confirmação de e-mail', exact: true }).click();
+  await expect(page).toHaveURL(/#\/confirmar-email$/);
+  await page.getByRole('button', { name: 'Confirmar este e-mail', exact: true }).click();
+  await expect(page.getByText(/E-mail confirmado\./)).toBeVisible();
+  await page.getByRole('button', { name: 'Voltar ao painel', exact: true }).click();
   await expect(page.getByLabel('E-mail', { exact: true })).toHaveValue(email);
   await page.getByLabel('Senha', { exact: true }).fill(password);
   await page.getByRole('button', { name: 'Entrar no painel', exact: true }).click();

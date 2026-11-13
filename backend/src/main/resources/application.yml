@@ -27,9 +27,15 @@ server:
         same-site: lax
         secure: ${COOKIE_SECURE:false}
 app:
+  mail:
+    mode: ${MAIL_MODE:disabled}
+    base-url: ${APP_BASE_URL:}
+    from: ${MAIL_FROM:}
+    resend-key: ${RESEND_API_KEY:}
   registration:
     enabled: ${REGISTRATION_ENABLED:true}
   protection:
+    access-per-minute: ${ACCESS_REQUESTS_PER_MINUTE:20}
     registration-per-minute: ${REGISTRATION_REQUESTS_PER_MINUTE:5}
     api-per-minute: ${API_REQUESTS_PER_MINUTE:1200}
     login-per-minute: ${LOGIN_REQUESTS_PER_MINUTE:120}

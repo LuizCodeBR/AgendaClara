@@ -4,5 +4,10 @@ spring:
     username: ${TEST_DB_USER:sa}
     password: ${TEST_DB_PASSWORD:}
 app:
+  protection:
+    access-per-minute: 1000
+  mail:
+    mode: demo
+    base-url: http://localhost:8080
   demo:
     enabled: true

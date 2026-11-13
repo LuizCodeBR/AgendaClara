@@ -19,6 +19,7 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: postgres
       APP_DEMO_ENABLED: "true"
+      MAIL_MODE: demo
       SERVER_ADDRESS: 0.0.0.0
       DB_URL: jdbc:postgresql://database:5432/agenda
       DB_USER: agenda

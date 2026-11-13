@@ -15,6 +15,10 @@ services:
         value: 0.0.0.0
       - key: COOKIE_SECURE
         value: 'true'
+      - key: MAIL_MODE
+        value: demo
+      - key: APP_BASE_URL
+        value: https://agenda-clara-luizcodebr.onrender.com
       - key: APP_PUBLIC_DEMO
         value: 'true'
       - key: SERVER_FORWARD_HEADERS_STRATEGY

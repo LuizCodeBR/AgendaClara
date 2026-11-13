@@ -30,7 +30,7 @@ function client() {
 const first=client(), second=client();
 const config=await first.expect('/api/public/config','GET',undefined,200);
 assert.equal(config.demo,true,'Este roteiro cria somente dados fictícios em uma demonstração.');
-assert.equal(config.registrationEnabled,true);
+assert.equal(config.registrationEnabled,true); assert.equal(config.mailMode,"demo");
 const password='frase exclusiva de teste 2030';
 function data(suffix) { return {requestKey:randomUUID(),businessName:'Empresa fictícia '+suffix,category:'Teste',address:'Atendimento online fictício',
   zoneId:'America/Sao_Paulo',ownerName:'Responsável Teste',email:randomUUID()+'@example.test',password,demoAcknowledged:true}; }
@@ -52,6 +52,9 @@ assert.equal(catalog.services.length,0);
 const date=catalog.suggestedDate, weekday=(new Date(date+'T12:00:00Z').getUTCDay()+6)%7+1;
 await first.expect('/api/admin/professionals/'+person.id,'PUT',{...person,hours:[{weekday,opensAt:'09:00',closesAt:'18:00'}]},200);
 const service=await first.expect('/api/admin/services','POST',{name:'Serviço fictício próprio',description:'Apenas teste',durationMinutes:30,priceCents:1000},201);
+const message=(await first.expect('/api/auth/demo-mailbox','GET',undefined,200)).find(item=>item.purpose==='VERIFY');
+assert.ok(message);
+await first.expect('/api/auth/email/confirm','POST',{token:new URL(message.actionUrl).hash.split('token=')[1]},200);
 setup=await first.expect('/api/admin/business/publication','PUT',{published:true,version:setup.version},200);
 assert.equal(setup.published,true); assert.equal(setup.ready,true);
 const query=new URLSearchParams({professionalId:person.id,serviceId:service.id,date});

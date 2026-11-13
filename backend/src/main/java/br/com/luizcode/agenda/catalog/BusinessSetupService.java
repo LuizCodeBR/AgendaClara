@@ -16,14 +16,15 @@ import org.springframework.transaction.annotation.Transactional;
 public class BusinessSetupService {
     public record PublicationRequest(@NotNull Boolean published, @NotNull @PositiveOrZero Integer version) {}
     public record Setup(Business business, boolean published, int version, int services, int professionals,
-                        boolean hasHours, boolean ready) {}
+                        boolean hasHours, boolean emailVerified, boolean verificationRequired, boolean verificationSimulated, int horizonDays, boolean ready) {}
     private final JdbcTemplate jdbc;
     private final CatalogRepository catalog;
     private final Clock clock;
+    private final br.com.luizcode.agenda.identity.MailSettings mail;
     private final int horizon;
-    public BusinessSetupService(JdbcTemplate jdbc, CatalogRepository catalog, Clock clock,
+    public BusinessSetupService(JdbcTemplate jdbc, CatalogRepository catalog, Clock clock, br.com.luizcode.agenda.identity.MailSettings mail,
             @Value("${app.booking.horizon-days:60}") int horizon) {
-        this.jdbc=jdbc; this.catalog=catalog; this.clock=clock; this.horizon=horizon;
+        this.jdbc=jdbc; this.catalog=catalog; this.clock=clock; this.mail=mail; this.horizon=horizon;
     }
 
     @Transactional(readOnly=true, isolation=Isolation.REPEATABLE_READ)
@@ -37,6 +38,8 @@ public class BusinessSetupService {
         if (versions.getFirst()!=request.version().intValue())
             throw BusinessException.conflict("A publicação foi alterada em outra janela. Atualize o painel.");
         Setup state=snapshot(businessId);
+        if (request.published() && state.verificationRequired() && !state.emailVerified())
+            throw BusinessException.invalid("Confirme seu e-mail antes de publicar a página de reservas.");
         if (request.published() && !state.ready())
             throw BusinessException.invalid("Cadastre pelo menos um serviço, um profissional ativo e horários de atendimento antes de publicar.");
         jdbc.update("update business set public_booking_enabled=?,publication_version=publication_version+1 where id=?",
@@ -55,8 +58,10 @@ public class BusinessSetupService {
                   or exists(select 1 from date_hours d join date_hours_window w on w.business_id=d.business_id and w.exception_id=d.id
                     where d.business_id=p.business_id and d.professional_id=p.id and d.exception_date between ? and ?))
                 """,Integer.class,businessId,today,today.plusDays(horizon))>0;
+        boolean[] status=jdbc.query("select email_verified_at,demo_email_verified_at,email_verification_required from app_user where business_id=?",
+                (rs,row)->new boolean[]{rs.getObject(1)!=null||(mail.demo()&&rs.getObject(2)!=null),rs.getBoolean(3),rs.getObject(1)==null&&mail.demo()&&rs.getObject(2)!=null},businessId).stream().findFirst().orElse(new boolean[]{false,false,false});
         return jdbc.query("select public_booking_enabled,publication_version from business where id=?",
-                (rs,row)->new Setup(business,rs.getBoolean(1),rs.getInt(2),services,professionals,hasHours,
-                        services>0 && professionals>0 && hasHours),businessId).getFirst();
+                (rs,row)->new Setup(business,rs.getBoolean(1)&&(!status[1]||status[0]),rs.getInt(2),services,professionals,hasHours,status[0],status[1],status[2],horizon,
+                        services>0 && professionals>0 && hasHours && (!status[1]||status[0])),businessId).getFirst();
     }
 }

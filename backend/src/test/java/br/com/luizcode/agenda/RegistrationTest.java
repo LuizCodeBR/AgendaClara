@@ -24,6 +24,7 @@ class RegistrationTest extends ApiTestBase {
     @Autowired PasswordEncoder passwords;
     @AfterEach void cleanAccounts() {
         for (UUID id : jdbc.query("select id from business where name like 'Cadastro teste%'",(rs,row)->rs.getObject(1,UUID.class))) {
+            jdbc.update("delete from account_action where user_id in (select id from app_user where business_id=?)",id);
             for (String table : List.of("date_hours_window","date_hours","appointment","time_block","weekly_hours","professional","service_offering","app_user"))
                 jdbc.update("delete from "+table+" where business_id=?",id);
             jdbc.update("delete from business where id=?",id);
@@ -160,6 +161,7 @@ class RegistrationTest extends ApiTestBase {
     }
     @Test void publicationRequiresSetupAndOptimisticVersionAndCanHideWithoutDeletingAppointments() throws Exception {
         UUID id=company(register(request(),201)); var own=ownUser(id);
+        jdbc.update("update app_user set email_verified_at=? where business_id=?",at("08:00"),id);
         mvc.perform(get("/api/admin/business").with(user(own))).andExpect(jsonPath("$.published").value(false))
                 .andExpect(jsonPath("$.ready").value(false)).andExpect(jsonPath("$.services").value(0));
         mvc.perform(put("/api/admin/business/publication").with(user(own)).with(csrf()).contentType("application/json")
@@ -206,6 +208,7 @@ class RegistrationTest extends ApiTestBase {
 
     @Test void readinessCountsOnlyActiveProfessionalsAndUpcomingOpenExceptions() throws Exception {
         UUID id=company(register(request(),201)); var own=ownUser(id);
+        jdbc.update("update app_user set email_verified_at=? where business_id=?",at("08:00"),id);
         UUID person=UUID.randomUUID(), exception=UUID.randomUUID();
         jdbc.update("insert into professional(id,business_id,name,specialty) values(?,?,?,?)",person,id,"Pessoa própria","Teste");
         jdbc.update("insert into service_offering(id,business_id,name,description,duration_minutes,price_cents) values(?,?,?,?,30,1000)",UUID.randomUUID(),id,"Teste","Teste");

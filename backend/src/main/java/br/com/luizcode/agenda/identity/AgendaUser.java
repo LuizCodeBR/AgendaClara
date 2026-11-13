@@ -13,9 +13,15 @@ public final class AgendaUser implements UserDetails, CredentialsContainer {
     private final UUID id, businessId;
     private final String name, email;
     private String passwordHash;
+    private final int credentialsVersion;
     public AgendaUser(UUID id, UUID businessId, String name, String email, String passwordHash) {
+        this(id,businessId,name,email,passwordHash,0);
+    }
+    public AgendaUser(UUID id,UUID businessId,String name,String email,String passwordHash,int credentialsVersion) {
+        this.credentialsVersion=credentialsVersion;
         this.id=id; this.businessId=businessId; this.name=name; this.email=email; this.passwordHash=passwordHash;
     }
+    public int credentialsVersion() { return credentialsVersion; }
     public UUID id() { return id; }
     public UUID businessId() { return businessId; }
     public String name() { return name; }

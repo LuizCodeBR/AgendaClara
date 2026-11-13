@@ -10,16 +10,21 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 public class RegistrationController {
     private final RegistrationService registration;
-    public RegistrationController(RegistrationService registration) { this.registration=registration; }
+    private final AccountAccessController access;
+    public RegistrationController(RegistrationService registration,AccountAccessController access) { this.registration=registration; this.access=access; }
 
     @PostMapping("/api/auth/register")
-    ResponseEntity<RegistrationReceipt> register(@AuthenticationPrincipal AgendaUser user, @Valid @RequestBody RegisterRequest request) {
+    ResponseEntity<RegistrationReceipt> register(@AuthenticationPrincipal AgendaUser user, @Valid @RequestBody RegisterRequest request,
+            jakarta.servlet.http.HttpServletRequest httpRequest,jakarta.servlet.http.HttpServletResponse response) {
         if (user!=null) throw RegistrationService.conflict();
         try {
             var result=registration.register(request);
+            access.registered(result.receipt().email(),httpRequest,response);
             return ResponseEntity.status(result.created()?201:200).body(result.receipt());
         } catch (DataIntegrityViolationException ex) {
-            return ResponseEntity.ok(registration.replay(request));
+            var receipt=registration.replay(request);
+            access.registered(receipt.email(),httpRequest,response);
+            return ResponseEntity.ok(receipt);
         }
     }
 }

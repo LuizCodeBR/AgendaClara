@@ -10,7 +10,7 @@ import org.springframework.mock.web.*;
 
 class RequestGuardFilterTest {
     private RequestGuardFilter filter(int api, int login, int account, int booking, int write) {
-        return new RequestGuardFilter(new RequestLimits(() -> 0, 100), api, login, account, booking, write, 5);
+        return new RequestGuardFilter(new RequestLimits(() -> 0, 100), api, login, account, booking, write, 5, 20);
     }
     private MockHttpServletRequest request(String method, String path) {
         return new MockHttpServletRequest(method, path);
@@ -22,7 +22,7 @@ class RequestGuardFilterTest {
     }
 
     @Test void registrationQuotaCannotBeBypassedWithNewCookiesOrForwardedAddresses() throws Exception {
-        var filter = new RequestGuardFilter(new RequestLimits(() -> 0, 100), 100,100,100,100,100,2);
+        var filter = new RequestGuardFilter(new RequestLimits(() -> 0, 100), 100,100,100,100,100,2,20);
         for(int i=0;i<3;i++) {
             var request=request("POST","/api/auth/register");
             request.setCookies(new Cookie("JSESSIONID","session-"+i));
@@ -32,6 +32,15 @@ class RequestGuardFilterTest {
             if(i==2) assertThat(response.getHeader("Retry-After")).isNotEmpty();
         }
     }
+    @Test void accountActionsHaveTheirOwnQuotaIndependentOfCookieAndForwardedAddress() throws Exception {
+        var filter=new RequestGuardFilter(new RequestLimits(() -> 0,100),100,100,100,100,100,100,2);
+        for(int i=0;i<3;i++) {
+            var request=request("POST",i%2==0?"/api/auth/password/request":"/api/auth/email/confirm");
+            request.setCookies(new Cookie("JSESSIONID","rotate-"+i)); request.addHeader("X-Forwarded-For","192.0.2."+i);
+            assertThat(execute(filter,request).getStatus()).isEqualTo(i<2?204:429);
+        }
+    }
+
     @Test void rejectsDeclaredOversizeBeforePassingToApplication() throws Exception {
         var request=request("POST", "/api/public/test/bookings");
         request.setContentType("application/json");

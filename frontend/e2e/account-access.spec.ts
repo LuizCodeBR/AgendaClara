@@ -1,0 +1,67 @@
+import { test, expect } from '@playwright/test';
+
+test('confirma e-mail e recupera a senha pela caixa de teste sem permitir reutilizar o link', async ({ page, browser }, testInfo) => {
+  test.setTimeout(60000); page.setDefaultTimeout(10000);
+  const email = 'access-' + testInfo.project.name + '-' + Date.now() + '@example.test';
+  const original = 'uma frase original para teste 2030', replacement = 'outra frase exclusiva para teste 2030';
+  await page.goto('/#/cadastro');
+  for (const [label, value] of Object.entries({ 'Nome da empresa': 'Empresa fictícia de acesso', 'Área de atuação': 'Teste', 'Local de atendimento': 'Atendimento online fictício', 'Seu nome': 'Ana Teste', 'E-mail de acesso': email, 'Crie uma senha': original, 'Confirme a senha': original }))
+    await page.getByLabel(label, { exact: true }).fill(value);
+  const acknowledgement = page.getByRole('checkbox');
+  if (await acknowledgement.isVisible()) await acknowledgement.check();
+  await page.getByRole('button', { name: 'Criar empresa e conta', exact: true }).click();
+  const confirm = page.getByRole('link', { name: 'Abrir confirmação de e-mail', exact: true });
+  await expect(confirm).toBeVisible();
+  const confirmUrl = await confirm.getAttribute('href');
+  await confirm.click();
+  await expect(page).toHaveURL(/#\/confirmar-email$/);
+  await page.getByRole('button', { name: 'Confirmar este e-mail', exact: true }).click();
+  await expect(page.getByText(/E-mail confirmado\./)).toBeVisible();
+  await page.getByRole('button', { name: 'Voltar ao painel', exact: true }).click();
+  await expect(page.getByLabel('E-mail', { exact: true })).toHaveValue(email);
+  await page.getByLabel('Senha', { exact: true }).fill(original);
+  await page.getByRole('button', { name: 'Entrar no painel', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Empresa fictícia de acesso', exact: true })).toBeVisible();
+  const other = await browser.newContext();
+  try {
+    const csrf = await (await other.request.get(new URL('/api/auth/csrf', page.url()).toString())).json();
+    const login = await other.request.post(new URL('/api/auth/login', page.url()).toString(), { form: { username: email, password: original }, headers: { [csrf.headerName]: csrf.token } });
+    expect(login.status()).toBe(204);
+    await page.getByRole('button', { name: 'Sair do painel', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Bem-vindo de volta.', exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Esqueci minha senha', exact: true }).click();
+    await page.getByLabel('E-mail da conta', { exact: true }).fill(email);
+    await page.getByRole('button', { name: 'Solicitar recuperação de senha', exact: true }).click();
+    const link = page.getByRole('link', { name: 'Abrir recuperação de senha', exact: true });
+    await expect(link).toBeVisible();
+    const resetUrl = await link.getAttribute('href');
+    await link.click();
+    await expect(page).toHaveURL(/#\/redefinir-senha$/);
+    await page.getByLabel('Nova senha', { exact: true }).fill(replacement);
+    await page.getByLabel('Confirme a nova senha', { exact: true }).fill(replacement);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await page.screenshot({ path: '../.cache/access-reset-' + testInfo.project.name + '.png', fullPage: true });
+    await page.getByRole('button', { name: 'Salvar nova senha', exact: true }).click();
+    await expect(page.getByText(/Senha alterada\. Entre novamente/)).toBeVisible();
+    expect((await other.request.get(new URL('/api/auth/me', page.url()).toString())).status()).toBe(401);
+    await page.getByRole('button', { name: 'Voltar ao painel', exact: true }).click();
+    await page.getByLabel('E-mail', { exact: true }).fill(email);
+    await page.getByLabel('Senha', { exact: true }).fill(original);
+    await page.getByRole('button', { name: 'Entrar no painel', exact: true }).click();
+    await expect(page.getByRole('alert')).toContainText('E-mail ou senha inválidos');
+    await page.getByLabel('Senha', { exact: true }).fill(replacement);
+    await page.getByRole('button', { name: 'Entrar no painel', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Empresa fictícia de acesso', exact: true })).toBeVisible();
+    await page.goto(resetUrl!);
+    await page.getByLabel('Nova senha', { exact: true }).fill(original);
+    await page.getByLabel('Confirme a nova senha', { exact: true }).fill(original);
+    await page.getByRole('button', { name: 'Salvar nova senha', exact: true }).click();
+    await expect(page.getByRole('alert')).toContainText('Link inválido, expirado ou já utilizado');
+    await page.getByRole('button', { name: 'Descartar nova senha e voltar', exact: true }).click();
+    await page.getByRole('button', { name: 'Sair do painel', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Bem-vindo de volta.', exact: true })).toBeVisible();
+    await page.goto(confirmUrl!);
+    await page.getByRole('button', { name: 'Confirmar este e-mail', exact: true }).click();
+    await expect(page.getByRole('alert')).toContainText('Link inválido, expirado ou já utilizado');
+  } finally { await other.close(); }
+});

@@ -4,5 +4,7 @@ spring:
     username: sa
     password: ""
 app:
+  mail:
+    mode: ${MAIL_MODE:demo}
   demo:
     enabled: true

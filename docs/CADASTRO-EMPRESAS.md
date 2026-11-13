@@ -1,4 +1,4 @@
-# Empresas e contas próprias — 0.4.0
+# Empresas e contas próprias — 0.5.0
 
 ## Experimentar
 1. Abra a página inicial ou Meu negócio e escolha **Cadastrar meu negócio**. Link direto: `/#/cadastro`.
@@ -14,8 +14,8 @@ O endereço compartilhado pertence à instalação atual. Um link com localhost/
 
 ## Regras do cadastro
 - Uma empresa e um responsável por conta. O e-mail é único em toda a instalação e é normalizado para minúsculas, sem espaços nas pontas.
-- A conta ainda não permite trocar e-mail, senha, fuso ou perfil da empresa. Não há convite de funcionários, múltiplos administradores, exclusão da conta, verificação de e-mail ou recuperação de senha nesta entrega.
-- O e-mail é identificador de acesso, não comprovação de identidade. Não são enviadas mensagens.
+- A conta ainda não permite editar e-mail, fuso ou perfil da empresa. Não há convites, múltiplos administradores ou exclusão de conta. Confirmação de e-mail e recuperação de senha foram implementadas em 0.5.0; na demonstração usam uma caixa de teste privada. Consulte EMAIL-ACESSO.md.
+- O e-mail é identificador de acesso. A confirmação real exige configurar um provedor; a caixa simulada não comprova acesso a um endereço real.
 - Novas empresas começam vazias e privadas; não recebem profissionais, clientes ou agendamentos dos exemplos.
 - O servidor gera identificadores e um endereço público único; o usuário não escolhe identificadores de outras empresas.
 - Fusos iniciais: Brasília/São Paulo, Manaus, Rio Branco e Fernando de Noronha.
@@ -31,7 +31,7 @@ O endereço compartilhado pertence à instalação atual. Um link com localhost/
 
 **PostgreSQL:** o perfil postgres usa o banco configurado por DB_URL, DB_USER e DB_PASSWORD. Com APP_DEMO_ENABLED=false, não há contas compartilhadas automáticas e é possível criar a primeira conta pela interface. O operador é responsável por persistência, backups, HTTPS, recuperação de acesso e monitoramento.
 
-O cadastro permite avaliar provisionamento e isolamento. Antes de uso comercial com dados reais, faltam verificação de e-mail, recuperação e gestão do acesso, política de retenção/exclusão, persistência operacional e proteção contra abuso adequada ao tráfego.
+O cadastro permite avaliar provisionamento e isolamento. Antes de uso comercial com dados reais, faltam ativação/validação do envio real, entrega persistente, gestão do acesso, política de retenção/exclusão, persistência operacional e proteção contra abuso adequada ao tráfego.
 
 ## Garantias e arquitetura
 A migração V4 acrescenta publicação e versão na empresa, além de uma chave única de cadastro no usuário. Empresas antigas continuam publicadas e suas credenciais são preservadas.
@@ -42,7 +42,7 @@ A interface mantém requestKey ao repetir um formulário sem alterações após 
 
 A página privada não aparece em /api/public/businesses e catálogo, disponibilidade e reserva por seu endereço retornam 404. Consultas administrativas continuam possíveis para o responsável.
 
-Publicação exige serviço, profissional ativo e ao menos um expediente semanal ou uma exceção aberta dentro do horizonte atual. Isso verifica configuração, não promete vaga: folgas, bloqueios e reservas continuam compondo a disponibilidade. A configuração pode mudar depois da publicação.
+Para contas novas, a publicação exige confirmação de e-mail, serviço, profissional ativo e ao menos um expediente semanal ou uma exceção aberta dentro do horizonte atual. Isso verifica configuração, não promete vaga: folgas, bloqueios e reservas continuam compondo a disponibilidade. A configuração pode mudar depois da publicação.
 
 A publicação usa bloqueio da empresa e versão otimista; uma edição desatualizada retorna 409. O usuário autenticado define a empresa, mesmo que a requisição inclua outro businessId. Reservas continuam usando o bloqueio por profissional já existente. Ocultar não desfaz uma solicitação que já estava em andamento quando a página foi ocultada.
 

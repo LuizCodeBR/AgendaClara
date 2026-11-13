@@ -73,3 +73,21 @@ it('preserva o rascunho do expediente ao tentar sair pelo menu principal ou pelo
   await user.click(screen.getByRole('link', { name: 'Agenda Clara início' }));
   expect(await screen.findByRole('heading', { name: 'Início' })).toBeInTheDocument();
 });
+
+it('remove o segredo do endereço e só envia a confirmação depois da ação explícita', async () => {
+  const token = 'a'.repeat(43);
+  window.history.replaceState(null, '', '/#/confirmar-email?token=' + token);
+  mocked.mockImplementation(async path => {
+    if (path.endsWith('/businesses')) return [catalog.business];
+    if (path.endsWith('/config')) return { demo: true, mailMode: 'demo', distribution: {} };
+    if (path.endsWith('/email/confirm')) return { message: 'E-mail confirmado.' };
+    return null;
+  });
+  render(<App />);
+  const button = await screen.findByRole('button', { name: 'Confirmar este e-mail' });
+  expect(window.location.hash).toBe('#/confirmar-email');
+  expect(mocked.mock.calls.some(([path]) => path.endsWith('/email/confirm'))).toBe(false);
+  await userEvent.setup().click(button);
+  expect(await screen.findByText('E-mail confirmado.')).toBeVisible();
+  expect(JSON.parse(mocked.mock.calls.find(([path]) => path.endsWith('/email/confirm'))![1]!.body as string)).toEqual({ token });
+});

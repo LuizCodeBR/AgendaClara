@@ -1,4 +1,4 @@
-# API — versão 0.4.0
+# API — versão 0.5.0
 
 A interface e a API usam a mesma origem. Datas de consulta usam ISO `YYYY-MM-DD`; instantes enviados usam ISO com offset, como `2030-06-04T09:00:00-03:00`.
 
@@ -116,3 +116,18 @@ GET /api/admin/business retorna business, published, version, services, professi
 GET /api/public/config inclui registrationEnabled. Empresas privadas são omitidas da listagem pública; consultas e reservas por seu slug retornam 404. A lista é um diretório público das empresas publicadas.
 
 Novos cadastros têm cota padrão global de 5 requisições/minuto e o mesmo limite de corpo de 16 KiB. Falhas de validação retornam 400; CSRF ausente, 403; frequência excedida, 429 com Retry-After. REGISTRATION_ENABLED=false desativa o formulário e faz a API retornar 400 para novos cadastros.
+## Confirmação e recuperação de acesso (0.5.0)
+| Método | Rota | Corpo / resultado |
+| --- | --- | --- |
+| POST | /api/auth/email/request | email; 202 genérico |
+| POST | /api/auth/email/confirm | token; 200 ou 400 para link inválido/vencido/utilizado |
+| POST | /api/auth/password/request | email; 202 genérico |
+| POST | /api/auth/password/reset | token e password; 200, revoga sessões anteriores e invalida outros links |
+| GET | /api/auth/demo-mailbox | lista privada pelo cookie AGENDA_DEMO_MAILBOX; vazia sem prova ou fora do modo demo |
+| POST | /api/auth/demo-mailbox/open | exige login; prepara cookie para a própria conta não compartilhada no modo demo |
+
+As alterações exigem CSRF, inclusive sem login. O cadastro prepara a caixa simulada e a primeira confirmação automaticamente nesse modo. Mailbox não retorna mensagens de outro e-mail apenas por informar seu endereço. O GET não consome links; apenas POST explícito altera a conta.
+
+Configuração pública inclui mailMode (demo/resend/disabled). GET /api/admin/business inclui emailVerified, verificationRequired, verificationSimulated e horizonDays. emailVerified pode representar simulação apenas no modo demo, identificada por verificationSimulated; o banco conserva a distinção. Contas legadas preservam a regra anterior; contas novas precisam confirmar antes de publicar.
+
+Detalhes de validade, limites, transporte, migração e preparação do provedor: [EMAIL-ACESSO.md](EMAIL-ACESSO.md). Nunca registre tokens ou senhas em logs nem envie o segredo em query HTTP; a interface recebe links no fragmento e o envia no corpo protegido por CSRF.

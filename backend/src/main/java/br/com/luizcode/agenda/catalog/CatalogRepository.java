@@ -12,6 +12,12 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class CatalogRepository {
     private final JdbcTemplate jdbc;
+    private final br.com.luizcode.agenda.identity.MailSettings mail;
+    private static final String PUBLIC_POLICY = """
+            b.public_booking_enabled=true and not exists (
+              select 1 from app_user u where u.business_id=b.id and u.email_verification_required=true
+              and u.email_verified_at is null and not (?=true and u.demo_email_verified_at is not null))
+            """;
     private static final RowMapper<Business> BUSINESS = (rs, row) ->
             new Business(rs.getObject("id", UUID.class), rs.getString("slug"), rs.getString("name"),
                     rs.getString("category"), rs.getString("zone_id"), rs.getString("address"));
@@ -21,14 +27,14 @@ public class CatalogRepository {
             new Service(rs.getObject("id", UUID.class), rs.getString("name"),
                     rs.getString("description"), rs.getInt("duration_minutes"), rs.getInt("price_cents"));
 
-    public CatalogRepository(JdbcTemplate jdbc) { this.jdbc = jdbc; }
+    public CatalogRepository(JdbcTemplate jdbc,br.com.luizcode.agenda.identity.MailSettings mail) { this.jdbc = jdbc; this.mail=mail; }
 
     public List<Business> businesses() {
-        return jdbc.query("select * from business where public_booking_enabled=true order by name", BUSINESS);
+        return jdbc.query("select b.* from business b where "+PUBLIC_POLICY+" order by b.name", BUSINESS,mail.demo());
     }
 
     public Business business(String slug) {
-        return jdbc.query("select * from business where slug = ? and public_booking_enabled=true", BUSINESS, slug)
+        return jdbc.query("select b.* from business b where b.slug=? and "+PUBLIC_POLICY, BUSINESS, slug,mail.demo())
                 .stream().findFirst().orElseThrow(BusinessException::notFound);
     }
 

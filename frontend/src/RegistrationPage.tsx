@@ -5,9 +5,10 @@ import { api, errorMessage } from './api';
 import { Message } from './components';
 import type { CurrentUser } from './types';
 import './registration.css';
+import DemoMailbox from './DemoMailbox';
 
 const empty = { businessName: '', category: '', address: '', zoneId: 'America/Sao_Paulo', ownerName: '', email: '', password: '', confirmation: '', demoAcknowledged: false };
-export default function RegistrationPage({ enabled, publicDemo, online, user, onLogin, onNavigationBlocked }: {
+export default function RegistrationPage({ enabled, publicDemo, online, user, onLogin, onNavigationBlocked, mailMode = 'disabled', onVerify, onRegistered }: { onRegistered?: (email: string) => void; mailMode?: string; onVerify?: (email: string) => void;
   enabled: boolean; publicDemo: boolean; online: boolean; user: CurrentUser | null;
   onLogin: (email: string) => void; onNavigationBlocked: (blocked: boolean) => void;
 }) {
@@ -38,14 +39,14 @@ export default function RegistrationPage({ enabled, publicDemo, online, user, on
     try {
       const { confirmation: _confirmation, ...fields } = form;
       const result = await api<{ businessName: string; email: string }>('/api/auth/register', { method: 'POST', body: JSON.stringify({ ...fields, requestKey }) });
-      setForm(empty); setReceipt(result);
+      setForm(empty); setReceipt(result); onRegistered?.(result.email);
     } catch (error) { setError(errorMessage(error)); } finally { setPending(false); }
   }
   if (user) return <section className="page-state"><h1>Você já está conectado.</h1><p>Continue configurando {user.business.name} no seu painel.</p><button className="button primary" onClick={() => onLogin(user.email)}>Voltar ao meu painel</button></section>;
   if (!enabled) return <section className="page-state"><h1>Cadastro indisponível</h1><p>Novas contas estão desativadas neste ambiente.</p><button className="button primary" onClick={() => onLogin('')}>Entrar com minha conta</button></section>;
-  if (receipt) return <section className="registration-success agenda-panel"><span className="login-icon"><Check /></span><h1>Sua conta foi criada.</h1><p><strong>{receipt.businessName}</strong> começa com uma página de reservas em rascunho. Entre com <strong>{receipt.email}</strong> e a senha escolhida para cadastrar serviços, equipe e horários.</p><p>A página só ficará disponível ao público quando você decidir publicá-la.</p>{publicDemo && <Message>Esta é uma conta de teste temporária. Ela pode ser apagada quando a demonstração reiniciar.</Message>}<button className="button primary" onClick={() => onLogin(receipt.email)}>Entrar no meu painel <ArrowRight size={17} /></button></section>;
+  if (receipt) return <section className="registration-success agenda-panel"><span className="login-icon"><Check /></span><h1>Sua conta foi criada.</h1><p><strong>{receipt.businessName}</strong> começa com uma página de reservas em rascunho. Entre com <strong>{receipt.email}</strong> e a senha escolhida para cadastrar serviços, equipe e horários.</p><p>Confirme seu e-mail antes de publicar a página. Enquanto isso, você pode entrar e preparar o atendimento.</p>{publicDemo && <Message>Esta é uma conta de teste temporária. Ela pode ser apagada quando a demonstração reiniciar.</Message>}<button className="button primary" onClick={() => onLogin(receipt.email)}>Entrar no meu painel <ArrowRight size={17} /></button>{onVerify && <button className="button quiet" onClick={() => onVerify(receipt.email)}>Solicitar confirmação de e-mail</button>}{mailMode === "demo" && <DemoMailbox />}{mailMode === "disabled" && <Message>O envio de e-mails precisa ser configurado nesta instalação para liberar a confirmação.</Message>}</section>;
   return <div className="registration-layout"><div className="registration-intro"><span className="eyebrow">SEU PRÓPRIO ESPAÇO</span><h1>Um começo claro para o seu negócio.</h1><p>Crie a empresa e a conta do responsável juntas. Depois, prepare sua equipe, os serviços e os horários antes de compartilhar o link de reservas.</p><p className="login-feature"><ShieldCheck size={22} /> O painel de cada empresa tem acesso separado.</p>{publicDemo && <Message>Você está na demonstração pública gratuita. Use apenas dados fictícios e uma senha exclusiva para testes. As contas e os agendamentos podem ser apagados quando o servidor reiniciar. Para preservar seu cadastro, use sua própria instalação local.</Message>}</div>
-    <section className="agenda-panel registration-card"><span className="login-icon"><Building2 size={23} /></span><h2>Cadastrar meu negócio</h2><p>Uma empresa e um responsável por conta. O e-mail será usado para entrar; ainda não enviamos mensagens nem oferecemos recuperação de senha.</p>
+    <section className="agenda-panel registration-card"><span className="login-icon"><Building2 size={23} /></span><h2>Cadastrar meu negócio</h2><p>Uma empresa e um responsável por conta. O e-mail será usado para entrar, confirmar o cadastro e recuperar a senha. A confirmação é obrigatória antes de publicar.</p>
       <form className="stack-form" onSubmit={event => void submit(event)}><fieldset disabled={pending}>
         <legend>Dados do negócio</legend>
         <label htmlFor="reg-business">Nome da empresa</label><input id="reg-business" required minLength={2} maxLength={120} autoComplete="organization" value={form.businessName} onChange={e => change('businessName', e.target.value)} />
