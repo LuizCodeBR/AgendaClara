@@ -41,7 +41,7 @@ try {
     [IO.Directory]::CreateDirectory($env:TEMP) | Out-Null
     $jar = Join-Path $root 'target/agenda-clara-0.8.0.jar'
     if (-not (Test-Path -LiteralPath $jar)) { throw 'Compile a versão 0.8.0 antes de executar.' }
-    $arguments = @('-Xmx512m', "-Djava.io.tmpdir=$env:TEMP", '-jar', $jar, "--operations=$Action", '--engine=postgres', "--work-dir=$WorkDirectory")
+    $arguments = @('-Xmx512m', '-Dstdout.encoding=UTF-8', '-Dstderr.encoding=UTF-8', "-Djava.io.tmpdir=$env:TEMP", '-jar', $jar, "--operations=$Action", '--engine=postgres', "--work-dir=$WorkDirectory")
     if (Test-Path -LiteralPath $ProviderInput) { $arguments += "--provider-input=$ProviderInput" }
     [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
     & java @arguments
