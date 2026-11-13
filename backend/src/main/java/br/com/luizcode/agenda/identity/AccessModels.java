@@ -23,7 +23,7 @@ public final class AccessModels {
         @Override public String toString() { return "Preview[id="+id+"]"; }
     }
     public record OutgoingMail(UUID id, String mailboxDigest, String purpose, String to, String subject,
-                               String text, String actionUrl, Instant expiresAt) {
+                               String text, String actionUrl, Instant expiresAt, UUID userId) {
         public Preview preview() { return new Preview(id,purpose,to,subject,text,actionUrl,expiresAt); }
         @Override public String toString() { return "OutgoingMail[id="+id+"]"; }
     }

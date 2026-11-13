@@ -1,4 +1,4 @@
-# API — versão 0.5.0
+# API — versão 0.6.0
 
 A interface e a API usam a mesma origem. Datas de consulta usam ISO `YYYY-MM-DD`; instantes enviados usam ISO com offset, como `2030-06-04T09:00:00-03:00`.
 
@@ -131,3 +131,13 @@ As alterações exigem CSRF, inclusive sem login. O cadastro prepara a caixa sim
 Configuração pública inclui mailMode (demo/resend/disabled). GET /api/admin/business inclui emailVerified, verificationRequired, verificationSimulated e horizonDays. emailVerified pode representar simulação apenas no modo demo, identificada por verificationSimulated; o banco conserva a distinção. Contas legadas preservam a regra anterior; contas novas precisam confirmar antes de publicar.
 
 Detalhes de validade, limites, transporte, migração e preparação do provedor: [EMAIL-ACESSO.md](EMAIL-ACESSO.md). Nunca registre tokens ou senhas em logs nem envie o segredo em query HTTP; a interface recebe links no fragmento e o envia no corpo protegido por CSRF.
+## Acompanhamento de e-mails (0.6.0)
+
+| Método | Rota | Resultado |
+| --- | --- | --- |
+| GET | /api/admin/emails?status=FAILED | totais da empresa, estado do processador e até 50 registros dos últimos sete dias; filtro opcional |
+| POST | /api/admin/emails/{id}/retry | 204 após agendar um ciclo manual elegível; exige CSRF |
+
+O status aceita PENDING, PROCESSING, ACCEPTED, FAILED, EXPIRED ou CANCELLED; outro valor retorna 400. A empresa é obtida da sessão, sem parâmetro de autorização por estabelecimento. A consulta inclui mode, counts, oldestPendingAt, lastCheckAt, health e messages. Itens incluem identificador, finalidade, modo, situação, tentativas, reagendamentos, datas, lastError resumido e canRetry.
+
+O painel não retorna destinatário, corpo, assunto, link, chave nem payload criptografado. A repetição exige falha elegível da própria empresa; outra empresa recebe 404 e estado incompatível recebe 409. Uma mensagem permite somente um ciclo manual, mantendo seu identificador e conteúdo. ACCEPTED indica aceitação pelo provedor; no modo demo indica disponibilidade na caixa simulada. Não comprova recebimento externo. Consulte [FILA-EMAILS.md](FILA-EMAILS.md).

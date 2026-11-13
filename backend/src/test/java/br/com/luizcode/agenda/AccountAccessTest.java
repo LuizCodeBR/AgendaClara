@@ -27,6 +27,7 @@ class AccountAccessTest extends ApiTestBase {
     @Autowired org.springframework.transaction.PlatformTransactionManager transactions;
     @AfterEach void cleanup() {
         for(UUID id:jdbc.query("select id from business where name='Access teste'",(rs,row)->rs.getObject(1,UUID.class))) {
+            jdbc.update("delete from mail_outbox where business_id=?",id);
             jdbc.update("delete from account_action where user_id in(select id from app_user where business_id=?)",id);
             for(String table:List.of("date_hours_window","date_hours","appointment","time_block","weekly_hours","professional","service_offering","app_user"))
                 jdbc.update("delete from "+table+" where business_id=?",id);
@@ -163,7 +164,7 @@ class AccountAccessTest extends ApiTestBase {
         Account account=account(); String digest=jdbc.queryForObject("select demo_mailbox_digest from app_user where id=?",String.class,account.id());
         int before=mails.preview(digest).size();
         new org.springframework.transaction.support.TransactionTemplate(transactions).executeWithoutResult(status -> {
-            events.publishEvent(new OutgoingMail(UUID.randomUUID(),digest,"RESET",account.email(),"Não enviar","Transação desfeita","https://example.test/#/secret",java.time.Instant.parse("2030-06-03T10:15:00Z")));
+            events.publishEvent(new OutgoingMail(UUID.randomUUID(),digest,"RESET",account.email(),"Não enviar","Transação desfeita","https://example.test/#/secret",java.time.Instant.parse("2030-06-03T10:15:00Z"),account.id()));
             status.setRollbackOnly();
         });
         assertThat(mails.preview(digest)).hasSize(before);

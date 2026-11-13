@@ -10,7 +10,7 @@ import tools.jackson.databind.json.JsonMapper;
 
 class MailSupportTest {
     MailSettings demo() { return new MailSettings("demo","","","",true,false,false); }
-    OutgoingMail mail(Instant now) { return new OutgoingMail(UUID.randomUUID(),"digest","RESET","test@example.test","Teste","Texto","https://agenda.example/#/redefinir-senha?token=secret",now.plusSeconds(900)); }
+    OutgoingMail mail(Instant now) { return new OutgoingMail(UUID.randomUUID(),"digest","RESET","test@example.test","Teste","Texto","https://agenda.example/#/redefinir-senha?token=secret",now.plusSeconds(900),UUID.randomUUID()); }
     @Test void publicOriginsCannotBeControlledThroughHostAndRealModeRequiresCredentials() {
         for(String origin:List.of("http://evil.example","https://user@agenda.example","https://agenda.example/path","https://agenda.example?query=1","https://agenda.example/#token","//agenda.example"))
             assertThatThrownBy(()->new MailSettings("resend",origin,"from@example.test","test-secret",false,false,true)).isInstanceOf(IllegalArgumentException.class);
@@ -33,26 +33,13 @@ class MailSupportTest {
         assertThat(mail.toString()).doesNotContain("token=secret","test@example.test");
         assertThat(new ResetRequest("secret","password").toString()).doesNotContain("secret","password");
     }
-    @Test void previewsAreBoundedAndExpireAndNeverCallTheExternalProvider() {
-        var now=Instant.parse("2030-06-03T10:00:00Z"); var clock=new MutableClock(now); var transport=mock(ResendTransport.class);
-        var dispatcher=new MailDispatcher(demo(),transport,clock);
-        for(int i=0;i<8;i++) dispatcher.committed(mail(now));
-        assertThat(dispatcher.preview("digest")).hasSize(5); assertThat(dispatcher.preview("other")).isEmpty();
-        clock.now=now.plusSeconds(901); assertThat(dispatcher.preview("digest")).isEmpty(); verifyNoInteractions(transport);
-    }
-    @Test void externalDeliveryRetriesAtMostThreeTimesWithTheSameMessage() {
-        var now=Instant.parse("2030-06-03T10:00:00Z"); var clock=new MutableClock(now); var transport=mock(ResendTransport.class);
-        var settings=new MailSettings("resend","https://agenda.example","from@example.test","test-secret",false,false,true);
-        var dispatcher=new MailDispatcher(settings,transport,clock); var mail=mail(now);
-        when(transport.send(mail)).thenReturn(false,false,true);
-        dispatcher.committed(mail); dispatcher.dispatchPending(); verify(transport,times(1)).send(mail);
-        dispatcher.dispatchPending(); verify(transport,times(1)).send(mail);
-        clock.now=now.plusSeconds(30); dispatcher.dispatchPending();
-        clock.now=now.plusSeconds(90); dispatcher.dispatchPending(); dispatcher.dispatchPending();
-        verify(transport,times(3)).send(mail); assertThat(dispatcher.preview("digest")).isEmpty();
-    }
-    static class MutableClock extends Clock {
-        Instant now; MutableClock(Instant now) {this.now=now;}
-        public ZoneId getZone() {return ZoneOffset.UTC;} public Clock withZone(ZoneId zone) {return this;} public Instant instant() {return now;}
+    @Test void providerFailuresDistinguishTemporaryFromPermanentAndBoundRetryAfter() {
+        assertThat(ResendTransport.classify(202,0).accepted()).isTrue();
+        assertThat(ResendTransport.classify(429,999999).retryAfterSeconds()).isEqualTo(86400);
+        assertThat(ResendTransport.classify(503,0).retryable()).isTrue();
+        assertThat(ResendTransport.classify(401,0).retryable()).isFalse();
+        assertThat(ResendTransport.classify(403,0).code()).isEqualTo("AUTH");
+        assertThat(ResendTransport.classify(409,0).code()).isEqualTo("CONFLICT");
+        assertThat(ResendTransport.classify(422,0).retryable()).isFalse();
     }
 }

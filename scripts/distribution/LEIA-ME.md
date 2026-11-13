@@ -1,4 +1,4 @@
-# Agenda Clara — demonstração 0.5.0
+# Agenda Clara — demonstração 0.6.0
 
 1. Instale Java 21 ou mais recente até a versão 27, caso ainda não possua.
 2. Extraia todos os arquivos deste ZIP em uma pasta gravável.
@@ -26,3 +26,9 @@ Depois abra http://localhost:8081.
 O sistema local escuta apenas neste computador. Para instalar em outro aparelho, use o site publicado: https://agenda-clara-luizcodebr.onrender.com
 
 Esta versão inclui reservas, bloqueios, remarcação, cancelamento, serviços, cadastro e edição de profissionais e expediente semanal, com isolamento entre estabelecimentos. Para configurar a equipe, entre em Meu negócio e abra Equipe e horários. Novos profissionais precisam de horários configurados antes de receber reservas. Para criar uma empresa e conta próprias, escolha Cadastrar meu negócio. Configure serviços, equipe e horários e publique em Página de reservas. A cópia local preserva esses cadastros na pasta data; a demonstração online tem contas temporárias. Confirmação de e-mail e recuperação de senha podem ser testadas pela caixa de e-mails privada do navegador. Nenhuma mensagem real é enviada no modo de demonstração. Configure um provedor para envio real; instruções em EMAIL-ACESSO.md no repositório. Use senha exclusiva para testes.
+
+Abra E-mails e envios no painel para acompanhar as mensagens de acesso da sua empresa. No modo demo, elas ficam na caixa simulada e nenhum e-mail real é enviado.
+
+Banco e mensagens protegidas são preservados na pasta data, que inclui a chave mail-outbox.key. Para backup, encerre o servidor e copie a pasta data completa para um local protegido. Não apague nem substitua a chave: sem a original, a aplicação não consegue recuperar os conteúdos. Ao atualizar de uma versão anterior, preserve data. Consulte docs/FILA-EMAILS.md no repositório para detalhes.
+
+Para manter arquivos desta cópia no D:, extraia o pacote nesse disco. Não é necessária extensão do VS Code.

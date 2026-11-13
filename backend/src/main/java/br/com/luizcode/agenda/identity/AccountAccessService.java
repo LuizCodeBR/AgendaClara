@@ -74,7 +74,7 @@ public class AccountAccessService {
                 "Você solicitou uma conta na Agenda Clara. Abra o link e confirme seu e-mail para publicar sua página de reservas. O link vale por 24 horas. Se não foi você, ignore esta mensagem.":
                 "Abra o link para escolher uma nova senha. Ele vale por 15 minutos e só pode ser usado uma vez. Se não solicitou a troca, ignore esta mensagem; sua senha continua igual.";
         events.publishEvent(new OutgoingMail(id,account.mailbox(),purpose,account.email(),subject,text,
-                origin+"/#/"+route+"?token="+token,expires));
+                origin+"/#/"+route+"?token="+token,expires,account.id()));
     }
 
     @Transactional
@@ -94,7 +94,7 @@ public class AccountAccessService {
         Account account=accounts("id=?",action.userId(),false).getFirst();
         if(settings.available()) events.publishEvent(new OutgoingMail(UUID.randomUUID(),account.mailbox(),"CHANGED",account.email(),
                 "Sua senha da Agenda Clara foi alterada",
-                "A senha da sua conta foi alterada. As sessões anteriores perderam o acesso. Se não foi você, solicite uma nova recuperação pelo site. Esta mensagem não contém sua senha.","",now.plus(Duration.ofHours(1))));
+                "A senha da sua conta foi alterada. As sessões anteriores perderam o acesso. Se não foi você, solicite uma nova recuperação pelo site. Esta mensagem não contém sua senha.","",now.plus(Duration.ofHours(1)),account.id()));
     }
     private Action consume(String token,String purpose) {
         if(!SecretTokens.wellFormed(token)) throw invalid();

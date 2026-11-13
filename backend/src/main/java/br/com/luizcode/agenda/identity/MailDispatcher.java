@@ -1,64 +1,59 @@
 package br.com.luizcode.agenda.identity;
 
 import static br.com.luizcode.agenda.identity.AccessModels.*;
+import br.com.luizcode.agenda.mail.*;
+import br.com.luizcode.agenda.mail.MailQueueModels.*;
 import java.time.*;
 import java.util.*;
-import java.util.concurrent.ArrayBlockingQueue;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.scheduling.annotation.*;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.event.TransactionalEventListener;
+import org.springframework.transaction.event.*;
 
 @Component
 public class MailDispatcher {
     @Configuration @EnableScheduling static class Scheduling {}
-    private record Pending(OutgoingMail mail,int attempts,Instant nextAttempt) {}
     private final MailSettings settings;
     private final ResendTransport transport;
     private final Clock clock;
-    private final LinkedHashMap<String,List<Preview>> previews=new LinkedHashMap<>();
-    private final ArrayBlockingQueue<Pending> queue=new ArrayBlockingQueue<>(100);
-    public MailDispatcher(MailSettings settings,ResendTransport transport,Clock clock) {
-        this.settings=settings; this.transport=transport; this.clock=clock;
+    private final MailOutboxRepository outbox;
+    private final MailPayloadCipher cipher;
+    private final boolean enabled;
+    private final UUID instance=UUID.randomUUID();
+    private Instant maintained=Instant.MIN,checked=Instant.MIN;
+    public MailDispatcher(MailSettings settings,ResendTransport transport,Clock clock,MailOutboxRepository outbox,
+            MailPayloadCipher cipher,@Value("${app.mail.worker-enabled:true}") boolean enabled) {
+        this.settings=settings; this.transport=transport; this.clock=clock; this.outbox=outbox; this.cipher=cipher; this.enabled=enabled;
     }
-    @TransactionalEventListener
-    public void committed(OutgoingMail mail) {
-        if(settings.demo()) {
-            synchronized(previews) {
-                purge();
-                if(!previews.containsKey(mail.mailboxDigest()) && previews.size()>=128)
-                    previews.remove(previews.keySet().iterator().next());
-                var items=new ArrayList<>(previews.getOrDefault(mail.mailboxDigest(),List.of()));
-                items.addFirst(mail.preview()); previews.put(mail.mailboxDigest(),List.copyOf(items.subList(0,Math.min(5,items.size()))));
-            }
-        } else if(settings.mode().equals("resend")&&!queue.offer(new Pending(mail,0,clock.instant()))) {
-            warn();
-        }
-    }
+    @TransactionalEventListener(phase=TransactionPhase.BEFORE_COMMIT)
+    public void enqueue(OutgoingMail mail) { outbox.record(mail,settings.mode(),settings.from(),cipher); }
     public List<Preview> preview(String digest) {
-        synchronized(previews) { purge(); return previews.getOrDefault(digest,List.of()); }
-    }
-    private void purge() {
-        Instant now=clock.instant();
-        previews.replaceAll((key,items)->items.stream().filter(item->item.expiresAt().isAfter(now)).toList());
-        previews.values().removeIf(List::isEmpty);
+        if(!settings.demo()) return List.of();
+        return outbox.previews(digest).stream().map(job->{
+            Payload payload=cipher.decrypt(job.aad(),job.payload());
+            return new Preview(job.id(),job.purpose(),payload.to(),payload.subject(),payload.text(),payload.actionUrl(),job.expiresAt());
+        }).toList();
     }
     @Scheduled(fixedDelay=1000)
     public void dispatchPending() {
-        for(int i=queue.size();i>0;i--) {
-            Pending pending=queue.poll(); if(pending==null) return;
+        if(!enabled) return;
+        try {
             Instant now=clock.instant();
-            if(!pending.mail().expiresAt().isAfter(now)) continue;
-            if(pending.nextAttempt().isAfter(now)) { queue.offer(pending); continue; }
-            if(transport.send(pending.mail())) continue;
-            int attempts=pending.attempts()+1;
-            if(attempts<3) queue.offer(new Pending(pending.mail(),attempts,now.plusSeconds(30L*attempts)));
-            else warn();
+            if(maintained.plusSeconds(30).isBefore(now)) { outbox.maintain(); maintained=now; }
+            if(settings.mode().equals("resend")) for(int i=0;i<10;i++) {
+                var next=outbox.claim("resend"); if(next.isEmpty()) break;
+                Job job=next.get(); Delivery result;
+                try { Payload payload=cipher.decrypt(job.aad(),job.payload()); result=transport.send(job.id(),payload); }
+                catch(IllegalStateException ex) { result=Delivery.failed("ENCRYPTION",false,0); }
+                outbox.finish(job,result);
+                if(!result.accepted()) LoggerFactory.getLogger(MailDispatcher.class).warn("Fila de e-mails: tentativa concluída sem aceitação; motivo={}.",result.code());
+            }
+            if(checked.plusSeconds(15).isBefore(now)) { outbox.heartbeat(instance,settings.mode(),null); checked=now; }
+        } catch(RuntimeException ex) {
+            LoggerFactory.getLogger(MailDispatcher.class).error("Fila de e-mails: processamento interrompido. Consulte o monitor e a configuração.");
+            try { outbox.heartbeat(instance,settings.mode(),"INTERNAL"); } catch(RuntimeException ignored) { /* Next poll retries; leases remain durable. */ }
         }
-    }
-    private static void warn() {
-        LoggerFactory.getLogger(MailDispatcher.class).warn("Envio de e-mail não concluído. Confira a configuração do remetente; o usuário pode solicitar outro link.");
     }
 }

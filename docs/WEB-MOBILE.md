@@ -2,7 +2,7 @@
 
 **Site:** https://agenda-clara-luizcodebr.onrender.com
 
-**Downloads:** https://github.com/LuizCodeBR/AgendaClara/releases/tag/v0.5.0
+**Downloads:** https://github.com/LuizCodeBR/AgendaClara/releases/tag/v0.6.0
 
 ## Três formas de acesso
 
@@ -57,7 +57,7 @@ Atualizações automáticas estão desligadas na configuração inicial. Uma nov
 
 ## Evolução para utilização real
 
-A API possui configuração para PostgreSQL. Antes de um negócio usar dados reais, a aplicação precisa configurar e validar o envio real de e-mails, entrega persistente, comunicação ao cliente e operação com persistência e proteção contra abuso. Confirmação e recuperação estão disponíveis para teste desde 0.5.0. O cadastro próprio para avaliação está disponível desde 0.4.0; na hospedagem gratuita os cadastros são temporários.
+A API possui configuração para PostgreSQL. Antes de um negócio usar dados reais, a aplicação precisa configurar e validar o envio real de e-mails, armazenamento durável e backups da fila, comunicação ao cliente e operação com persistência e proteção contra abuso. Confirmação e recuperação estão disponíveis para teste desde 0.5.0. O cadastro próprio para avaliação está disponível desde 0.4.0; na hospedagem gratuita os cadastros são temporários.
 
 A hospedagem e o banco persistente devem ser escolhidos conforme os limites e custos reais do provedor, sem converter automaticamente esta demonstração em um serviço pago.
 
@@ -70,3 +70,5 @@ Web, PWA instalada e cópia local usam o mesmo código de proteção da API. Rep
 
 ## Empresas e contas (0.5.0)
 O cadastro e a publicação funcionam pela mesma interface no site, celular/PWA e instalação local. Consulte [CADASTRO-EMPRESAS.md](CADASTRO-EMPRESAS.md) para o fluxo, persistência e limites.
+## Fila e acompanhamento (0.6.0)
+A aba E-mails e envios está disponível no site, PWA e pacote local. Usa o mesmo servidor, com atualização enquanto a tela está visível e conectada. Não há armazenamento do histórico privado no service worker. O pacote local mantém banco e chave em data; a hospedagem gratuita continua efêmera. Consulte [FILA-EMAILS.md](FILA-EMAILS.md).

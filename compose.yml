@@ -24,8 +24,11 @@ services:
       DB_URL: jdbc:postgresql://database:5432/agenda
       DB_USER: agenda
       DB_PASSWORD: local-demo-only
+    volumes:
+      - mail-data:/app/data
     depends_on:
       database:
         condition: service_healthy
 volumes:
   postgres-data:
+  mail-data:

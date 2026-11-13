@@ -28,6 +28,9 @@ server:
         secure: ${COOKIE_SECURE:false}
 app:
   mail:
+    encryption-key: ${MAIL_ENCRYPTION_KEY:}
+    key-file: ${MAIL_KEY_FILE:${AGENDA_DATA_DIR:./data}/mail-outbox.key}
+    worker-enabled: ${MAIL_WORKER_ENABLED:true}
     mode: ${MAIL_MODE:disabled}
     base-url: ${APP_BASE_URL:}
     from: ${MAIL_FROM:}

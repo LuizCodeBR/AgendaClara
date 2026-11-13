@@ -11,3 +11,5 @@
 .DS_Store
 
 *.tsbuildinfo
+
+**/mail-outbox.key

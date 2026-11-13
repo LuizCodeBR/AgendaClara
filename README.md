@@ -2,9 +2,9 @@
 
 Agendamento para pequenos negócios com página pública de reservas, painel do responsável e interface instalável pelo navegador.
 
-**Versão 0.5.0 — confirmação de e-mail e recuperação de senha.** A demonstração inclui uma caixa de e-mails de teste privada; o adaptador de envio real está pronto para configuração. Consulte [EMAIL-ACESSO.md](docs/EMAIL-ACESSO.md). Cadastre sua empresa e seu acesso, prepare serviços, equipe e horários e publique sua página de reservas. Na hospedagem gratuita, novas contas são de teste e podem ser apagadas quando o servidor reiniciar. A cópia local preserva o banco em arquivo.
+**Versão 0.6.0 — fila persistente e acompanhamento de e-mails.** Mensagens de acesso são gravadas com a alteração da conta, protegidas por criptografia e acompanhadas no painel **E-mails e envios**. A demonstração usa uma caixa privada de teste; o envio real está preparado para configuração. Consulte [FILA-EMAILS.md](docs/FILA-EMAILS.md) e [EMAIL-ACESSO.md](docs/EMAIL-ACESSO.md). Cadastre sua empresa e seu acesso, prepare serviços, equipe e horários e publique sua página de reservas. Na hospedagem gratuita, novas contas são de teste e podem ser apagadas quando o servidor reiniciar. A cópia local preserva o banco em arquivo.
 
-**Acessos:** [Abrir o site](https://agenda-clara-luizcodebr.onrender.com) · [Baixar a demonstração](https://github.com/LuizCodeBR/AgendaClara/releases/tag/v0.5.0) · [Testes automáticos](https://github.com/LuizCodeBR/AgendaClara/actions)
+**Acessos:** [Abrir o site](https://agenda-clara-luizcodebr.onrender.com) · [Baixar a demonstração](https://github.com/LuizCodeBR/AgendaClara/releases/tag/v0.6.0) · [Testes automáticos](https://github.com/LuizCodeBR/AgendaClara/actions)
 
 ## Site, app mobile e versão local
 
@@ -98,6 +98,8 @@ Todos os dados são exemplos. O perfil de demonstração não deve ser usado par
 - Repetição segura de uma mesma confirmação após falha de conexão.
 - Cadastro de empresa e responsável, página em rascunho e publicação controlada. Consulte [CADASTRO-EMPRESAS.md](docs/CADASTRO-EMPRESAS.md).
 - Login, logout e painel exclusivo do estabelecimento.
+- Confirmação de e-mail e recuperação de senha com links de uso único.
+- Fila transacional criptografada, recuperação de processamento interrompido e monitoramento de e-mails por empresa.
 - Agenda diária, filtro de status, cancelamento e remarcação.
 - Bloqueio e liberação de períodos.
 - Inclusão de novos serviços no catálogo.
@@ -135,6 +137,8 @@ data/             banco local da demonstração (ignorado pelo Git)
 .cache/           dependências e temporários locais (ignorados pelo Git)
 target/           JAR e relatórios Java (ignorados pelo Git)
 ```
+
+O pacote local preserva o banco e a chave data/mail-outbox.key. Faça backup da pasta data completa com o servidor parado; perder a chave impede recuperar os conteúdos protegidos. Consulte [as instruções de backup](docs/FILA-EMAILS.md#chave-e-backup).
 
 Os iniciadores colocam dependências e arquivos temporários dentro do projeto. Se a pasta estiver no D:, esses arquivos também ficam no D:. Configurações normais do sistema operacional, do navegador e do editor seguem os locais definidos pelos próprios aplicativos.
 
@@ -182,7 +186,7 @@ Docker não é necessário para a demonstração local. Com Docker Engine/Deskto
 docker compose up --build
 ```
 
-Abra a mesma URL. O Compose mantém o PostgreSQL sem porta pública e publica a aplicação somente em `127.0.0.1:8080`. A senha presente no Compose é um exemplo local. Os dados ficam em um volume.
+Abra a mesma URL. O Compose mantém o PostgreSQL sem porta pública e publica a aplicação somente em `127.0.0.1:8080`. A senha presente no Compose é um exemplo local. Banco e chave da fila ficam nos volumes postgres-data e mail-data. O armazenamento físico dos volumes segue a configuração do Docker Desktop; configure-o no D: se escolher essa opção.
 
 Para encerrar preservando os dados:
 
@@ -194,8 +198,8 @@ Para usar um PostgreSQL próprio, configure `SPRING_PROFILES_ACTIVE=postgres`, `
 
 ## Próximas etapas
 
-1. Configuração e validação do remetente real e entrega persistente de e-mails.
+1. Configuração e validação do remetente real, com confirmação de recebimento e tratamento de eventos de entrega.
 2. Gestão de contas e comunicação real de confirmação/cancelamento de reservas.
 3. Persistência operacional e ampliação da proteção contra abuso antes de receber clientes reais.
 
-A funcionalidade atual está em [EMAIL-ACESSO.md](docs/EMAIL-ACESSO.md), com resultados em [VALIDACAO-0.5.0.md](docs/VALIDACAO-0.5.0.md). Cadastro de empresas: [CADASTRO-EMPRESAS.md](docs/CADASTRO-EMPRESAS.md), com validação anterior em [VALIDACAO-0.4.0.md](docs/VALIDACAO-0.4.0.md). Folgas e horários especiais: [EXCECOES.md](docs/EXCECOES.md), com resultados anteriores em [VALIDACAO-0.3.0.md](docs/VALIDACAO-0.3.0.md). A revisão de uso anterior está em [REVISAO-USO-0.2.2.md](docs/REVISAO-USO-0.2.2.md). A revisão de segurança anterior está em [REVISAO-SEGURANCA-0.2.1.md](docs/REVISAO-SEGURANCA-0.2.1.md). Históricos: [0.2.0](docs/VALIDACAO-0.2.0.md) e [primeira versão](docs/VALIDACAO.md).
+A funcionalidade atual está em [FILA-EMAILS.md](docs/FILA-EMAILS.md), com resultados em [VALIDACAO-0.6.0.md](docs/VALIDACAO-0.6.0.md). A etapa anterior está em [EMAIL-ACESSO.md](docs/EMAIL-ACESSO.md) e [VALIDACAO-0.5.0.md](docs/VALIDACAO-0.5.0.md). Cadastro de empresas: [CADASTRO-EMPRESAS.md](docs/CADASTRO-EMPRESAS.md), com validação anterior em [VALIDACAO-0.4.0.md](docs/VALIDACAO-0.4.0.md). Folgas e horários especiais: [EXCECOES.md](docs/EXCECOES.md), com resultados anteriores em [VALIDACAO-0.3.0.md](docs/VALIDACAO-0.3.0.md). A revisão de uso anterior está em [REVISAO-USO-0.2.2.md](docs/REVISAO-USO-0.2.2.md). A revisão de segurança anterior está em [REVISAO-SEGURANCA-0.2.1.md](docs/REVISAO-SEGURANCA-0.2.1.md). Históricos: [0.2.0](docs/VALIDACAO-0.2.0.md) e [primeira versão](docs/VALIDACAO.md).

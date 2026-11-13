@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:h2:file:${AGENDA_DATA_DIR:./data}/agenda;DB_CLOSE_ON_EXIT=FALSE;LOCK_TIMEOUT=10000
+    url: jdbc:h2:file:${AGENDA_DATA_DIR:./data}/agenda;DB_CLOSE_ON_EXIT=FALSE;LOCK_TIMEOUT=10000;WRITE_DELAY=0
     username: sa
     password: ""
 app:

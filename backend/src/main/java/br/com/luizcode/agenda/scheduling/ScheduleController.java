@@ -34,7 +34,7 @@ public class ScheduleController {
         this.publicDemo = publicDemo; this.sourceUrl = sourceUrl; this.downloadUrl = downloadUrl;
     }
     @GetMapping("/api/public/config")
-    Map<String, Object> config() { return Map.of("demo", demo, "publicDemo", publicDemo, "registrationEnabled", registrationEnabled, "mailMode", mailSettings.mode(), "version", "0.5.0",
+    Map<String, Object> config() { return Map.of("demo", demo, "publicDemo", publicDemo, "registrationEnabled", registrationEnabled, "mailMode", mailSettings.mode(), "version", "0.6.0",
             "distribution", Map.of("sourceUrl", sourceUrl, "downloadUrl", downloadUrl)); }
     @GetMapping("/api/public/businesses")
     List<Business> businesses() { return catalog.businesses(); }

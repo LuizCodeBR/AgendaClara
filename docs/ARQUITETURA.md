@@ -105,7 +105,7 @@ Instalação no navegador não cria um serviço nativo em segundo plano. Na demo
 
 A gestão de profissionais e expediente foi implementada na versão 0.2.0. Perfil e semana são salvos em uma única transação; atendimentos confirmados futuros ou em andamento precisam caber no novo expediente. Inativação é recusada enquanto existirem esses compromissos. Reservas e configuração usam o mesmo bloqueio de linha; o campo version recusa edições desatualizadas. A migração V2 acrescenta active e version sem apagar cadastros. Consulte [PROFISSIONAIS.md](PROFISSIONAIS.md).
 
-Uma entrega para clientes reais também exige verificação de e-mail, recuperação de acesso, ampliação dos limites contra abuso, hospedagem HTTPS, persistência e operação. O Compose atual é uma opção local, com configurações fictícias.
+Verificação de e-mail e recuperação de acesso estão implementadas. Uma entrega para clientes reais ainda exige configurar e validar envio real, ampliar proteção contra abuso e preparar hospedagem HTTPS, persistência e operação. O Compose atual é uma opção local, com configurações fictícias.
 
 ## Revisão 0.2.1
 
@@ -132,4 +132,15 @@ O cadastro e a publicação funcionam pela mesma interface no site, celular/PWA 
 ## Confirmação e recuperação (0.5.0)
 A migração V5 acrescenta tokens de uso único, confirmação real/simulada separadas, prova de caixa de teste e versão das credenciais. Emissão e consumo bloqueiam o usuário e mensagens só são entregues após commit. O filtro CredentialVersionFilter recusa sessões anteriores à recuperação, usando o caminho canônico e uma consulta por chamada autenticada à API. Catálogo público e publicação respeitam a confirmação exigida para contas novas no modo atual. A interface remove tokens da barra de endereço e exige confirmação explícita.
 
-O envio externo usa HTTP para Resend e fila limitada em memória, com idempotência e três tentativas; não é uma outbox durável. O modo demo não dispara e-mails e sua caixa privada tem cookie separado da sessão de login. Consulte [EMAIL-ACESSO.md](EMAIL-ACESSO.md).
+Na entrega 0.5.0, o envio externo usava HTTP para Resend e fila limitada em memória. Essa fila foi substituída pela outbox persistente na versão 0.6.0 descrita abaixo. O modo demo não dispara e-mails e sua caixa privada tem cookie separado da sessão de login. Consulte [EMAIL-ACESSO.md](EMAIL-ACESSO.md).
+## Outbox e monitoramento (0.6.0)
+
+A migração V6 cria outbox, heartbeat do processador e vínculo da chave à instalação. O listener BEFORE_COMMIT grava a mensagem criptografada na mesma transação de emissão do link ou mudança de senha. A falha da fila provoca rollback conjunto.
+
+O scheduler interno consulta a fila a cada segundo. A seleção transacional usa FOR UPDATE SKIP LOCKED e concessão de 60 segundos; a conclusão exige o mesmo lease_token. O envio HTTP ocorre fora da transação. Conteúdo e identificador são estáveis entre tentativas, que cessam na validade do link ou 23 horas após a criação. Há três tentativas automáticas e um ciclo manual elegível.
+
+AES-256-GCM protege o snapshot da mensagem, com nonce aleatório e AAD vinculando seus identificadores. A chave fica em arquivo protegido ou segredo de ambiente, separada do banco. O vínculo no banco impede instâncias com chaves diferentes; não há rotação automática.
+
+Mensagens reais aceitas descartam o conteúdo; mensagens de teste/falhas têm conteúdo limpo na validade. Metadados expiram após sete dias e heartbeat antigo é removido. O H2 local usa WRITE_DELAY=0. Compose preserva a chave em volume próprio junto à persistência do PostgreSQL.
+
+O monitor usa leitura REPEATABLE READ, filtra por empresa da sessão e retorna somente metadados, 50 registros e totais. Falha, atraso ou ausência de verificação recente geram atenção no painel. Não há alerta externo nem confirmação de recebimento por webhook. Consulte [FILA-EMAILS.md](FILA-EMAILS.md).

@@ -7,6 +7,8 @@ app:
   protection:
     access-per-minute: 1000
   mail:
+    encryption-key: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+    worker-enabled: false
     mode: demo
     base-url: http://localhost:8080
   demo:

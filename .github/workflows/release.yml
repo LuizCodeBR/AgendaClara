@@ -44,6 +44,7 @@ jobs:
           node scripts/date-hours-smoke.mjs http://127.0.0.1:8080
           node scripts/registration-smoke.mjs http://127.0.0.1:8080
           node scripts/account-access-smoke.mjs http://127.0.0.1:8080
+          node scripts/mail-queue-smoke.mjs http://127.0.0.1:8080
       - name: Montar os pacotes portáteis
         run: |
           mkdir -p .cache/release/AgendaClara-demo

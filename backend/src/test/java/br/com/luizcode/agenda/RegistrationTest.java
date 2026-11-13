@@ -24,6 +24,7 @@ class RegistrationTest extends ApiTestBase {
     @Autowired PasswordEncoder passwords;
     @AfterEach void cleanAccounts() {
         for (UUID id : jdbc.query("select id from business where name like 'Cadastro teste%'",(rs,row)->rs.getObject(1,UUID.class))) {
+            jdbc.update("delete from mail_outbox where business_id=?",id);
             jdbc.update("delete from account_action where user_id in (select id from app_user where business_id=?)",id);
             for (String table : List.of("date_hours_window","date_hours","appointment","time_block","weekly_hours","professional","service_offering","app_user"))
                 jdbc.update("delete from "+table+" where business_id=?",id);

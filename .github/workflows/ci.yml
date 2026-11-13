@@ -77,7 +77,7 @@ jobs:
           chmod +x mvnw
           mkdir -p .cache/tmp
           ./mvnw -B -ntp -DskipTests package
-          java -jar target/agenda-clara-0.5.0.jar --spring.profiles.active=demo > .cache/e2e-server.log 2>&1 &
+          java -jar target/agenda-clara-0.6.0.jar --spring.profiles.active=demo > .cache/e2e-server.log 2>&1 &
           APP_PID=$!
           trap 'kill "$APP_PID" 2>/dev/null || true; cat "$GITHUB_WORKSPACE/.cache/e2e-server.log"' EXIT
           for attempt in $(seq 1 60); do
@@ -89,6 +89,7 @@ jobs:
           node scripts/date-hours-smoke.mjs http://127.0.0.1:8080
           node scripts/registration-smoke.mjs http://127.0.0.1:8080
           node scripts/account-access-smoke.mjs http://127.0.0.1:8080
+          node scripts/mail-queue-smoke.mjs http://127.0.0.1:8080
           cd frontend
           npm run test:e2e
   docker:
@@ -112,3 +113,13 @@ jobs:
           node scripts/date-hours-smoke.mjs http://127.0.0.1:8080
           node scripts/registration-smoke.mjs http://127.0.0.1:8080
           node scripts/account-access-smoke.mjs http://127.0.0.1:8080
+          node scripts/mail-queue-smoke.mjs http://127.0.0.1:8080
+      - name: Verificar persistência após recriar o contêiner
+        run: |
+          trap 'docker compose logs; docker compose down' EXIT
+          docker compose up --force-recreate -d app
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent http://127.0.0.1:8080/api/public/config > /dev/null; then break; fi
+            sleep 1
+          done
+          curl --fail --silent http://127.0.0.1:8080/api/public/config
