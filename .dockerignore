@@ -7,3 +7,11 @@ frontend/dist
 frontend/test-results
 frontend/playwright-report
 .env
+
+operations
+backups
+**/mail-outbox.key
+**/*.acbackup
+**/*.dump
+**/*.mv.db
+**/*.partial

@@ -18,6 +18,7 @@ $keys = @('DB_URL','DB_USER','DB_PASSWORD','MAIL_KEY_FILE','MAIL_ENCRYPTION_KEY'
 $previous = @{}
 foreach ($key in $keys) { $previous[$key] = [Environment]::GetEnvironmentVariable($key, 'Process') }
 $exitCode = 1
+$consoleEncoding = [Console]::OutputEncoding
 try {
     $config = Read-PrivateFile (Join-Path $PrivateDirectory 'connection.json') | ConvertFrom-Json
     if (-not $config.url -or -not $config.user -or -not $config.password) { throw 'Configuração incompleta.' }
@@ -42,12 +43,14 @@ try {
     if (-not (Test-Path -LiteralPath $jar)) { throw 'Compile a versão 0.8.0 antes de executar.' }
     $arguments = @('-Xmx512m', "-Djava.io.tmpdir=$env:TEMP", '-jar', $jar, "--operations=$Action", '--engine=postgres', "--work-dir=$WorkDirectory")
     if (Test-Path -LiteralPath $ProviderInput) { $arguments += "--provider-input=$ProviderInput" }
+    [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
     & java @arguments
     $exitCode = $LASTEXITCODE
 }
 catch { Write-Output 'ERRO: rotina Neon não concluída. Confira os arquivos privados e a compilação no D:. Nenhuma credencial foi exibida.' }
 finally {
     foreach ($key in $keys) { [Environment]::SetEnvironmentVariable($key, $previous[$key], 'Process') }
+    [Console]::OutputEncoding = $consoleEncoding
     $config = $null
 }
 exit $exitCode
