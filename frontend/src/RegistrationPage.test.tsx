@@ -72,3 +72,10 @@ it('limpar cadastro libera a navegação e remove os dados digitados', async () 
   expect(screen.getByLabelText('Nome da empresa')).toHaveValue('');
   expect(blocked).toHaveBeenLastCalledWith(false);
 });
+
+it('mantém o aceite fictício e descreve uma demonstração persistente', () => {
+  render(<RegistrationPage enabled publicDemo temporaryStorage={false} online user={null} onLogin={vi.fn()} onNavigationBlocked={vi.fn()} />);
+  expect(screen.getByText(/demonstração com armazenamento persistente/)).toBeVisible();
+  expect(screen.queryByText(/podem ser apagados quando o servidor reiniciar/)).not.toBeInTheDocument();
+  expect(screen.getByRole('checkbox')).toBeRequired();
+});

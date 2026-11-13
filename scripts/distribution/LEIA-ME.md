@@ -1,4 +1,4 @@
-# Agenda Clara — demonstração 0.6.1
+# Agenda Clara — demonstração 0.7.0
 
 1. Instale Java 21 ou mais recente até a versão 27, caso ainda não possua.
 2. Extraia todos os arquivos deste ZIP em uma pasta gravável.
@@ -33,4 +33,10 @@ Banco e mensagens protegidas são preservados na pasta data, que inclui a chave 
 
 Para manter arquivos desta cópia no D:, extraia o pacote nesse disco. Não é necessária extensão do VS Code.
 
-A versão 0.6.1 corrige a espera de tentativas manuais, a atualização do monitor durante envios lentos e a leitura concorrente da chave. Encerre a cópia local anterior antes de atualizar e preserve data. O arquivo mail-outbox.key.lock é gerenciado automaticamente para coordenar inicializações; não o remova enquanto o aplicativo estiver em execução.
+A versão 0.7.0 corrige a espera de tentativas manuais, a atualização do monitor durante envios lentos e a leitura concorrente da chave. Encerre a cópia local anterior antes de atualizar e preserve data. O arquivo mail-outbox.key.lock é gerenciado automaticamente para coordenar inicializações; não o remova enquanto o aplicativo estiver em execução.
+
+Backups: com o Java encerrado, abra um terminal nesta pasta e execute backup.cmd, ou bash backup.sh. Informe e confirme uma senha exclusiva. O arquivo criptografado .acbackup é criado em backups e reúne banco e chave. Limite do conjunto: 64 MiB; o processo reserva até 512 MiB de memória.
+
+Para verificar: backup.cmd --backup=verify --input="D:\Backups\copia.acbackup"
+Para restaurar: backup.cmd --backup=restore --input="D:\Backups\copia.acbackup" --target-dir="D:\AgendaRestaurada\data"
+O destino deve ser uma pasta nova. Preserve a senha fora do arquivo e mantenha outra cópia protegida fora do disco do banco. As instruções completas estão em docs/ARMAZENAMENTO-BACKUPS.md no repositório.

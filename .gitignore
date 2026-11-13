@@ -14,3 +14,7 @@
 
 **/mail-outbox.key
 **/mail-outbox.key.lock
+
+/backups/
+*.acbackup
+*.partial

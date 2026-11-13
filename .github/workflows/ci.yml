@@ -38,6 +38,7 @@ jobs:
           java-version: ${{ matrix.java }}
       - name: Testes de regras, segurança e concorrência
         env:
+          AGENDA_PG_CONTAINER: ${{ matrix.database == 'postgres' && job.services.postgres.id || '' }}
           TEST_DB_URL: ${{ matrix.database == 'postgres' && 'jdbc:postgresql://localhost:5432/agenda_test' || 'jdbc:h2:mem:agenda-tests;DB_CLOSE_DELAY=-1;LOCK_TIMEOUT=10000' }}
           TEST_DB_USER: ${{ matrix.database == 'postgres' && 'agenda' || 'sa' }}
           TEST_DB_PASSWORD: ${{ matrix.database == 'postgres' && 'test-only' || '' }}
@@ -77,7 +78,7 @@ jobs:
           chmod +x mvnw
           mkdir -p .cache/tmp
           ./mvnw -B -ntp -DskipTests package
-          java -jar target/agenda-clara-0.6.1.jar --spring.profiles.active=demo > .cache/e2e-server.log 2>&1 &
+          java -jar target/agenda-clara-0.7.0.jar --spring.profiles.active=demo > .cache/e2e-server.log 2>&1 &
           APP_PID=$!
           trap 'kill "$APP_PID" 2>/dev/null || true; cat "$GITHUB_WORKSPACE/.cache/e2e-server.log"' EXIT
           for attempt in $(seq 1 60); do
@@ -92,6 +93,22 @@ jobs:
           node scripts/mail-queue-smoke.mjs http://127.0.0.1:8080
           cd frontend
           npm run test:e2e
+          cd ..
+          node scripts/storage-smoke.mjs before http://127.0.0.1:8080 .cache/storage-fixture.json
+          kill "$APP_PID"
+          wait "$APP_PID" || true
+          export AGENDA_BACKUP_PASSWORD='senha ficticia exclusiva dos testes de backup'
+          java -Xmx512m -Djava.io.tmpdir=.cache/tmp -jar target/agenda-clara-0.7.0.jar --backup=create --data-dir=.cache/e2e-data --output=.cache/browser.acbackup
+          java -Xmx512m -Djava.io.tmpdir=.cache/tmp -jar target/agenda-clara-0.7.0.jar --backup=verify --input=.cache/browser.acbackup
+          java -Xmx512m -Djava.io.tmpdir=.cache/tmp -jar target/agenda-clara-0.7.0.jar --backup=restore --input=.cache/browser.acbackup --target-dir=.cache/e2e-restored
+          export AGENDA_DATA_DIR="$GITHUB_WORKSPACE/.cache/e2e-restored"
+          java -jar target/agenda-clara-0.7.0.jar --spring.profiles.active=demo > .cache/restored-server.log 2>&1 &
+          APP_PID=$!
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent http://127.0.0.1:8080/api/public/config > /dev/null; then break; fi
+            sleep 1
+          done
+          node scripts/storage-smoke.mjs after http://127.0.0.1:8080 .cache/storage-fixture.json
   docker:
     name: Docker e PostgreSQL · demonstração
     runs-on: ubuntu-latest

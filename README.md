@@ -2,9 +2,9 @@
 
 Agendamento para pequenos negócios com página pública de reservas, painel do responsável e interface instalável pelo navegador.
 
-**Versão 0.6.1 — revisão de segurança e concorrência.** A revisão corrigiu espera de tentativas manuais, acompanhamento durante lotes lentos e inicialização concorrente da chave. Consulte [o relatório](docs/REVISAO-SEGURANCA-0.6.1.md). Mensagens de acesso são gravadas com a alteração da conta, protegidas por criptografia e acompanhadas no painel **E-mails e envios**. A demonstração usa uma caixa privada de teste; o envio real está preparado para configuração. Consulte [FILA-EMAILS.md](docs/FILA-EMAILS.md) e [EMAIL-ACESSO.md](docs/EMAIL-ACESSO.md). Cadastre sua empresa e seu acesso, prepare serviços, equipe e horários e publique sua página de reservas. Na hospedagem gratuita, novas contas são de teste e podem ser apagadas quando o servidor reiniciar. A cópia local preserva o banco em arquivo.
+**Versão 0.7.0 — armazenamento e backups.** O pacote inclui backup criptografado do banco e da chave dos e-mails, verificação e restauração em destino separado. As rotinas PostgreSQL usam ferramentas nativas. Consulte [ARMAZENAMENTO-BACKUPS.md](docs/ARMAZENAMENTO-BACKUPS.md). Mensagens de acesso são gravadas com a alteração da conta, protegidas por criptografia e acompanhadas no painel **E-mails e envios**. A demonstração usa uma caixa privada de teste; o envio real está preparado para configuração. Consulte [FILA-EMAILS.md](docs/FILA-EMAILS.md) e [EMAIL-ACESSO.md](docs/EMAIL-ACESSO.md). Cadastre sua empresa e seu acesso, prepare serviços, equipe e horários e publique sua página de reservas. Na hospedagem gratuita, novas contas são de teste e podem ser apagadas quando o servidor reiniciar. A cópia local preserva o banco em arquivo.
 
-**Acessos:** [Abrir o site](https://agenda-clara-luizcodebr.onrender.com) · [Baixar a demonstração](https://github.com/LuizCodeBR/AgendaClara/releases/tag/v0.6.1) · [Testes automáticos](https://github.com/LuizCodeBR/AgendaClara/actions)
+**Acessos:** [Abrir o site](https://agenda-clara-luizcodebr.onrender.com) · [Baixar a demonstração](https://github.com/LuizCodeBR/AgendaClara/releases/tag/v0.7.0) · [Testes automáticos](https://github.com/LuizCodeBR/AgendaClara/actions)
 
 ## Site, app mobile e versão local
 
@@ -66,6 +66,12 @@ Também é possível iniciar diretamente:
 ```bash
 java -jar agenda-clara.jar --spring.profiles.active=demo
 ```
+
+## Backup e recuperação
+
+Com o servidor local encerrado, execute `backup.cmd` no Windows ou `bash backup.sh` no Linux/macOS. Informe uma senha exclusiva e guarde o arquivo .acbackup fora do disco do banco. A ferramenta pode verificar o arquivo e restaurar em uma nova pasta; não substitui o banco original. Limite do conjunto: 64 MiB. O pacote local usa somente Java; exportações PostgreSQL exigem pg_dump/pg_restore compatíveis ou Docker. Consulte [as instruções completas](docs/ARMAZENAMENTO-BACKUPS.md).
+
+A hospedagem gratuita continua efêmera. A configuração proposta para PostgreSQL durável e recuperação gerenciada está [neste plano](docs/PLANO-PERSISTENCIA-RENDER.md); nenhum recurso pago é contratado por executar os iniciadores.
 
 ## Usar como aplicativo
 
@@ -198,8 +204,9 @@ Para usar um PostgreSQL próprio, configure `SPRING_PROFILES_ACTIVE=postgres`, `
 
 ## Próximas etapas
 
-1. Configuração e validação do remetente real, com confirmação de recebimento e tratamento de eventos de entrega.
-2. Gestão de contas e comunicação real de confirmação/cancelamento de reservas.
-3. Persistência operacional e ampliação da proteção contra abuso antes de receber clientes reais.
+1. Autorizar/configurar o banco durável da hospedagem conforme [o plano concreto](docs/PLANO-PERSISTENCIA-RENDER.md).
+2. Configuração e validação do remetente real, com confirmação de recebimento e tratamento de eventos de entrega.
+3. Gestão de contas e comunicação real de confirmação/cancelamento de reservas.
+4. Cópias externas, ensaios periódicos de restauração e ampliação da proteção contra abuso antes de receber clientes reais.
 
-A funcionalidade atual está em [FILA-EMAILS.md](docs/FILA-EMAILS.md), com os resultados atuais em [VALIDACAO-0.6.1.md](docs/VALIDACAO-0.6.1.md). O histórico da fila está em [VALIDACAO-0.6.0.md](docs/VALIDACAO-0.6.0.md). A etapa anterior está em [EMAIL-ACESSO.md](docs/EMAIL-ACESSO.md) e [VALIDACAO-0.5.0.md](docs/VALIDACAO-0.5.0.md). Cadastro de empresas: [CADASTRO-EMPRESAS.md](docs/CADASTRO-EMPRESAS.md), com validação anterior em [VALIDACAO-0.4.0.md](docs/VALIDACAO-0.4.0.md). Folgas e horários especiais: [EXCECOES.md](docs/EXCECOES.md), com resultados anteriores em [VALIDACAO-0.3.0.md](docs/VALIDACAO-0.3.0.md). A revisão de uso anterior está em [REVISAO-USO-0.2.2.md](docs/REVISAO-USO-0.2.2.md). A revisão de segurança anterior está em [REVISAO-SEGURANCA-0.2.1.md](docs/REVISAO-SEGURANCA-0.2.1.md). Históricos: [0.2.0](docs/VALIDACAO-0.2.0.md) e [primeira versão](docs/VALIDACAO.md).
+A funcionalidade atual está em [FILA-EMAILS.md](docs/FILA-EMAILS.md), com os resultados atuais em [VALIDACAO-0.7.0.md](docs/VALIDACAO-0.7.0.md). A revisão anterior está em [VALIDACAO-0.6.1.md](docs/VALIDACAO-0.6.1.md). O histórico da fila está em [VALIDACAO-0.6.0.md](docs/VALIDACAO-0.6.0.md). A etapa anterior está em [EMAIL-ACESSO.md](docs/EMAIL-ACESSO.md) e [VALIDACAO-0.5.0.md](docs/VALIDACAO-0.5.0.md). Cadastro de empresas: [CADASTRO-EMPRESAS.md](docs/CADASTRO-EMPRESAS.md), com validação anterior em [VALIDACAO-0.4.0.md](docs/VALIDACAO-0.4.0.md). Folgas e horários especiais: [EXCECOES.md](docs/EXCECOES.md), com resultados anteriores em [VALIDACAO-0.3.0.md](docs/VALIDACAO-0.3.0.md). A revisão de uso anterior está em [REVISAO-USO-0.2.2.md](docs/REVISAO-USO-0.2.2.md). A revisão de segurança anterior está em [REVISAO-SEGURANCA-0.2.1.md](docs/REVISAO-SEGURANCA-0.2.1.md). Históricos: [0.2.0](docs/VALIDACAO-0.2.0.md) e [primeira versão](docs/VALIDACAO.md).

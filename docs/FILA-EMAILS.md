@@ -74,3 +74,6 @@ Veja [REVISAO-SEGURANCA-0.6.1.md](REVISAO-SEGURANCA-0.6.1.md), [VALIDACAO-0.6.1.
 - [Resend: códigos de erro](https://resend.com/docs/api-reference/errors).
 - [PostgreSQL: SELECT e SKIP LOCKED](https://www.postgresql.org/docs/17/sql-select.html).
 - [Render: limites do plano gratuito](https://render.com/docs/free).
+
+## Backup protegido (0.7.0)
+O pacote inclui rotinas para reunir banco e chave em um backup criptografado, verificar sua integridade e restaurar em outro destino. Não basta restaurar somente o banco. Consulte [ARMAZENAMENTO-BACKUPS.md](ARMAZENAMENTO-BACKUPS.md).

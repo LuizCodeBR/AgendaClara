@@ -1,4 +1,4 @@
-# API — versão 0.6.1
+# API — versão 0.7.0
 
 A interface e a API usam a mesma origem. Datas de consulta usam ISO `YYYY-MM-DD`; instantes enviados usam ISO com offset, como `2030-06-04T09:00:00-03:00`.
 
@@ -18,7 +18,7 @@ Antes de uma alteração, consulte `/api/auth/csrf`. Envie o cookie recebido e o
 
 | Método | Rota | Resultado |
 | --- | --- | --- |
-| GET | /api/public/config | sinalização de demonstração e versão |
+| GET | /api/public/config | sinalização de demonstração, versão e storageMode (local, ephemeral ou persistent); não expõe conexão, senha ou caminhos |
 | GET | /api/public/businesses | estabelecimentos disponíveis |
 | GET | /api/public/{slug}/catalog | serviços, profissionais, fuso e data sugerida |
 | GET | /api/public/{slug}/availability?professionalId=UUID&serviceId=UUID&date=YYYY-MM-DD | horários disponíveis |

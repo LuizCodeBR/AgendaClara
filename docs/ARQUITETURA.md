@@ -147,3 +147,6 @@ O monitor usa leitura REPEATABLE READ, filtra por empresa da sessão e retorna s
 
 ## Revisão de concorrência (0.6.1)
 A espera do provedor permanece em next_attempt_at após falha definitiva do ciclo e é validada também na repetição manual. O processador confere atividade e manutenção entre mensagens. A leitura/criação da chave local de demonstração usa coordenação na JVM e bloqueio de arquivo entre processos, com permissões antes de escrever e sincronização do conteúdo. Não houve migração de esquema. Consulte [a revisão](REVISAO-SEGURANCA-0.6.1.md).
+
+## Armazenamento e recuperação (0.7.0)
+Ferramentas de backup executam por modo de linha de comando antes da inicialização do Spring, sem endpoint HTTP de exportação integral. Arquivos ACBK0001 usam AES-256-GCM e derivação PBKDF2-HMAC-SHA256, guardando banco e chave com manifesto autenticado e hashes. H2 exige banco fechado e bloqueio exclusivo do arquivo; PostgreSQL usa pg_dump custom e pg_restore em transação única para banco vazio. A restauração não substitui instalação existente. STORAGE_MODE explicita o ambiente; persistent exige PostgreSQL e segredo estável para envio ativo. Consulte [ARMAZENAMENTO-BACKUPS.md](ARMAZENAMENTO-BACKUPS.md).

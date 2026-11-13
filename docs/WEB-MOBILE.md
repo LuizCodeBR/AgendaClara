@@ -2,7 +2,7 @@
 
 **Site:** https://agenda-clara-luizcodebr.onrender.com
 
-**Downloads:** https://github.com/LuizCodeBR/AgendaClara/releases/tag/v0.6.0
+**Downloads:** https://github.com/LuizCodeBR/AgendaClara/releases/tag/v0.7.0
 
 ## Três formas de acesso
 
@@ -75,3 +75,6 @@ A aba E-mails e envios está disponível no site, PWA e pacote local. Usa o mesm
 
 ## Revisão 0.6.1
 Site, PWA e download local incluem as correções de espera manual, monitor em lotes lentos e chave concorrente. A interface diferencia espera do serviço de tentativa automaticamente agendada. Veja [REVISAO-SEGURANCA-0.6.1.md](REVISAO-SEGURANCA-0.6.1.md).
+
+## Armazenamento e backups (0.7.0)
+A API informa o modo operacional local, ephemeral ou persistent. O cadastro web/mobile mantém o aceite de dados fictícios e apresenta o aviso correspondente. A demonstração online atual continua efêmera; a ativação do banco durável depende de autorização de custo. O pacote local inclui backup.cmd e backup.sh. Consulte [ARMAZENAMENTO-BACKUPS.md](ARMAZENAMENTO-BACKUPS.md) e [o plano de ativação](PLANO-PERSISTENCIA-RENDER.md).

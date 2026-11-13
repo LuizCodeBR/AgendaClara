@@ -54,7 +54,7 @@ test('layout cabe na tela e PWA não armazena respostas da API', async ({ page, 
 
 test('responsável cadastra profissional, abre expediente e preserva reserva ao editar horários', async ({ page }, testInfo) => {
   const name = 'Equipe E2E ' + testInfo.project.name + ' ' + Date.now();
-  const customer = 'Cliente da equipe ' + testInfo.project.name;
+  const customer = 'Cliente da equipe ' + testInfo.project.name + ' ' + Date.now();
   await page.goto('/');
   await openAdmin(page);
   await page.getByRole('button', { name: 'Barbearia Horizonte Marina · responsável' }).click();
@@ -161,7 +161,7 @@ test('folga fecha a data; horário especial permite reservar; alterações prese
   test.setTimeout(60000);
   page.setDefaultTimeout(10000);
   const name = 'Exceções E2E ' + testInfo.project.name + ' ' + Date.now();
-  const customer = 'Cliente das exceções ' + testInfo.project.name;
+  const customer = 'Cliente das exceções ' + testInfo.project.name + ' ' + Date.now();
   await page.goto('/');
   await openAdmin(page);
   await page.getByRole('button', { name: 'Barbearia Horizonte Marina · responsável' }).click();

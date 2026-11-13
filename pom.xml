@@ -2,7 +2,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-parent</artifactId><version>4.1.2</version><relativePath/></parent>
-  <groupId>br.com.luizcode</groupId><artifactId>agenda-clara</artifactId><version>0.6.1</version>
+  <groupId>br.com.luizcode</groupId><artifactId>agenda-clara</artifactId><version>0.7.0</version>
   <name>Agenda Clara</name><description>Agendamento para pequenos negócios, com demonstração local e PWA.</description>
   <properties><java.version>21</java.version><h2.version>2.5.252</h2.version><project.build.sourceEncoding>UTF-8</project.build.sourceEncoding></properties>
   <dependencies>

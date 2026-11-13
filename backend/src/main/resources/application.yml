@@ -27,6 +27,8 @@ server:
         same-site: lax
         secure: ${COOKIE_SECURE:false}
 app:
+  storage:
+    mode: ${STORAGE_MODE:local}
   mail:
     encryption-key: ${MAIL_ENCRYPTION_KEY:}
     key-file: ${MAIL_KEY_FILE:${AGENDA_DATA_DIR:./data}/mail-outbox.key}
