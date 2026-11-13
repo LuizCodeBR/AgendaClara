@@ -18,3 +18,9 @@
 /backups/
 *.acbackup
 *.partial
+
+**/agenda.mv.db
+*.trace.db
+*.lock.db
+*.dump
+/tmp/
