@@ -46,7 +46,7 @@ services:
       - key: SOURCE_URL
         value: https://github.com/LuizCodeBR/AgendaClara
       - key: DEMO_DOWNLOAD_URL
-        value: https://github.com/LuizCodeBR/AgendaClara/releases/download/v0.7.0/AgendaClara-0.7.0-demo.zip
+        value: https://github.com/LuizCodeBR/AgendaClara/releases/download/v0.8.0/AgendaClara-0.8.0-demo.zip
 # Banco externo Neon Free, criado separadamente; não provisiona recursos pagos.
 # Forneça as credenciais JDBC/TLS e a chave estável como entradas privadas.
 # Consulte docs/PERSISTENCIA-GRATUITA.md antes de implantar outra instalação.
