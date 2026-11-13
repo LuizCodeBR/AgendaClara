@@ -29,9 +29,9 @@ Para criar, verificar e registrar um backup do H2, primeiro encerre o servidor l
 
 A senha exclusiva é solicitada e confirmada sem aparecer no terminal. Não informe senha como argumento. Para automação não interativa, AGENDA_BACKUP_PASSWORD pode ser fornecida por um ambiente privado. Nenhum agendamento é criado.
 
-No Linux/macOS, use bash operacao.sh com as mesmas opções. No código-fonte, compile antes com iniciar.cmd e encerre o servidor. A rotina usa o JAR 0.8.0; o pacote distribuído usa agenda-clara.jar.
+No Linux/macOS, use bash operacao.sh com as mesmas opções. No código-fonte, compile antes com iniciar.cmd e encerre o servidor. A rotina usa o JAR 0.8.1; o pacote distribuído usa agenda-clara.jar.
 
-O resultado fica em operations/latest.html e operations/latest.json, com cópias em operations/backups. A pasta operations é privada e ignorada pelo Git. Para escolher outra pasta, use --work-dir apontando a uma pasta nova ou vazia. A ferramenta recusa pastas existentes com outros arquivos, links simbólicos e troca de motor no mesmo histórico.
+O resultado fica em operations/latest.html e operations/latest.json, com cópias em operations/backups. A pasta operations é privada e ignorada pelo Git. Para escolher outra pasta, use --work-dir apontando a uma pasta nova ou vazia. A ferramenta recusa pastas existentes com outros arquivos, links simbólicos e troca de motor ou de origem no mesmo histórico.
 
 ## Neon desta instalação no D:
 O adaptador Windows reutiliza a configuração privada criada na etapa anterior, sem senhas no script. Para apenas consultar:
