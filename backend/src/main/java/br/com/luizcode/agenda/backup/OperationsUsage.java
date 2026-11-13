@@ -14,7 +14,7 @@ public final class OperationsUsage {
     public record Neon(String projectId,String plan,Double computeCuHours,Double transferBytes,Double storageBytes,String periodStart,String periodEnd) {}
     public record Render(String workspaceId,String plan,Double freeInstanceHours,Double outboundBytes,Double pipelineMinutes,Double pipelineLimit,String periodStart,String periodEnd) {}
     public record Snapshot(int format,String observedAt,String source,Neon neon,Render render) {}
-    public record Metric(String id,String label,Double used,Double limit,String unit,String source,String status,Double percentage) {}
+    public record Metric(String id,String label,Double used,Double limit,String unit,String source,String status,Double percentage,String freshness) {}
     public record Observation(String observedAt,String source,String status,Snapshot snapshot) {}
 
     static Snapshot read(Path path,Map<String,String> env,Instant now) throws Exception {
@@ -66,10 +66,10 @@ public final class OperationsUsage {
         return start!=null&&end!=null&&!now.isBefore(Instant.parse(start))&&now.isBefore(Instant.parse(end));
     }
     static Metric metric(String id,String label,Double used,Double limit,String unit,String source,boolean fresh) {
-        String status=used==null||limit==null?"UNKNOWN":!fresh?"STALE":
-            used>=limit?"EXCEEDED":used>=limit*.9?"CRITICAL":used>=limit*.7?"WARNING":"OK";
+        String status=used==null||limit==null?"UNKNOWN":
+            used>=limit?"EXCEEDED":used>=limit*.9?"CRITICAL":used>=limit*.7?"WARNING":!fresh?"STALE":"OK";
         Double percentage=used==null||limit==null||limit<=0?null:Math.round(used/limit*1000)/10.0;
-        return new Metric(id,label,used,limit,unit,source,status,percentage);
+        return new Metric(id,label,used,limit,unit,source,status,percentage,used==null?"UNKNOWN":fresh?"CURRENT":"STALE");
     }
     static List<Metric> metrics(Snapshot snapshot,Long databaseBytes,String engine,Instant now) {
         var result=new ArrayList<Metric>();boolean fresh=fresh(snapshot,now);

@@ -6,8 +6,10 @@ public final class OperationsReport {
     private OperationsReport() {}
     public record Verified(String filename,String engine,String createdAt,String verifiedAt,long bytes,String sha256) {}
     public record Attempt(String id,String startedAt,String finishedAt,String result,String code) {}
-    public record State(int format,Verified lastVerified,Attempt lastAttempt) {}
-    public record Backup(String status,Verified lastVerified,Attempt lastAttempt,boolean fileMatches,long count,long bytes) {}
+    public record State(int format,String targetId,Verified lastVerified,Attempt lastAttempt) {
+        public State(int format,Verified lastVerified,Attempt lastAttempt){this(format,null,lastVerified,lastAttempt);}
+    }
+    public record Backup(String status,Verified lastVerified,Attempt lastAttempt,boolean fileMatches,boolean sourceBound,long count,long bytes) {}
     public record Report(int format,String version,String generatedAt,String runId,boolean onDemandOnly,String engine,String status,
                          Backup backup,Long databaseBytes,OperationsUsage.Observation provider,List<OperationsUsage.Metric> metrics,List<String> notices) {}
 
@@ -21,6 +23,7 @@ public final class OperationsReport {
     }
     static String label(String status) {
         return switch(status) {
+            case "CURRENT"->"Observação recente";
             case "OK","VERIFIED"->"Conferido";
             case "WARNING"->"Atenção: 70% ou mais";
             case "CRITICAL"->"Atenção crítica: 90% ou mais";
@@ -29,6 +32,10 @@ public final class OperationsReport {
             case "UNKNOWN"->"Não informado";
             case "FAILED"->"Falha";
             case "MISMATCH"->"Arquivo ausente ou alterado";
+            case "UNBOUND"->"Origem anterior não vinculada";
+            case "INVALID"->"Observação inválida ou de outro recurso";
+            case "INTERRUPTED"->"Tentativa interrompida";
+            case "RUNNING"->"Em execução";
             case "NONE"->"Nenhum backup verificado";
             default->"Precisa de atenção";
         };
@@ -58,13 +65,16 @@ public final class OperationsReport {
             var v=b.lastVerified();out.append("<dl><dt>Arquivo</dt><dd>").append(escape(v.filename())).append("</dd><dt>Verificado em UTC</dt><dd>")
                 .append(escape(v.verifiedAt())).append("</dd><dt>SHA-256</dt><dd><code>").append(escape(v.sha256())).append("</code></dd></dl>");
         }
-        if(b.lastAttempt()!=null)out.append("<p>Última tentativa: ").append(escape(b.lastAttempt().result())).append(" · ").append(escape(b.lastAttempt().code())).append("</p>");
+        out.append("<p>Origem: ").append(b.sourceBound()?"vinculada à configuração desta execução":"histórico anterior ainda não vinculado").append(".</p>");
+        if(b.lastAttempt()!=null)out.append("<p>Última tentativa: ").append(escape(label(b.lastAttempt().result()))).append(" · ").append(escape(b.lastAttempt().code())).append("</p>");
         out.append("<p>").append(b.count()).append(" cópia(s) nesta pasta, ").append(number((double)b.bytes(),"bytes"))
             .append(". Nenhuma cópia foi excluída.</p><small>A validação criptográfica ocorreu na criação. O relatório confere o hash do último arquivo; não substitui um ensaio de restauração.</small></section>");
-        out.append("<section class=\"card\"><h2>Uso e cotas</h2><p>Alertas em 70%, 90% e 100%. Valores não informados não representam consumo zero.</p><div class=\"scroll\"><table><thead><tr><th>Recurso</th><th>Uso / referência</th><th>Estado</th><th>Origem</th></tr></thead><tbody>");
+        out.append("<section class=\"card\"><h2>Uso e cotas</h2><p>Alertas em 70%, 90% e 100%. Valores não informados não representam consumo zero.</p><div class=\"scroll\"><table>");
+        out.append("<caption>Observação dos provedores: ").append(escape(report.provider().observedAt())).append(" · ").append(escape(label(report.provider().status()))).append("</caption>");
+        out.append("<thead><tr><th>Recurso</th><th>Uso / referência</th><th>Estado</th><th>Origem</th></tr></thead><tbody>");
         for(var metric:report.metrics())out.append("<tr><td>").append(escape(metric.label())).append("</td><td>")
             .append(escape(number(metric.used(),metric.unit()))).append(" / ").append(escape(number(metric.limit(),metric.unit())))
-            .append(metric.percentage()==null?"":" · "+metric.percentage()+"%").append("</td><td>").append(escape(label(metric.status())))
+            .append(metric.percentage()==null?"":" · "+metric.percentage()+"%").append("</td><td>").append(escape(label(metric.status())+(metric.freshness().equals("STALE")?" · observação antiga":"")))
             .append("</td><td>").append(escape(metric.source())).append("</td></tr>");
         out.append("</tbody></table></div></section><section class=\"card\"><h2>O que considerar</h2><ul>");
         for(String notice:report.notices())out.append("<li>").append(escape(notice)).append("</li>");

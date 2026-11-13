@@ -13,7 +13,7 @@ import tools.jackson.databind.ObjectMapper;
 
 /** Operator-only encrypted archive; never exposed through a tenant HTTP endpoint. */
 public final class BackupArchive {
-    public static final String VERSION="0.8.0";
+    public static final String VERSION="0.8.1";
     static final int LIMIT=64*1024*1024;
     private static final byte[] MAGIC="ACBK0001".getBytes(java.nio.charset.StandardCharsets.US_ASCII);
     private static final SecureRandom RANDOM=new SecureRandom();
@@ -27,23 +27,11 @@ public final class BackupArchive {
         try { return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes)); }
         catch(NoSuchAlgorithmException ex){ throw new IllegalStateException(ex); }
     }
-    static void protect(Path path,boolean directory) throws IOException {
-        if(Files.getFileStore(path).supportsFileAttributeView("posix"))
-            Files.setPosixFilePermissions(path,PosixFilePermissions.fromString(directory?"rwx------":"rw-------"));
-        else {
-            var view=Files.getFileAttributeView(path,AclFileAttributeView.class);
-            if(view!=null) view.setAcl(List.of(AclEntry.newBuilder().setType(AclEntryType.ALLOW).setPrincipal(Files.getOwner(path))
-                    .setPermissions(EnumSet.allOf(AclEntryPermission.class)).build()));
-        }
-    }
-    static Path privateFile(Path path) throws IOException {
-        Files.createFile(path); protect(path,false); return path;
-    }
-    static Path staging() throws IOException {
-        Path path=Files.createTempDirectory("agenda-backup-"); protect(path,true); return path;
-    }
+    static void protect(Path path,boolean directory) throws IOException { BackupFiles.protect(path,directory); }
+    static Path privateFile(Path path) throws IOException { return BackupFiles.file(path); }
+    static Path staging() throws IOException { return BackupFiles.staging(); }
     static void clearStage(Path stage) throws IOException {
-        Path root=stage.toAbsolutePath().normalize();
+        Path root=stage.toAbsolutePath().normalize();BackupFiles.noLinks(root);
         if(!root.getFileName().toString().startsWith("agenda-backup-")) throw new IOException("Diretório temporário inesperado.");
         try(var paths=Files.list(root)) {
             for(Path path:paths.toList()) {
@@ -54,14 +42,7 @@ public final class BackupArchive {
         }
         Files.deleteIfExists(root);
     }
-    static byte[] readBounded(Path path) throws IOException {
-        if(Files.size(path)>LIMIT) throw new IOException("Esta ferramenta aceita até 64 MiB por conjunto de dados. Use o procedimento nativo para bases maiores.");
-        try(var input=Files.newInputStream(path)) {
-            byte[] value=input.readNBytes(LIMIT+1);
-            if(value.length>LIMIT) throw new IOException("O backup excede o limite de 64 MiB.");
-            return value;
-        }
-    }
+    static byte[] readBounded(Path path) throws IOException { return BackupFiles.read(path,LIMIT); }
     static void checkFiles(String engine,Map<String,byte[]> files) throws IOException {
         String database=switch(engine){case "h2"->"agenda.mv.db";case "postgres"->"database.dump";default->throw new IOException("Tipo de banco inválido.");};
         if(!files.containsKey(database)||files.size()>2||files.keySet().stream().anyMatch(name->!name.equals(database)&&!name.equals("mail-outbox.key")))
@@ -99,7 +80,7 @@ public final class BackupArchive {
         Path absolute=output.toAbsolutePath().normalize(),partial=null;
         try {
             if(Files.exists(absolute,LinkOption.NOFOLLOW_LINKS)) throw new IOException("O arquivo de destino já existe.");
-            Files.createDirectories(absolute.getParent());
+            BackupFiles.directory(absolute.getParent());
             partial=absolute.resolveSibling("."+absolute.getFileName()+"."+UUID.randomUUID()+".partial");
             privateFile(partial);
             try(var stream=Files.newOutputStream(partial)) {
@@ -112,8 +93,7 @@ public final class BackupArchive {
         } finally { Arrays.fill(payload,(byte)0); if(partial!=null)Files.deleteIfExists(partial); }
     }
     public static Bundle read(Path input,char[] password) throws Exception {
-        if(Files.size(input)>LIMIT+52L) throw new IOException("O arquivo excede o limite de leitura.");
-        byte[] encrypted=Files.readAllBytes(input),plain=null;
+        byte[] encrypted=BackupFiles.read(input,LIMIT+52),plain=null;
         try {
             if(encrypted.length<52||!Arrays.equals(MAGIC,Arrays.copyOf(encrypted,8))) throw new IOException("Formato de backup inválido.");
             plain=crypt(Cipher.DECRYPT_MODE,Arrays.copyOfRange(encrypted,36,encrypted.length),password,

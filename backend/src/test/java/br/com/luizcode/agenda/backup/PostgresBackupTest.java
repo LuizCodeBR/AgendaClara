@@ -50,7 +50,13 @@ class PostgresBackupTest {
                 assertThat(report.databaseBytes()).isPositive();assertThat(report.backup().status()).isEqualTo("VERIFIED");
                 archive=operation.resolve("backups").resolve(report.backup().lastVerified().filename());
                 env.put("DB_URL",target);Path restoredKey=directory.resolve("restored-key");
+                env.put("PGHOSTADDR","192.0.2.1");env.put("PGSERVICE","must-not-be-used");
                 try(var bundle=BackupArchive.read(archive,secret)) {
+                    try(var blocker=BackupPostgres.connect(DatabaseSnapshot.pg(env),env)) {
+                        BackupPostgres.restoreLock(blocker);
+                        assertThatThrownBy(()->DatabaseSnapshot.restorePostgres(bundle,restoredKey,env)).hasMessageContaining("andamento");
+                        assertThat(restoredKey).doesNotExist();
+                    }
                     DatabaseSnapshot.restorePostgres(bundle,restoredKey,env);
                     assertThatThrownBy(()->DatabaseSnapshot.restorePostgres(bundle,directory.resolve("another-key"),env)).hasMessageContaining("vazio");
                 }

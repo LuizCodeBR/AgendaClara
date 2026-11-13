@@ -29,65 +29,58 @@ public final class OperationsTool {
         }
         return result;
     }
-    static void noLinks(Path path) throws IOException {
-        Path absolute=path.toAbsolutePath().normalize();
-        for(Path item=absolute;item!=null;item=item.getParent())if(Files.isSymbolicLink(item))throw new IOException("Não use atalhos simbólicos na pasta operacional.");
-    }
+    static void noLinks(Path path) throws IOException { BackupFiles.noLinks(path); }
     static Path workspace(Path path) throws Exception {
-        Path root=path.toAbsolutePath().normalize();noLinks(root);
-        if(root.getParent()==null)throw new IOException("Escolha uma pasta operacional exclusiva.");
-        if(Files.exists(root)&&!Files.isDirectory(root,LinkOption.NOFOLLOW_LINKS))throw new IOException("Pasta operacional inválida.");
-        Path marker=root.resolve(".agenda-operations");
-        if(Files.exists(root)&&!Files.exists(marker)) {
-            try(var list=Files.list(root)){if(list.findAny().isPresent())throw new IOException("Escolha uma pasta nova ou vazia para a operação.");}
+        try(var workspace=OperationsWorkspace.acquire(path)) {
+            if(!workspace.acquired())throw new IOException("Pasta operacional em uso.");
+            return workspace.root();
         }
-        Files.createDirectories(root);protect(root,true);
-        if(!Files.exists(marker)){privateFile(marker);Files.writeString(marker,MARKER);}
-        if(!Files.isRegularFile(marker,LinkOption.NOFOLLOW_LINKS)||Files.size(marker)>64||!Files.readString(marker).equals(MARKER))
-            throw new IOException("Pasta operacional sem identificação válida.");
-        Path backups=root.resolve("backups");noLinks(backups);Files.createDirectories(backups);protect(backups,true);
-        return root;
     }
-    static byte[] bounded(Path path,long limit) throws IOException {
-        if(!Files.isRegularFile(path,LinkOption.NOFOLLOW_LINKS)||Files.size(path)>limit)throw new IOException("Arquivo operacional inválido.");
-        try(var input=Files.newInputStream(path)){byte[] bytes=input.readNBytes((int)limit+1);if(bytes.length>limit)throw new IOException("Arquivo operacional muito grande.");return bytes;}
-    }
-    static void atomic(Path path,byte[] bytes) throws Exception {
-        noLinks(path);
-        Path partial=path.resolveSibling(path.getFileName()+"."+UUID.randomUUID()+".partial");
-        try {
-            privateFile(partial);
-            try(var channel=FileChannel.open(partial,StandardOpenOption.WRITE)) {
-                var buffer=java.nio.ByteBuffer.wrap(bytes);while(buffer.hasRemaining())channel.write(buffer);channel.force(true);
-            }
-            Files.move(partial,path,StandardCopyOption.ATOMIC_MOVE,StandardCopyOption.REPLACE_EXISTING);
-        } finally {Files.deleteIfExists(partial);}
+    static byte[] bounded(Path path,long limit) throws IOException { return BackupFiles.read(path,(int)limit); }
+    static void atomic(Path path,byte[] bytes) throws Exception { BackupFiles.atomic(path,bytes); }
+    static String sourceId(String engine,Path data,Map<String,String> env) throws Exception {
+        String identity;
+        if(engine.equals("h2")) {
+            Path file=BackupFiles.absolute(data.resolve("agenda.mv.db"));BackupFiles.noLinks(file);
+            String name=(Files.exists(file)?file.toRealPath():file).toString();
+            if(System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("win"))name=name.toLowerCase(Locale.ROOT);
+            identity="h2\0"+name;
+        } else {
+            var pg=DatabaseSnapshot.pg(env);var uri=java.net.URI.create(pg.url().substring(5));
+            identity="postgres\0"+uri.getHost().toLowerCase(Locale.ROOT)+"\0"+(uri.getPort()<0?5432:uri.getPort())+"\0"+uri.getPath()+"\0"+pg.user();
+        }
+        return digest(identity.getBytes(java.nio.charset.StandardCharsets.UTF_8));
     }
     static String hash(Path path) throws Exception {
-        if(!Files.isRegularFile(path,LinkOption.NOFOLLOW_LINKS)||Files.size(path)>64L*1024*1024)throw new IOException("Backup ausente ou maior que o limite.");
+        BackupFiles.noLinks(path);
+        if(!Files.isRegularFile(path,LinkOption.NOFOLLOW_LINKS)||Files.size(path)>(long)LIMIT+52)throw new IOException("Backup ausente ou maior que o limite.");
         var digest=MessageDigest.getInstance("SHA-256");long read=0;
-        try(var input=Files.newInputStream(path)) {
+        try(var input=Files.newInputStream(path,LinkOption.NOFOLLOW_LINKS)) {
             byte[] buffer=new byte[8192];int count;
-            while((count=input.read(buffer))!=-1){read+=count;if(read>64L*1024*1024)throw new IOException("Backup muito grande.");digest.update(buffer,0,count);}
+            while((count=input.read(buffer))!=-1){read+=count;if(read>(long)LIMIT+52)throw new IOException("Backup muito grande.");digest.update(buffer,0,count);}
         }
         return HexFormat.of().formatHex(digest.digest());
     }
     static State state(Path root) throws Exception {
         Path path=root.resolve("state.json");
-        if(!Files.exists(path,LinkOption.NOFOLLOW_LINKS))return new State(1,null,null);
+        if(!Files.exists(path,LinkOption.NOFOLLOW_LINKS))return new State(2,null,null,null);
         var state=OperationsUsage.JSON.readValue(bounded(path,MAX_STATE),State.class);
-        if(state.format()!=1)throw new IOException("Estado operacional incompatível.");
+        if(!Set.of(1,2).contains(state.format()))throw new IOException("Estado operacional incompatível.");
+        if(state.targetId()!=null&&!state.targetId().matches("[a-f0-9]{64}"))throw new IOException("Origem operacional inválida.");
+        if(state.format()==2&&state.lastVerified()!=null&&state.targetId()==null)throw new IOException("Origem operacional ausente.");
         if(state.lastVerified()!=null) {
             var v=state.lastVerified();
             if(v.filename()==null||!v.filename().matches("AgendaClara-[0-9TZ-]+-[a-f0-9-]{36}\\.acbackup")||
-               !Set.of("h2","postgres").contains(v.engine())||v.bytes()<1||v.bytes()>67108864||
+               !Set.of("h2","postgres").contains(v.engine())||v.bytes()<1||v.bytes()>(long)LIMIT+52||
                v.sha256()==null||!v.sha256().matches("[a-f0-9]{64}"))throw new IOException("Estado operacional inválido.");
-            Instant.parse(v.createdAt());Instant.parse(v.verifiedAt());
+            if(Instant.parse(v.createdAt()).isAfter(Instant.parse(v.verifiedAt()).plusSeconds(300)))throw new IOException("Datas operacionais inválidas.");
         }
         if(state.lastAttempt()!=null) {
-            var a=state.lastAttempt();UUID.fromString(a.id());Instant.parse(a.startedAt());Instant.parse(a.finishedAt());
-            if(!Set.of("VERIFIED","FAILED").contains(a.result())||!Set.of("OK","BACKUP_FAILED").contains(a.code()))
+            var attempt=state.lastAttempt();UUID.fromString(attempt.id());Instant start=Instant.parse(attempt.startedAt());
+            String expected=switch(attempt.result()) {case "VERIFIED"->"OK";case "FAILED"->"BACKUP_FAILED";case "RUNNING"->"IN_PROGRESS";case "INTERRUPTED"->"INTERRUPTED";default->throw new IOException("Tentativa operacional inválida.");};
+            if(!expected.equals(attempt.code())||(attempt.result().equals("RUNNING")?attempt.finishedAt()!=null:attempt.finishedAt()==null))
                 throw new IOException("Tentativa operacional inválida.");
+            if(attempt.finishedAt()!=null&&Instant.parse(attempt.finishedAt()).isBefore(start.minusSeconds(300)))throw new IOException("Datas operacionais inválidas.");
         }
         return state;
     }
@@ -106,10 +99,8 @@ public final class OperationsTool {
     static Long databaseBytes(String engine,Path data,Map<String,String> env) {
         try {
             if(engine.equals("h2")){Path file=data.resolve("agenda.mv.db");return Files.isRegularFile(file,LinkOption.NOFOLLOW_LINKS)?Files.size(file):null;}
-            var pg=DatabaseSnapshot.pg(env);var properties=new Properties();
-            properties.setProperty("user",pg.user());properties.setProperty("password",pg.password());
-            properties.setProperty("connectTimeout","10");properties.setProperty("socketTimeout","15");
-            try(var connection=DriverManager.getConnection(pg.url(),properties)) {
+            var pg=DatabaseSnapshot.pg(env);
+            try(var connection=BackupPostgres.connect(pg,env)) {
                 connection.setReadOnly(true);
                 try(var statement=connection.createStatement()){statement.setQueryTimeout(10);
                     try(var rows=statement.executeQuery("select pg_database_size(current_database())")){return rows.next()?rows.getLong(1):null;}
@@ -117,18 +108,19 @@ public final class OperationsTool {
             }
         } catch(Exception ex){return null;} // Driver errors can contain credentials. No raw error is logged.
     }
-    static Report report(Path root,String engine,Path data,Map<String,String> env,State state,OperationsUsage.Snapshot snapshot,Instant now,String runId) throws Exception {
+    static Report report(Path root,String engine,Path data,Map<String,String> env,State state,OperationsUsage.Snapshot snapshot,boolean invalidUsage,Instant now,String runId) throws Exception {
         var verified=state.lastVerified();boolean matches=false;
         if(verified!=null)try {
             Path path=root.resolve("backups").resolve(verified.filename());
             matches=Files.size(path)==verified.bytes()&&hash(path).equals(verified.sha256());
         }catch(Exception ignored){}
-        String backupStatus=verified==null?"NONE":!matches?"MISMATCH":
+        boolean sourceBound=state.targetId()!=null;
+        String backupStatus=verified==null?"NONE":!sourceBound?"UNBOUND":!matches?"MISMATCH":
             Instant.parse(verified.verifiedAt()).isBefore(now.minus(Duration.ofDays(7)))?"STALE":"VERIFIED";
-        if(state.lastAttempt()!=null&&state.lastAttempt().result().equals("FAILED"))backupStatus="FAILED";
+        boolean attemptFailed=state.lastAttempt()!=null&&!state.lastAttempt().result().equals("VERIFIED");
         long count=0,bytes=0;
         try(var list=Files.list(root.resolve("backups"))) {
-            for(Path file:list.toList())if(Files.isRegularFile(file,LinkOption.NOFOLLOW_LINKS)&&file.getFileName().toString().endsWith(".acbackup")){count++;bytes+=Files.size(file);}
+            for(var iterator=list.iterator();iterator.hasNext();) {Path file=iterator.next();if(Files.isRegularFile(file,LinkOption.NOFOLLOW_LINKS)&&file.getFileName().toString().endsWith(".acbackup")){count++;bytes=Math.addExact(bytes,Files.size(file));}}
         }
         Long dbBytes=databaseBytes(engine,data,env);
         var metrics=OperationsUsage.metrics(snapshot,dbBytes,engine,now);
@@ -146,13 +138,25 @@ public final class OperationsTool {
             Set.of("free","hobby").contains(snapshot.render().plan())&&OperationsUsage.fresh(snapshot,now);
         if(!plansOk)notices.add("Plano gratuito não confirmado recentemente para ambos os provedores; confira os painéis. Não foi feito upgrade automático.");
         if(dbBytes==null)notices.add("Não foi possível medir o banco atual nesta execução.");
-        boolean attention=!backupStatus.equals("VERIFIED")||!plansOk||metrics.stream().anyMatch(m->!m.status().equals("OK"));
+        if(invalidUsage)notices.add("Observação de consumo inválida ou de outro recurso: ignorada. Isso não impede criar uma cópia de segurança.");
+        if(verified!=null&&!sourceBound)notices.add("Histórico anterior à vinculação de origem: a cópia foi preservada, mas não é atribuída ao banco atual. Um novo backup válido registra a origem.");
+        if(attemptFailed)notices.add("A última tentativa falhou ou foi interrompida. A cópia válida anterior permanece preservada.");
+        boolean attention=attemptFailed||invalidUsage||!backupStatus.equals("VERIFIED")||!plansOk||metrics.stream().anyMatch(m->!m.status().equals("OK"));
         var observation=new OperationsUsage.Observation(snapshot==null?null:snapshot.observedAt(),snapshot==null?null:snapshot.source(),
-            snapshot==null?"UNKNOWN":OperationsUsage.fresh(snapshot,now)?"CURRENT":"STALE",snapshot);
-        return new Report(1,VERSION,now.toString(),runId,true,engine,attention?"ATTENTION":"OK",
-            new Backup(backupStatus,verified,state.lastAttempt(),matches,count,bytes),dbBytes,observation,metrics,List.copyOf(notices));
+            invalidUsage?"INVALID":snapshot==null?"UNKNOWN":OperationsUsage.fresh(snapshot,now)?"CURRENT":"STALE",snapshot);
+        return new Report(2,VERSION,now.toString(),runId,true,engine,attention?"ATTENTION":"OK",
+            new Backup(backupStatus,verified,state.lastAttempt(),matches,sourceBound,count,bytes),dbBytes,observation,metrics,List.copyOf(notices));
+    }
+    @FunctionalInterface interface SnapshotWriter {
+        void write(String engine,Path data,Path archive,char[] password,Map<String,String> env) throws Exception;
     }
     static int run(String[] args,Map<String,String> env,PrintStream output,Clock clock) {
+        return run(args,env,output,clock,(engine,data,archive,password,configuration)->{
+            if(engine.equals("h2"))DatabaseSnapshot.createLocal(data,archive,password,configuration);
+            else DatabaseSnapshot.createPostgres(data,archive,password,configuration);
+        });
+    }
+    static int run(String[] args,Map<String,String> env,PrintStream output,Clock clock,SnapshotWriter writer) {
         try {
             var options=options(args);String action=options.getOrDefault("operations","help");
             if(action.equals("help")) {
@@ -165,47 +169,53 @@ public final class OperationsTool {
             String engine=options.getOrDefault("engine","h2");
             if(!Set.of("backup","report").contains(action)||!Set.of("h2","postgres").contains(engine))throw new IOException("Operação inválida.");
             Path data=Path.of(options.getOrDefault("data-dir",env.getOrDefault("AGENDA_DATA_DIR","data")));
-            Path root=workspace(Path.of(options.getOrDefault("work-dir","operations")));
-            Path lockPath=root.resolve(".operations.lock");noLinks(lockPath);
-            try(var channel=FileChannel.open(lockPath,StandardOpenOption.CREATE,StandardOpenOption.WRITE)) {
-                protect(lockPath,false);
-                FileLock lock;try{lock=channel.tryLock();}catch(OverlappingFileLockException ex){lock=null;}
-                if(lock==null){output.println("ATENÇÃO: outra execução está ativa; nenhuma cópia foi iniciada.");return 3;}
-                try(var held=lock) {
-                    State state=state(root);Instant now=clock.instant();String runId=UUID.randomUUID().toString();
-                    if(state.lastVerified()!=null&&(!state.lastVerified().engine().equals(engine)||Instant.parse(state.lastVerified().verifiedAt()).isAfter(now.plusSeconds(300))))throw new IOException("Use o mesmo motor e um estado com data válida.");
-                    OperationsUsage.Snapshot snapshot=options.containsKey("provider-input")?OperationsUsage.read(Path.of(options.get("provider-input")),env,now):null;
-                    boolean failed=false;
-                    if(action.equals("backup")) {
-                        String started=now.toString();char[] password=null;
-                        try {
-                            if(Files.getFileStore(root).getUsableSpace()<256L*1024*1024)throw new IOException("Espaço insuficiente.");
-                            password=password(env);
-                            Path archive=root.resolve("backups").resolve("AgendaClara-"+DateTimeFormatter.ofPattern("uuuuMMdd'T'HHmmss'Z'").withZone(ZoneOffset.UTC).format(now)+"-"+runId+".acbackup");
-                            if(engine.equals("h2"))DatabaseSnapshot.createLocal(data,archive,password,env);
-                            else DatabaseSnapshot.createPostgres(data,archive,password,env);
-                            try(var bundle=BackupArchive.read(archive,password)) {
-                                if(!bundle.manifest().engine().equals(engine))throw new IOException("Tipo de cópia inesperado.");
-                                String finished=clock.instant().toString();
-                                state=new State(1,new Verified(archive.getFileName().toString(),engine,bundle.manifest().createdAt(),finished,Files.size(archive),hash(archive)),
-                                    new Attempt(runId,started,finished,"VERIFIED","OK"));
-                            }
-                        } catch(Exception ex) {
-                            failed=true;state=new State(1,state.lastVerified(),new Attempt(runId,started,clock.instant().toString(),"FAILED","BACKUP_FAILED"));
-                        } finally {if(password!=null)Arrays.fill(password,'\0');}
-                        save(root,state);
-                    }
-                    var report=report(root,engine,data,env,state,snapshot,clock.instant(),runId);
-                    atomic(root.resolve("latest.json"),OperationsUsage.JSON.writeValueAsBytes(report));
-                    atomic(root.resolve("latest.html"),OperationsReport.html(report).getBytes(java.nio.charset.StandardCharsets.UTF_8));
-                    output.println(failed?"ERRO: backup não concluído; a última cópia válida foi preservada.":"OK: rotina concluída; "+(action.equals("backup")?"backup criado e verificado.":"nenhuma nova cópia criada."));
-                    output.println("Relatório: "+root.resolve("latest.html"));
-                    output.println("Cotas não informadas exigem conferência nos painéis. Nenhum recurso pago ou agendamento foi criado.");
-                    return failed?1:report.status().equals("OK")?0:2;
+            String target=sourceId(engine,data,env);
+            try(var workspace=OperationsWorkspace.acquire(Path.of(options.getOrDefault("work-dir","operations")))) {
+                if(!workspace.acquired()){output.println("ATENÇÃO: outra execução está ativa; nenhuma cópia foi iniciada.");return 3;}
+                Path root=workspace.root();State state=state(root);Instant now=clock.instant();String runId=UUID.randomUUID().toString();
+                if(state.targetId()!=null&&!state.targetId().equals(target))throw new IOException("Esta pasta pertence a outra origem.");
+                if(state.lastVerified()!=null&&(!state.lastVerified().engine().equals(engine)||Instant.parse(state.lastVerified().verifiedAt()).isAfter(now.plusSeconds(300))))
+                    throw new IOException("Use o mesmo motor e um estado com data válida.");
+                if(state.lastVerified()==null&&state.targetId()==null)state=new State(2,target,null,state.lastAttempt());
+                if(state.lastAttempt()!=null&&state.lastAttempt().result().equals("RUNNING")) {
+                    var prior=state.lastAttempt();
+                    state=new State(state.format(),state.targetId(),state.lastVerified(),new Attempt(prior.id(),prior.startedAt(),now.toString(),"INTERRUPTED","INTERRUPTED"));
+                    save(root,state);
                 }
+                OperationsUsage.Snapshot snapshot=null;boolean invalidUsage=false;
+                if(options.containsKey("provider-input"))try{snapshot=OperationsUsage.read(Path.of(options.get("provider-input")),env,now);}
+                    catch(Exception ex){invalidUsage=true;}
+                boolean failed=false;
+                if(action.equals("backup")) {
+                    String started=now.toString();char[] password=null;
+                    state=new State(state.format(),state.targetId(),state.lastVerified(),new Attempt(runId,started,null,"RUNNING","IN_PROGRESS"));
+                    save(root,state); // Durable intent precedes prompts, native processes, copies and encryption.
+                    try {
+                        if(Files.getFileStore(root).getUsableSpace()<256L*1024*1024)throw new IOException("Espaço insuficiente.");
+                        password=password(env);
+                        Path archive=root.resolve("backups").resolve("AgendaClara-"+DateTimeFormatter.ofPattern("uuuuMMdd'T'HHmmss'Z'").withZone(ZoneOffset.UTC).format(now)+"-"+runId+".acbackup");
+                        writer.write(engine,data,archive,password,env);
+                        try(var bundle=BackupArchive.read(archive,password)) {
+                            if(!bundle.manifest().engine().equals(engine))throw new IOException("Tipo de cópia inesperado.");
+                            String finished=clock.instant().toString();
+                            state=new State(2,target,new Verified(archive.getFileName().toString(),engine,bundle.manifest().createdAt(),finished,Files.size(archive),hash(archive)),
+                                new Attempt(runId,started,finished,"VERIFIED","OK"));
+                        }
+                    } catch(Exception ex) {
+                        failed=true;state=new State(state.format(),state.targetId(),state.lastVerified(),new Attempt(runId,started,clock.instant().toString(),"FAILED","BACKUP_FAILED"));
+                    } finally {if(password!=null)Arrays.fill(password,'\0');}
+                    save(root,state);
+                }
+                var report=report(root,engine,data,env,state,snapshot,invalidUsage,clock.instant(),runId);
+                atomic(root.resolve("latest.json"),OperationsUsage.JSON.writeValueAsBytes(report));
+                atomic(root.resolve("latest.html"),OperationsReport.html(report).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                output.println(failed?"ERRO: backup não concluído; a última cópia válida foi preservada.":"OK: rotina concluída; "+(action.equals("backup")?"backup criado e verificado.":"nenhuma nova cópia criada."));
+                output.println("Relatório: "+root.resolve("latest.html"));
+                output.println("Cotas não informadas exigem conferência nos painéis. Nenhum recurso pago ou agendamento foi criado.");
+                return failed?1:report.status().equals("OK")?0:2;
             }
         } catch(Exception ex) {
-            output.println("ERRO: operação não concluída. Confira opções, pasta exclusiva, observações e permissões. Dados privados não foram exibidos.");
+            output.println("ERRO: operação não concluída. Confira opções, origem do banco, pasta exclusiva e permissões. Dados privados não foram exibidos.");
             return 1;
         }
     }

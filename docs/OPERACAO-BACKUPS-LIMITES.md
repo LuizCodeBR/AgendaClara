@@ -1,4 +1,4 @@
-# Operação sob demanda: backups e limites — 0.8.0
+# Operação sob demanda: backups e limites — 0.8.1
 
 ## Decisão de execução
 Nesta etapa o usuário escolheu não agendar backup diário e consultar os limites somente sob demanda. Não há tarefa ativa no Codex, Agendador do Windows, GitHub Actions com horário, cron, Render ou Neon. Os comandos abaixo automatizam as etapas de uma execução solicitada, sem repetição posterior.
@@ -95,7 +95,7 @@ O arquivo aceita somente os campos previstos, números finitos não negativos, o
 
 Códigos de saída: 0 significa verificações conferidas; 2 significa rotina concluída com pontos de atenção (inclusive cotas desconhecidas); 1 significa falha da operação; 3 significa outra execução em andamento. Código 2 com backup VERIFIED não significa falha de criação. Os relatórios mostram o horário UTC e não se atualizam sozinhos.
 
-A rotina exige pelo menos 256 MiB livres no disco de trabalho e mantém o limite existente de 64 MiB por backup. JSON e HTML são gravados por substituição atômica individual; ambos incluem o identificador da execução para reconhecer uma interrupção entre arquivos. O arquivo state.json mantém a última cópia verificada.
+A rotina exige pelo menos 256 MiB livres no disco de trabalho e mantém o limite existente de 64 MiB por backup. JSON e HTML formato 2 são gravados por substituição atômica individual; ambos incluem o identificador da execução para reconhecer uma interrupção entre arquivos. O arquivo state.json mantém a última cópia verificada. Na 0.8.1, o formato 2 vincula esse histórico à origem e registra a intenção antes da exportação. Metadados formato 1 permanecem sem vínculo até um novo backup válido; arquivos anteriores não são apagados.
 
 ## Web, mobile e segurança
 Site e PWA continuam usando o mesmo servidor e PostgreSQL persistente. O pacote local tem banco próprio. A versão 0.8.0 distribui as ferramentas operacionais; não há exportação global nem consulta de credenciais no painel de uma empresa.
@@ -110,3 +110,6 @@ Para restaurar, use backup.cmd/backup.sh conforme [ARMAZENAMENTO-BACKUPS.md](ARM
 - [Render: horas, limites e faturamento no plano gratuito](https://render.com/docs/free).
 - [Render: referências do plano Hobby](https://render.com/pricing).
 - [PostgreSQL: tamanho de banco](https://www.postgresql.org/docs/17/functions-admin.html#FUNCTIONS-ADMIN-DBSIZE).
+
+## Revisão 0.8.1
+Consulte [REVISAO-BACKUPS-0.8.1.md](REVISAO-BACKUPS-0.8.1.md). Entrada de consumo inválida não impede backup; o relatório mostra INVALID. Tentativa sem finalização vira INTERRUPTED. Trocar a origem do banco exige pasta operacional distinta. Um alerta antigo de limite esgotado permanece visível com a indicação de observação antiga. TLS externo é obrigatório e os parâmetros JDBC/nativos aceitos são validados.

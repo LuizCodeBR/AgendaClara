@@ -38,9 +38,8 @@ public final class DatabaseSnapshot {
         String configured=env.getOrDefault("MAIL_ENCRYPTION_KEY","");
         if(!configured.isBlank())return configured.strip().getBytes(java.nio.charset.StandardCharsets.US_ASCII);
         Path path=Path.of(env.getOrDefault("MAIL_KEY_FILE",data.resolve("mail-outbox.key").toString()));
-        if(!Files.exists(path))return null;
-        if(Files.size(path)>256)throw new IOException("Formato da chave inválido.");
-        return Files.readAllBytes(path);
+        if(!Files.exists(path,LinkOption.NOFOLLOW_LINKS))return null;
+        return BackupFiles.read(path,256);
     }
     static String h2(Path data) throws IOException {
         String location=data.resolve("agenda").toAbsolutePath().normalize().toString();
@@ -48,19 +47,22 @@ public final class DatabaseSnapshot {
         return "jdbc:h2:file:"+location+";IFEXISTS=TRUE;ACCESS_MODE_DATA=r";
     }
     public static void createLocal(Path data,Path output,char[] password,Map<String,String> env) throws Exception {
-        Path absolute=data.toAbsolutePath().normalize(),database=absolute.resolve("agenda.mv.db");
+        Path absolute=data.toAbsolutePath().normalize(),database=absolute.resolve("agenda.mv.db");BackupFiles.noLinks(absolute);
         if(!Files.isRegularFile(database,LinkOption.NOFOLLOW_LINKS))throw new IOException("Banco local não encontrado.");
         Path stage=staging();
         var files=new LinkedHashMap<String,byte[]>();
-        try(var guard=FileChannel.open(absolute.resolve("mail-outbox.key.lock"),StandardOpenOption.CREATE,StandardOpenOption.WRITE);
+        try(var guard=FileChannel.open(absolute.resolve("mail-outbox.key.lock"),java.util.Set.of(StandardOpenOption.CREATE,StandardOpenOption.WRITE,LinkOption.NOFOLLOW_LINKS),BackupFiles.attributes(absolute,false));
                 var keyLock=guard.tryLock()) {
             if(keyLock==null)throw new IOException("A chave está sendo utilizada. Encerre as instâncias locais.");
-            try(var channel=FileChannel.open(database,StandardOpenOption.READ,StandardOpenOption.WRITE);
+            try(var channel=FileChannel.open(database,StandardOpenOption.READ,StandardOpenOption.WRITE,LinkOption.NOFOLLOW_LINKS);
                     var databaseLock=channel.tryLock()) {
                 if(databaseLock==null)throw new IOException("Encerre o servidor local antes de criar o backup.");
                 if(channel.size()>LIMIT)throw new IOException("O banco excede o limite de 64 MiB.");
                 Path copy=privateFile(stage.resolve("agenda.mv.db"));
-                try(var target=Files.newOutputStream(copy)) { channel.position(0); Channels.newInputStream(channel).transferTo(target); }
+                try(var target=Files.newOutputStream(copy)) {
+                    channel.position(0);var input=Channels.newInputStream(channel);byte[] buffer=new byte[8192];long total=0;int count;
+                    while((count=input.read(buffer))!=-1){total+=count;if(total>LIMIT)throw new IOException("O banco excede o limite de 64 MiB.");target.write(buffer,0,count);}
+                }
                 byte[] key=key(absolute,env);
                 if(key!=null)files.put("mail-outbox.key",key);
             }
@@ -92,8 +94,8 @@ public final class DatabaseSnapshot {
     }
     static void publish(Bundle bundle,Path target) throws IOException {
         Path absolute=target.toAbsolutePath().normalize();
-        Files.createDirectories(absolute.getParent());
-        Files.createDirectory(absolute); protect(absolute,true);
+        BackupFiles.directory(absolute.getParent());
+        BackupFiles.noLinks(absolute);Files.createDirectory(absolute,BackupFiles.attributes(absolute.getParent(),true));
         var created=new ArrayList<Path>();
         try {
             for(var entry:bundle.files().entrySet()) {
@@ -112,36 +114,25 @@ public final class DatabaseSnapshot {
         URI uri=URI.create(url.substring(5));
         if(uri.getHost()==null||uri.getUserInfo()!=null||uri.getFragment()!=null||uri.getPath()==null||uri.getPath().length()<2)
             throw new IOException("Endereço PostgreSQL inválido.");
-        return new Pg(url,user,password);
+        if(uri.getPort()==0||uri.getPort()>65535||uri.getPath().indexOf('\0')>=0)throw new IOException("Endereço PostgreSQL inválido.");
+        var pg=new Pg(url,user,password);BackupPostgres.parameters(pg);return pg;
     }
     static void nativeTool(String tool,Pg pg,Map<String,String> env,Path input,Path output) throws Exception {
         URI uri=URI.create(pg.url().substring(5));
         var command=new ArrayList<String>();String container=env.getOrDefault("AGENDA_PG_CONTAINER","");
+        var safe=BackupPostgres.environment(pg,env);
         var names=List.of("PGHOST","PGPORT","PGDATABASE","PGUSER","PGPASSWORD","PGSSLMODE","PGSSLROOTCERT","PGCONNECT_TIMEOUT","PGCHANNELBINDING");
         if(!container.isBlank()) {
             command.addAll(List.of("docker","exec","-i"));
-            for(String name:names)command.addAll(List.of("--env",name));
+            for(String name:names)if(safe.containsKey(name))command.addAll(List.of("--env",name));
             command.add(container);
         }
         command.add(tool.equals("pg_dump")?env.getOrDefault("PG_DUMP_PATH","pg_dump"):env.getOrDefault("PG_RESTORE_PATH","pg_restore"));
-        command.add("--no-password");
+        command.add("--no-password");command.addAll(List.of("--dbname",BackupPostgres.databaseArgument(pg)));
         if(tool.equals("pg_dump"))command.addAll(List.of("--format=custom","--no-owner","--no-privileges"));
-        else command.addAll(List.of("--exit-on-error","--single-transaction","--no-owner","--no-privileges","--dbname",uri.getPath().substring(1)));
+        else command.addAll(List.of("--exit-on-error","--single-transaction","--no-owner","--no-privileges"));
         ProcessBuilder builder=new ProcessBuilder(command);
-        var processEnv=builder.environment();
-        processEnv.put("PGHOST",uri.getHost());processEnv.put("PGPORT",String.valueOf(uri.getPort()<0?5432:uri.getPort()));
-        processEnv.put("PGDATABASE",uri.getPath().substring(1));processEnv.put("PGUSER",pg.user());processEnv.put("PGPASSWORD",pg.password());
-        processEnv.put("PGCONNECT_TIMEOUT","10");processEnv.put("PGSSLROOTCERT",env.getOrDefault("PGSSLROOTCERT",""));
-        boolean local=Set.of("localhost","127.0.0.1","[::1]").contains(uri.getHost());
-        String ssl=local?"disable":"require",binding="prefer";
-        if(uri.getRawQuery()!=null)for(String parameter:uri.getRawQuery().split("&")) {
-            String[] pair=parameter.split("=",2);
-            if(pair.length==2&&pair[0].equals("sslmode"))ssl=pair[1];
-            if(pair.length==2&&pair[0].equals("channelBinding"))binding=pair[1];
-        }
-        if(!Set.of("disable","require","verify-ca","verify-full").contains(ssl))throw new IOException("Modo TLS PostgreSQL não suportado.");
-        if(!Set.of("disable","prefer","require").contains(binding))throw new IOException("Modo de vínculo TLS inválido.");
-        processEnv.put("PGSSLMODE",ssl);processEnv.put("PGCHANNELBINDING",binding);
+        builder.environment().clear();builder.environment().putAll(safe);
         if(input!=null)builder.redirectInput(input.toFile());
         if(output==null)builder.redirectOutput(ProcessBuilder.Redirect.DISCARD);
         builder.redirectError(ProcessBuilder.Redirect.DISCARD);
@@ -169,10 +160,10 @@ public final class DatabaseSnapshot {
         try {
             byte[] key=key(data,env);if(key!=null)files.put("mail-outbox.key",key);
             Info info;
-            try(var connection=DriverManager.getConnection(pg.url(),pg.user(),pg.password())){info=inspect(connection,key);}
+            try(var connection=BackupPostgres.connect(pg,env)){info=inspect(connection,key);}
             Path dump=privateFile(stage.resolve("database.dump"));nativeTool("pg_dump",pg,env,null,dump);
             // The installation key is immutable: recheck after the consistent native dump.
-            try(var connection=DriverManager.getConnection(pg.url(),pg.user(),pg.password())) {
+            try(var connection=BackupPostgres.connect(pg,env)) {
                 if(!Objects.equals(info.keyId(),inspect(connection,key).keyId()))throw new IOException("A identidade da chave mudou durante o backup.");
             }
             files.put("database.dump",readBounded(dump));write(output,"postgres",info.engineVersion(),info.schema(),info.keyId(),files,password);
@@ -180,21 +171,28 @@ public final class DatabaseSnapshot {
     }
     public static void restorePostgres(Bundle bundle,Path keyTarget,Map<String,String> env) throws Exception {
         if(!bundle.manifest().engine().equals("postgres"))throw new IOException("Este backup exige restauração local H2.");
+        BackupFiles.noLinks(keyTarget);
         if(Files.exists(keyTarget,LinkOption.NOFOLLOW_LINKS))throw new IOException("Escolha uma nova pasta para a chave restaurada.");
         Pg pg=pg(env);
-        try(var connection=DriverManager.getConnection(pg.url(),pg.user(),pg.password());
-                var statement=connection.createStatement();var rows=statement.executeQuery("""
-                select count(*) from pg_class c join pg_namespace n on n.oid=c.relnamespace
-                where left(n.nspname,3)<>'pg_' and n.nspname<>'information_schema'
-                """)) {
-            rows.next();if(rows.getLong(1)!=0)throw new IOException("A restauração exige um banco PostgreSQL vazio e exclusivo; nenhum dado foi apagado.");
+        try(var guard=BackupPostgres.connect(pg,env)) {
+            BackupPostgres.restoreLock(guard);
+            try(var statement=guard.createStatement()) {
+                statement.setQueryTimeout(10);
+                try(var rows=statement.executeQuery("""
+                    select count(*) from pg_catalog.pg_class c join pg_catalog.pg_namespace n on n.oid=c.relnamespace
+                    where left(n.nspname,3)<>'pg_' and n.nspname<>'information_schema'
+                    """)) {
+                    rows.next();if(rows.getLong(1)!=0)throw new IOException("A restauração exige um banco PostgreSQL vazio e exclusivo; nenhum dado foi apagado.");
+                }
+            }
+            Path stage=staging();
+            try {
+                Path dump=privateFile(stage.resolve("database.dump"));Files.write(dump,bundle.files().get("database.dump"));
+                // Preserve the recovery key before a successful DB commit can outlive this JVM.
+                publish(bundle,keyTarget);
+                nativeTool("pg_restore",pg,env,dump,null);
+                inspect(guard,bundle.files().get("mail-outbox.key"));
+            } finally {clearStage(stage);}
         }
-        Path stage=staging();
-        try {
-            Path dump=privateFile(stage.resolve("database.dump"));Files.write(dump,bundle.files().get("database.dump"));
-            nativeTool("pg_restore",pg,env,dump,null);
-            try(var connection=DriverManager.getConnection(pg.url(),pg.user(),pg.password())){inspect(connection,bundle.files().get("mail-outbox.key"));}
-            publish(bundle,keyTarget);
-        } finally {clearStage(stage);}
     }
 }

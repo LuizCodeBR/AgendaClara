@@ -78,7 +78,7 @@ Para restauração, configure as variáveis para **outro banco vazio e exclusivo
 .\backup.cmd --backup=restore-postgres --input="D:\Backups\agenda-postgres.acbackup" --target-dir="D:\ChaveRestaurada"
 ```
 
-A ferramenta recusa banco não vazio e pasta existente. Usa pg_restore com transação única, encerramento no primeiro erro, sem limpar dados e sem restaurar proprietário/privilégios. A chave é publicada na nova pasta após conferir o banco restaurado. O operador precisa impedir o uso concorrente do banco de destino durante essa manutenção.
+A ferramenta recusa banco não vazio e pasta existente. Usa pg_restore com transação única, encerramento no primeiro erro, sem limpar dados e sem restaurar proprietário/privilégios. Na versão 0.8.1, a chave é preservada em nova pasta privada antes da restauração nativa. Essa pasta pode permanecer se houver falha; confira o resultado antes de utilizar o banco. O operador precisa impedir o uso concorrente do banco de destino durante essa manutenção.
 
 Não se converte H2 em PostgreSQL automaticamente. São motores diferentes, e uma migração de dados exige procedimento próprio. O backup também não inclui configurações externas, credenciais de envio, domínio, regras de rede ou contas do provedor; preserve essas configurações separadamente.
 
