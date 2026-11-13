@@ -39,6 +39,34 @@ try {
             if (-not $rejected) { throw 'Leitor aceitou arquivo aberto para alteração concorrente.' }
         } finally { $writer.Dispose() }
     }
+
+    # Validate adapter argument forwarding with a fake profile and a Java function stub; no network or real credentials.
+    $profile = Join-Path $directory 'profile'
+    [IO.Directory]::CreateDirectory($profile) | Out-Null
+    [IO.File]::WriteAllText((Join-Path $profile 'connection.json'), '{"url":"jdbc:postgresql://localhost:1/test","user":"dummy","password":"dummy"}', [Text.UTF8Encoding]::new($false))
+    [xml]$pom = [IO.File]::ReadAllText((Join-Path $root 'pom.xml'))
+    $jar = Join-Path $root ('target/agenda-clara-' + $pom.project.version + '.jar')
+    $madeJar = -not (Test-Path -LiteralPath $jar)
+    if ($madeJar) {
+        [IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($jar)) | Out-Null
+        [IO.File]::WriteAllBytes($jar, [byte[]]@())
+    }
+    try {
+        $global:AgendaReaderTestArguments = $null
+        & {
+            function java { $global:AgendaReaderTestArguments = @($args); $global:LASTEXITCODE = 2 }
+            & $source -PrivateDirectory $profile -WorkDirectory (Join-Path $directory 'operation') -ProviderInput (Join-Path $directory 'missing.json')
+        }
+        if ($LASTEXITCODE -ne 2 -or -not ($global:AgendaReaderTestArguments -contains ('--provider-input=' + (Join-Path $directory 'missing.json')))) {
+            throw 'Arquivo de consumo explícito ausente não foi encaminhado para validação.'
+        }
+    }
+    finally {
+        if ($madeJar) { Remove-Item -LiteralPath $jar -Force }
+        Remove-Variable -Name AgendaReaderTestArguments -Scope Global -ErrorAction SilentlyContinue
+        $global:LASTEXITCODE = 0
+    }
+
     Write-Output 'OK: leitor privado preserva JSON/BOM e espaços, limita a leitura, recusa UTF-8 inválido e protege contra alteração concorrente no Windows.'
 }
 finally {

@@ -8,6 +8,7 @@ $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 if (-not $PrivateDirectory) { $PrivateDirectory = Join-Path $root '.cache/neon-private' }
 if (-not $WorkDirectory) { $WorkDirectory = Join-Path $root '.cache/neon-operations' }
+$explicitProviderInput = -not [string]::IsNullOrEmpty($ProviderInput)
 if (-not $ProviderInput) { $ProviderInput = Join-Path $PrivateDirectory 'provider-usage.json' }
 function Read-PrivateFile([string]$path, [long]$maximum = 4096) {
     $item = Get-Item -LiteralPath $path -Force
