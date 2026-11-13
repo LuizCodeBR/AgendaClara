@@ -2,16 +2,28 @@ name: Publicar downloads
 on:
   push:
     tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag existente para publicar, por exemplo v0.8.0'
+        required: true
+        type: string
 permissions:
   contents: write
 jobs:
   release:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
     steps:
       - name: Identificar a versão da entrega
-        run: echo "RELEASE_VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+        run: |
+          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then exit 1; fi
+          echo "RELEASE_VERSION=${RELEASE_TAG#v}" >> "$GITHUB_ENV"
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.RELEASE_TAG }}
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
@@ -23,6 +35,7 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - name: Compilar o mesmo aplicativo da entrega local
         run: |
+          test "$(node -p "require('./frontend/package.json').version")" = "$RELEASE_VERSION"
           cd frontend
           npm ci
           npm run build
@@ -78,7 +91,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" \
+          gh release create "$RELEASE_TAG" \
             --title "Agenda Clara ${RELEASE_VERSION} — web, mobile e local" \
             --notes-file docs/RELEASE-${RELEASE_VERSION}.md \
             --prerelease \
