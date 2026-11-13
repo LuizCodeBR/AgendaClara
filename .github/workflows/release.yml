@@ -50,8 +50,14 @@ jobs:
           kill "$APP_PID"
           wait "$APP_PID" || true
           export AGENDA_BACKUP_PASSWORD='senha ficticia exclusiva dos testes de backup'
-          java -Xmx512m -Djava.io.tmpdir=.cache/tmp -jar target/agenda-clara-${RELEASE_VERSION}.jar --backup=create --data-dir=.cache/release-data --output=.cache/release.acbackup
-          java -Xmx512m -Djava.io.tmpdir=.cache/tmp -jar target/agenda-clara-${RELEASE_VERSION}.jar --backup=restore --input=.cache/release.acbackup --target-dir=.cache/release-restored
+          set +e
+          bash operacao.sh --operations=backup --data-dir=.cache/release-data --work-dir=.cache/release-operations
+          OPERATIONS_STATUS=$?
+          set -e
+          test "$OPERATIONS_STATUS" -eq 2
+          node scripts/operations-smoke.mjs .cache/release-operations
+          BACKUP_PATH=".cache/release-operations/backups/$(node -p "JSON.parse(require('fs').readFileSync('.cache/release-operations/latest.json','utf8')).backup.lastVerified.filename")"
+          java -Xmx512m -Djava.io.tmpdir=.cache/tmp -jar target/agenda-clara-${RELEASE_VERSION}.jar --backup=restore --input="$BACKUP_PATH" --target-dir=.cache/release-restored
           export AGENDA_DATA_DIR="$GITHUB_WORKSPACE/.cache/release-restored"
           java -jar target/agenda-clara-${RELEASE_VERSION}.jar --spring.profiles.active=demo > .cache/release-restored-server.log 2>&1 &
           APP_PID=$!
@@ -64,7 +70,7 @@ jobs:
         run: |
           mkdir -p .cache/release/AgendaClara-demo
           cp target/agenda-clara-${RELEASE_VERSION}.jar .cache/release/AgendaClara-demo/agenda-clara.jar
-          cp scripts/distribution/iniciar-demo.cmd scripts/distribution/iniciar-demo.sh scripts/distribution/backup.cmd scripts/distribution/backup.sh scripts/distribution/LEIA-ME.md .cache/release/AgendaClara-demo/
+          cp scripts/distribution/iniciar-demo.cmd scripts/distribution/iniciar-demo.sh scripts/distribution/backup.cmd scripts/distribution/backup.sh scripts/distribution/operacao.cmd scripts/distribution/operacao.sh scripts/distribution/LEIA-ME.md .cache/release/AgendaClara-demo/
           (cd .cache/release && zip -r AgendaClara-${RELEASE_VERSION}-demo.zip AgendaClara-demo)
           git archive --format=zip --prefix=AgendaClara/ -o .cache/release/AgendaClara-${RELEASE_VERSION}-fonte.zip HEAD
           (cd .cache/release && sha256sum AgendaClara-${RELEASE_VERSION}-demo.zip AgendaClara-${RELEASE_VERSION}-fonte.zip > SHA256SUMS.txt)

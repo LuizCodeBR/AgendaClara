@@ -24,3 +24,5 @@
 *.lock.db
 *.dump
 /tmp/
+
+/operations/

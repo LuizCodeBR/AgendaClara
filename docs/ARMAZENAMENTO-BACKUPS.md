@@ -103,3 +103,6 @@ Não existe endpoint para baixar ou restaurar o banco pelo painel das empresas. 
 - [PostgreSQL 17: pg_dump](https://www.postgresql.org/docs/17/app-pgdump.html).
 - [Render: recuperação e backups](https://render.com/docs/postgresql-backups).
 - [Limites do Render gratuito](https://render.com/docs/free).
+
+## Rotina sob demanda (0.8.0)
+O responsável pela instalação pode criar e verificar uma cópia, preservar o último resultado válido e consultar um relatório privado de limites com operacao.cmd/operacao.sh. Site e PWA seguem usando o mesmo banco persistente; não há nova exportação global por HTTP. Conforme a escolha do usuário, nenhum agendamento foi ativado. Consulte [OPERACAO-BACKUPS-LIMITES.md](OPERACAO-BACKUPS-LIMITES.md).

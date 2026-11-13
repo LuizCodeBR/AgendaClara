@@ -2,7 +2,7 @@
 
 **Site:** https://agenda-clara-luizcodebr.onrender.com
 
-**Downloads:** https://github.com/LuizCodeBR/AgendaClara/releases/tag/v0.7.0
+**Downloads:** https://github.com/LuizCodeBR/AgendaClara/releases/tag/v0.8.0
 
 ## Três formas de acesso
 
@@ -82,3 +82,6 @@ Site, PWA e download local incluem as correções de espera manual, monitor em l
 
 ## Armazenamento e backups (0.7.0)
 A API informa o modo operacional local, ephemeral ou persistent. O cadastro web/mobile mantém o aceite de dados fictícios e apresenta o aviso correspondente. A demonstração online usa Neon Free, sem contratação paga. O pacote local inclui backup.cmd e backup.sh. Consulte [ARMAZENAMENTO-BACKUPS.md](ARMAZENAMENTO-BACKUPS.md) e [a configuração gratuita](PERSISTENCIA-GRATUITA.md).
+
+## Rotina sob demanda (0.8.0)
+O responsável pela instalação pode criar e verificar uma cópia, preservar o último resultado válido e consultar um relatório privado de limites com operacao.cmd/operacao.sh. Site e PWA seguem usando o mesmo banco persistente; não há nova exportação global por HTTP. Conforme a escolha do usuário, nenhum agendamento foi ativado. Consulte [OPERACAO-BACKUPS-LIMITES.md](OPERACAO-BACKUPS-LIMITES.md).

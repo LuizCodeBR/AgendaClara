@@ -117,7 +117,7 @@ public final class DatabaseSnapshot {
     static void nativeTool(String tool,Pg pg,Map<String,String> env,Path input,Path output) throws Exception {
         URI uri=URI.create(pg.url().substring(5));
         var command=new ArrayList<String>();String container=env.getOrDefault("AGENDA_PG_CONTAINER","");
-        var names=List.of("PGHOST","PGPORT","PGDATABASE","PGUSER","PGPASSWORD","PGSSLMODE","PGSSLROOTCERT","PGCONNECT_TIMEOUT");
+        var names=List.of("PGHOST","PGPORT","PGDATABASE","PGUSER","PGPASSWORD","PGSSLMODE","PGSSLROOTCERT","PGCONNECT_TIMEOUT","PGCHANNELBINDING");
         if(!container.isBlank()) {
             command.addAll(List.of("docker","exec","-i"));
             for(String name:names)command.addAll(List.of("--env",name));
@@ -133,13 +133,15 @@ public final class DatabaseSnapshot {
         processEnv.put("PGDATABASE",uri.getPath().substring(1));processEnv.put("PGUSER",pg.user());processEnv.put("PGPASSWORD",pg.password());
         processEnv.put("PGCONNECT_TIMEOUT","10");processEnv.put("PGSSLROOTCERT",env.getOrDefault("PGSSLROOTCERT",""));
         boolean local=Set.of("localhost","127.0.0.1","[::1]").contains(uri.getHost());
-        String ssl=local?"disable":"require";
+        String ssl=local?"disable":"require",binding="prefer";
         if(uri.getRawQuery()!=null)for(String parameter:uri.getRawQuery().split("&")) {
             String[] pair=parameter.split("=",2);
             if(pair.length==2&&pair[0].equals("sslmode"))ssl=pair[1];
+            if(pair.length==2&&pair[0].equals("channelBinding"))binding=pair[1];
         }
         if(!Set.of("disable","require","verify-ca","verify-full").contains(ssl))throw new IOException("Modo TLS PostgreSQL não suportado.");
-        processEnv.put("PGSSLMODE",ssl);
+        if(!Set.of("disable","prefer","require").contains(binding))throw new IOException("Modo de vínculo TLS inválido.");
+        processEnv.put("PGSSLMODE",ssl);processEnv.put("PGCHANNELBINDING",binding);
         if(input!=null)builder.redirectInput(input.toFile());
         if(output==null)builder.redirectOutput(ProcessBuilder.Redirect.DISCARD);
         builder.redirectError(ProcessBuilder.Redirect.DISCARD);

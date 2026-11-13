@@ -1,0 +1,24 @@
+{
+  "format": 1,
+  "observedAt": "PREENCHA_COM_INSTANTE_ISO_8601_UTC",
+  "source": "console",
+  "neon": {
+    "projectId": "seu-projeto",
+    "plan": "free",
+    "computeCuHours": null,
+    "transferBytes": null,
+    "storageBytes": null,
+    "periodStart": null,
+    "periodEnd": null
+  },
+  "render": {
+    "workspaceId": "seu-workspace",
+    "plan": "other",
+    "freeInstanceHours": null,
+    "outboundBytes": null,
+    "pipelineMinutes": null,
+    "pipelineLimit": null,
+    "periodStart": null,
+    "periodEnd": null
+  }
+}

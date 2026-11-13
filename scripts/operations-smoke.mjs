@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import { createHash } from 'node:crypto';
+const root=path.resolve(process.argv[2]??'operations');
+const report=JSON.parse(fs.readFileSync(path.join(root,'latest.json'),'utf8'));
+assert.equal(report.format,1);assert.equal(report.version,'0.8.0');assert.equal(report.onDemandOnly,true);
+assert.equal(report.backup.status,'VERIFIED');assert.equal(report.backup.fileMatches,true);
+const v=report.backup.lastVerified;assert.equal(path.basename(v.filename),v.filename);
+const archive=fs.readFileSync(path.join(root,'backups',v.filename));
+assert.equal(archive.subarray(0,8).toString(),'ACBK0001');
+assert.equal(createHash('sha256').update(archive).digest('hex'),v.sha256);
+const html=fs.readFileSync(path.join(root,'latest.html'),'utf8');
+assert.ok(html.includes(report.runId));assert.ok(html.includes('Content-Security-Policy'));
+assert.ok(!/<script[\s>]/i.test(html));assert.ok(!html.includes('AGENDA_BACKUP_PASSWORD'));
+assert.ok(!html.includes('mail-outbox.key'));assert.ok(!html.includes('jdbc:'));
+assert.ok(report.metrics.some(m=>m.status==='UNKNOWN'));
+console.log('OK: rotina do JAR, backup autenticado registrado, SHA-256, relatório privado sem scripts e cotas desconhecidas explícitas.');

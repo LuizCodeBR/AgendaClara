@@ -59,3 +59,6 @@ Nenhuma tarefa recorrente de backup, exclusão automática de cópias, alerta ex
 - [Conexões diretas e pooling](https://neon.com/docs/connect/connection-pooling).
 - [Limites do Render Free](https://render.com/docs/free).
 - [Clientes Windows oficiais](https://www.postgresql.org/download/windows/) e [arquivos portáteis EDB](https://www.enterprisedb.com/download-postgresql-binaries).
+
+## Rotina sob demanda (0.8.0)
+O responsável pela instalação pode criar e verificar uma cópia, preservar o último resultado válido e consultar um relatório privado de limites com operacao.cmd/operacao.sh. Site e PWA seguem usando o mesmo banco persistente; não há nova exportação global por HTTP. Conforme a escolha do usuário, nenhum agendamento foi ativado. Consulte [OPERACAO-BACKUPS-LIMITES.md](OPERACAO-BACKUPS-LIMITES.md).

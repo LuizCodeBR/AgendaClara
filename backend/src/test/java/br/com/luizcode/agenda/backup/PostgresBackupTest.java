@@ -44,7 +44,11 @@ class PostgresBackupTest {
                 var env=new HashMap<>(System.getenv());env.put("DB_URL",source);env.put("DB_USER",user);env.put("DB_PASSWORD",password);
                 env.put("MAIL_KEY_FILE",directory.resolve("mail-outbox.key").toString());env.remove("MAIL_ENCRYPTION_KEY");
                 Path archive=directory.resolve("postgres.acbackup");char[] secret="senha exclusiva do teste postgres".toCharArray();
-                DatabaseSnapshot.createPostgres(directory,archive,secret,env);
+                env.put("AGENDA_BACKUP_PASSWORD",new String(secret));Path operation=directory.resolve("operation");
+                assertThat(OperationsTool.run(new String[]{"--operations=backup","--engine=postgres","--data-dir="+directory,"--work-dir="+operation},env,new java.io.PrintStream(new java.io.ByteArrayOutputStream()))).isEqualTo(2);
+                var report=new ObjectMapper().readValue(Files.readAllBytes(operation.resolve("latest.json")),OperationsReport.Report.class);
+                assertThat(report.databaseBytes()).isPositive();assertThat(report.backup().status()).isEqualTo("VERIFIED");
+                archive=operation.resolve("backups").resolve(report.backup().lastVerified().filename());
                 env.put("DB_URL",target);Path restoredKey=directory.resolve("restored-key");
                 try(var bundle=BackupArchive.read(archive,secret)) {
                     DatabaseSnapshot.restorePostgres(bundle,restoredKey,env);

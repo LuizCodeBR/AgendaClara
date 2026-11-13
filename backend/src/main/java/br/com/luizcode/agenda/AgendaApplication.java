@@ -8,6 +8,9 @@ import org.springframework.context.annotation.Bean;
 @SpringBootApplication
 public class AgendaApplication {
     public static void main(String[] args) {
+        if(br.com.luizcode.agenda.backup.OperationsTool.requested(args)) {
+            System.exit(br.com.luizcode.agenda.backup.OperationsTool.run(args,System.getenv(),System.out)); return;
+        }
         if(br.com.luizcode.agenda.backup.BackupTool.requested(args)) {
             System.exit(br.com.luizcode.agenda.backup.BackupTool.run(args,System.getenv(),System.out)); return;
         }
