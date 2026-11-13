@@ -2,13 +2,13 @@
 
 Agendamento para pequenos negócios com página pública de reservas, painel do responsável e interface instalável pelo navegador.
 
-**Versão 0.7.0 — armazenamento e backups.** O pacote inclui backup criptografado do banco e da chave dos e-mails, verificação e restauração em destino separado. As rotinas PostgreSQL usam ferramentas nativas. Consulte [ARMAZENAMENTO-BACKUPS.md](docs/ARMAZENAMENTO-BACKUPS.md). Mensagens de acesso são gravadas com a alteração da conta, protegidas por criptografia e acompanhadas no painel **E-mails e envios**. A demonstração usa uma caixa privada de teste; o envio real está preparado para configuração. Consulte [FILA-EMAILS.md](docs/FILA-EMAILS.md) e [EMAIL-ACESSO.md](docs/EMAIL-ACESSO.md). Cadastre sua empresa e seu acesso, prepare serviços, equipe e horários e publique sua página de reservas. Na hospedagem gratuita, novas contas são de teste e podem ser apagadas quando o servidor reiniciar. A cópia local preserva o banco em arquivo.
+**Versão 0.7.0 — armazenamento e backups.** O pacote inclui backup criptografado do banco e da chave dos e-mails, verificação e restauração em destino separado. As rotinas PostgreSQL usam ferramentas nativas. Consulte [ARMAZENAMENTO-BACKUPS.md](docs/ARMAZENAMENTO-BACKUPS.md). Mensagens de acesso são gravadas com a alteração da conta, protegidas por criptografia e acompanhadas no painel **E-mails e envios**. A demonstração usa uma caixa privada de teste; o envio real está preparado para configuração. Consulte [FILA-EMAILS.md](docs/FILA-EMAILS.md) e [EMAIL-ACESSO.md](docs/EMAIL-ACESSO.md). Cadastre sua empresa e seu acesso, prepare serviços, equipe e horários e publique sua página de reservas. O site e a PWA usam PostgreSQL persistente no Neon Free; reinícios do servidor preservam contas, reservas e fila. A demonstração continua restrita a dados fictícios. A cópia local preserva seu próprio banco em arquivo.
 
 **Acessos:** [Abrir o site](https://agenda-clara-luizcodebr.onrender.com) · [Baixar a demonstração](https://github.com/LuizCodeBR/AgendaClara/releases/tag/v0.7.0) · [Testes automáticos](https://github.com/LuizCodeBR/AgendaClara/actions)
 
 ## Site, app mobile e versão local
 
-A tela inicial apresenta as três opções. O site hospedado e a PWA usam o mesmo servidor; a cópia local tem um banco próprio. A publicação gratuita é uma demonstração com dados descartáveis. Consulte [WEB-MOBILE.md](docs/WEB-MOBILE.md).
+A tela inicial apresenta as três opções. O site hospedado e a PWA usam o mesmo servidor; a cópia local tem um banco próprio. A publicação gratuita é uma demonstração com banco persistente externo, sujeita às cotas dos provedores. Consulte [WEB-MOBILE.md](docs/WEB-MOBILE.md).
 
 ## Experimentar em poucos passos
 
@@ -71,7 +71,7 @@ java -jar agenda-clara.jar --spring.profiles.active=demo
 
 Com o servidor local encerrado, execute `backup.cmd` no Windows ou `bash backup.sh` no Linux/macOS. Informe uma senha exclusiva e guarde o arquivo .acbackup fora do disco do banco. A ferramenta pode verificar o arquivo e restaurar em uma nova pasta; não substitui o banco original. Limite do conjunto: 64 MiB. O pacote local usa somente Java; exportações PostgreSQL exigem pg_dump/pg_restore compatíveis ou Docker. Consulte [as instruções completas](docs/ARMAZENAMENTO-BACKUPS.md).
 
-A hospedagem gratuita continua efêmera. A configuração proposta para PostgreSQL durável e recuperação gerenciada está [neste plano](docs/PLANO-PERSISTENCIA-RENDER.md); nenhum recurso pago é contratado por executar os iniciadores.
+A hospedagem usa Render Free com PostgreSQL 17 no Neon Free, sem recurso pago. Configuração, limites e recuperação estão em [PERSISTENCIA-GRATUITA.md](docs/PERSISTENCIA-GRATUITA.md). Executar os iniciadores mantém o banco local independente e não contrata serviços.
 
 ## Usar como aplicativo
 

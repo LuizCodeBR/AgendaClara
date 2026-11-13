@@ -10,6 +10,6 @@
 
 O conjunto de backup é limitado a 64 MiB e usa senha exclusiva. O operador deve guardar essa senha e manter cópias protegidas fora do disco do banco.
 
-A demonstração hospedada continua gratuita e efêmera até a autorização/configuração de banco durável. O plano concreto de PostgreSQL e backups gerenciados está em docs/PLANO-PERSISTENCIA-RENDER.md. Não foi contratado recurso pago automaticamente.
+Atualização de hospedagem em 13/11/2026: a demonstração usa Render Free com PostgreSQL 17 no Neon Free, sem contratação paga. Contas e mensagens foram verificadas após nova implantação, e um backup real foi restaurado em PostgreSQL local separado. Consulte docs/PERSISTENCIA-GRATUITA.md para cotas, recuperação e chave estável. Os binários e hashes da entrega permanecem os mesmos; os registros atualizados ficam no ramo principal.
 
 Leia docs/ARMAZENAMENTO-BACKUPS.md e docs/VALIDACAO-0.7.0.md. O ZIP fonte conserva os registros do commit da entrega; o ramo principal recebe a confirmação final.

@@ -1,4 +1,6 @@
-# Ativação proposta — PostgreSQL durável no Render
+# Proposta não adotada — PostgreSQL pago no Render
+
+**Decisão em 13/11/2026:** o usuário recusou recursos pagos. Nenhuma ação de criação deste plano foi executada. Foi adotado PostgreSQL 17 no Neon Free, mantendo o site no Render Free; consulte [PERSISTENCIA-GRATUITA.md](PERSISTENCIA-GRATUITA.md). O restante deste documento é o registro histórico da proposta, não uma pendência de autorização nem a configuração atual.
 
 ## Estado atual
 Inspeção do espaço My Workspace, tea-dbqf02c9v7es73cd4uf0: nenhum PostgreSQL existente. Serviço agenda-clara-luizcodebr, srv-dbqf9mon74is73c13k6g, free, Virginia.

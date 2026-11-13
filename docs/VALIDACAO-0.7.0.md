@@ -3,7 +3,7 @@
 ## Escopo e ambiente
 Backups criptografados do banco e da chave, restauração em destino separado, exportação PostgreSQL nativa e configuração explícita de armazenamento. Código, dependências, temporários, pacotes e evidências no D:/Projetos.
 
-Java local 26.0.2 e Node 24.18.0. Nenhuma nova biblioteca ou extensão instalada. O teste PostgreSQL nativo foi executado no GitHub, pois Docker e clientes PostgreSQL não estão instalados neste computador. Datas de infraestrutura abaixo em UTC, em 13/11/2026.
+Java local 26.0.2 e Node 24.18.0. Dependências do aplicativo e extensões do editor preservadas. Clientes oficiais PostgreSQL 17.12 foram extraídos de forma portátil no D: para exportar o Neon e restaurar em um servidor isolado; verificadores de esquema Render também ficam em .cache. Não foi instalado serviço Windows nem alterado o PATH. Datas de infraestrutura abaixo em UTC, em 13/11/2026.
 
 ## Resultados finais
 | Verificação | Resultado |
@@ -20,9 +20,13 @@ Java local 26.0.2 e Node 24.18.0. Nenhuma nova biblioteca ou extensão instalada
 | Pacote oficial baixado | hashes SHA-256 conferidos; cinco roteiros HTTP aprovados |
 | backup.cmd do pacote oficial | criação, verificação, restauração e inicialização com a mesma empresa/conta/senha/mensagem aprovadas |
 | Permissões no Windows | backup criptografado e chave restaurada com acesso permitido somente ao proprietário |
-| Site HTTPS | versão 0.7.0, mailMode=demo, storageMode=ephemeral e download 0.7.0 confirmados; cinco roteiros aprovados |
+| Site HTTPS | versão 0.7.0, mailMode=demo, storageMode=persistent e download 0.7.0 confirmados; cinco roteiros aprovados no PostgreSQL Neon |
 | Interface HTTPS | painel, filtro, aviso simulado e logout em desktop/Pixel 7 emulado; sem transbordamento ou erros JavaScript |
-| Logs do site | zero registros de nível ERROR entre 19:28:30 e 19:31:45 UTC |
+| Persistência HTTPS entre implantações | mesma empresa/conta/senha/mensagem recuperadas após substituição do servidor web |
+| Backup real Neon → PostgreSQL local | arquivo criptografado exportado com o site ativo, verificado, restaurado em banco vazio e mesma conta/mensagem recuperadas por HTTP |
+| Navegador sobre PostgreSQL restaurado | 18 cenários aprovados em 28,1 segundos, desktop e Pixel 7 emulado |
+| Blueprint | render.yaml validado com esquema oficial JSON Schema 2020-12; web free, sem banco/disco pago e quatro entradas privadas |
+| Logs do site | zero registros de nível ERROR entre 19:52:36 e 19:57:00 UTC |
 
 Roteiros HTTP: smoke, date-hours-smoke, registration-smoke, account-access-smoke e mail-queue-smoke. O roteiro storage-smoke compara os mesmos identificadores antes/depois da restauração, sem imprimir a prova privada ou senha.
 
@@ -42,8 +46,12 @@ Os nomes de clientes dos testes de navegador passaram a ser únicos por execuç�
 - [Publicação dos pacotes aprovada](https://github.com/LuizCodeBR/AgendaClara/actions/runs/43491996030).
 - [Entrega v0.7.0](https://github.com/LuizCodeBR/AgendaClara/releases/tag/v0.7.0), publicada em 2026-11-13T19:25:56Z como pré-lançamento de demonstração.
 - [Site](https://agenda-clara-luizcodebr.onrender.com).
-- Render: dep-dbrm95p5efls73dbvo40, live em 2026-11-13T19:29:57.847467Z, serviço srv-dbqf9mon74is73c13k6g no plano free preservado.
-- Somente DEMO_DOWNLOAD_URL e STORAGE_MODE foram atualizados por mesclagem. Nenhum banco PostgreSQL estava criado no espaço conectado após a publicação.
+- Render inicial H2: dep-dbrm95p5efls73dbvo40, live em 2026-11-13T19:29:57.847467Z.
+- Ativação Neon: dep-dbrmhrkipgvc739i1l8g, live em 2026-11-13T19:47:35.384814Z; seis migrações aplicadas em PostgreSQL 17.12.
+- Nova implantação para provar persistência: dep-dbrmk695efls73dd0uig, live em 2026-11-13T19:52:36.572194Z; mesma conta e mensagem verificadas depois.
+- Serviço srv-dbqf9mon74is73c13k6g no plano free preservado. Configurações PostgreSQL, chave estável e pool pequeno atualizadas por mesclagem, com MAIL_MODE=demo.
+- Projeto Neon sweet-dream-41359619, branch br-dry-band-bcbho3aa, região aws-us-east-1; organização confirmada no plano free, compute fixo 0,25 CU e histórico configurado de seis horas.
+- Snapshot manual snap-lively-credit-bcn6ett1 criada em 2026-11-13T19:54:23Z e conferida pela listagem. A restauração testada foi a do arquivo criptografado; não foi ensaiada a restauração da snapshot do provedor.
 - Os servidores Java locais de validação foram encerrados.
 
 ## Downloads e evidências
@@ -58,14 +66,14 @@ O pacote foi extraído em teste-pacote/AgendaClara-demo, iniciado na porta 8086 
 
 O ZIP fonte conserva o relatório disponível no commit da entrega. Este relatório final foi acrescentado ao ramo principal depois da publicação, sem alterar tag ou arquivos distribuídos.
 
-## Pendência para armazenamento online durável
-O serviço gratuito atual continua efêmero. A versão 0.7.0 prepara a operação e os backups, mas não ativa um banco pago automaticamente.
+## Persistência online concluída sem recurso pago
+O usuário recusou a proposta paga e conectou a integração Neon no plano Free. Banco PostgreSQL 17 criado e vinculado ao site com TLS e chave estável. O teste comparou identificadores reais de dados fictícios antes/depois da nova implantação e, depois, na cópia restaurada localmente.
 
-O [plano concreto](PLANO-PERSISTENCIA-RENDER.md) propõe PostgreSQL 17, 0.1c-256mb, 1 GB, Virginia, no mesmo espaço, mantendo o web service free. Base estimada consultada em 13/11/2026: US$ 6,30/mês antes de tributos/câmbio/consumo adicional. Requer autorização explícita de cobrança.
+Backup criptografado de 13.549 bytes e arquivos privados ficam em D:/Projetos/AgendaClara/.cache/neon-private, com ACL somente do usuário Windows atual e exclusão pelo Git. O servidor de teste PostgreSQL e o Java local foram encerrados após a validação. Configuração, cotas e instruções em [PERSISTENCIA-GRATUITA.md](PERSISTENCIA-GRATUITA.md). Nenhum recurso pago foi criado.
 
 ## Limites
 Backups são protegidos por senha exclusiva, com limite de 64 MiB; os iniciadores usam até 512 MiB de memória. Sem a senha, não é possível abrir a cópia. Restaure apenas arquivos de origem confiável, em destino separado.
 
-Nenhuma tarefa agendada local ou exclusão automática de backups foi criada. A cópia fora do disco do banco e a guarda da senha continuam sendo responsabilidade do operador. O PostgreSQL gerenciado pago pode oferecer recuperação automática conforme seu plano; essa contratação ainda não foi feita.
+Nenhuma tarefa agendada local ou exclusão automática de backups foi criada. A cópia fora do disco do banco e a guarda da senha continuam sendo responsabilidade do operador. O Neon Free oferece histórico curto de recuperação e uma snapshot manual; não foram configuradas snapshots agendadas nem tarefa de exportação recorrente. Não houve contratação paga.
 
-Não há migração automática H2→PostgreSQL, envio real de e-mail, teste em celular físico ou restauração da infraestrutura inteira. Configurações externas e credenciais do provedor precisam de preservação separada. Consulte [ARMAZENAMENTO-BACKUPS.md](ARMAZENAMENTO-BACKUPS.md).
+Não houve migração dos dados H2 temporários do Render. Não há envio real de e-mail, teste em celular físico ou restauração da infraestrutura inteira. Configurações externas e credenciais do provedor precisam de preservação separada. Consulte [ARMAZENAMENTO-BACKUPS.md](ARMAZENAMENTO-BACKUPS.md).

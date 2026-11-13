@@ -78,7 +78,7 @@ A fila recupera pendências após interrupções quando banco e chave original s
 
 O modo demo exige APP_DEMO_ENABLED=true. O Compose local já configura essa combinação. O perfil postgres sem demonstração deixa o envio disabled até a configuração explícita. Os testes automatizados usam caixa simulada e dados fictícios; nenhum e-mail real é disparado pelos roteiros.
 
-O plano gratuito online continua com banco temporário e pode perder contas, tokens e mensagens ao reiniciar/suspender. No pacote local, o banco e a chave ficam em data; mensagens simuladas ainda válidas persistem quando ambos são preservados. A PWA depende do mesmo servidor.
+O ambiente gratuito online usa PostgreSQL persistente no Neon Free e chave estável no Render. Reinícios preservam contas, tokens ainda válidos e mensagens; cotas, validade e recuperação estão em [PERSISTENCIA-GRATUITA.md](PERSISTENCIA-GRATUITA.md). No pacote local, o banco e a chave ficam em data; mensagens simuladas ainda válidas persistem quando ambos são preservados. A PWA depende do mesmo servidor.
 
 ## Referências e validação
 - [OWASP: recuperação de senha](https://cheatsheetseries.owasp.org/cheatsheets/Forgot_Password_Cheat_Sheet.html).

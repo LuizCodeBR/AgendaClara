@@ -18,11 +18,11 @@ Não há aplicativo nativo em loja Android/iOS nesta versão. Para instalar no i
 
 `render.yaml` descreve um único serviço web Docker no **plano free**. Não cria banco ou serviço pago. A aplicação é pública, usa HTTPS fornecido pela hospedagem e mantém a sessão com cookie Secure.
 
-O ambiente usa o perfil demo e `APP_PUBLIC_DEMO=true`. A interface avisa para usar apenas dados fictícios. As contas são compartilhadas para avaliação; não representam acesso individual de clientes reais.
+O ambiente online usa o perfil postgres, STORAGE_MODE=persistent, APP_DEMO_ENABLED=true e `APP_PUBLIC_DEMO=true`. A interface avisa para usar apenas dados fictícios. As contas são compartilhadas para avaliação; não representam acesso individual de clientes reais.
 
 ### Limites relevantes
 
-A hospedagem gratuita pode suspender o serviço por inatividade e levar algum tempo para reabrir. Seu armazenamento é temporário: reservas de teste podem desaparecer depois de suspensão, reinício ou nova publicação. Os exemplos são recriados quando o banco está vazio.
+A hospedagem gratuita pode suspender o serviço por inatividade e levar algum tempo para reabrir. O sistema de arquivos do Render é temporário, mas o banco da aplicação está no Neon Free. Contas, reservas e mensagens permanecem após reinício e nova publicação. A chave dos e-mails é um segredo estável configurado no serviço. Consulte [PERSISTENCIA-GRATUITA.md](PERSISTENCIA-GRATUITA.md) para cotas e recuperação.
 
 Portanto, esta configuração é uma **demonstração pública**, não a configuração de utilização por um negócio com dados reais.
 
@@ -32,7 +32,11 @@ Referência: [limitações oficiais do plano gratuito](https://render.com/docs/f
 
 | Variável | Uso |
 | --- | --- |
-| SPRING_PROFILES_ACTIVE=demo | H2 e exemplos fictícios |
+| SPRING_PROFILES_ACTIVE=postgres | PostgreSQL externo, acesso privado configurado no serviço |
+| APP_DEMO_ENABLED=true | Exemplos fictícios no primeiro banco vazio |
+| STORAGE_MODE=persistent | Exige PostgreSQL e chave de e-mail estável |
+| DB_URL / DB_USER / DB_PASSWORD | Credenciais privadas; URL JDBC direta com TLS |
+| MAIL_ENCRYPTION_KEY | Segredo estável, com cópia protegida fora do banco |
 | APP_PUBLIC_DEMO=true | Aviso de demonstração pública |
 | SERVER_ADDRESS=0.0.0.0 | Receber conexões da hospedagem |
 | PORT | Definida pelo provedor e lida pelo servidor |
@@ -57,7 +61,7 @@ Atualizações automáticas estão desligadas na configuração inicial. Uma nov
 
 ## Evolução para utilização real
 
-A API possui configuração para PostgreSQL. Antes de um negócio usar dados reais, a aplicação precisa configurar e validar o envio real de e-mails, armazenamento durável e backups da fila, comunicação ao cliente e operação com persistência e proteção contra abuso. Confirmação e recuperação estão disponíveis para teste desde 0.5.0. O cadastro próprio para avaliação está disponível desde 0.4.0; na hospedagem gratuita os cadastros são temporários.
+A API possui configuração para PostgreSQL. Antes de um negócio usar dados reais, a aplicação precisa configurar e validar o envio real de e-mails, retenção e recuperação adequadas ao negócio, comunicação ao cliente e operação contínua com proteção contra abuso. Confirmação e recuperação estão disponíveis para teste desde 0.5.0. O cadastro próprio para avaliação está disponível desde 0.4.0; na hospedagem atual os cadastros persistem, mas continuam sendo dados fictícios para avaliação.
 
 A hospedagem e o banco persistente devem ser escolhidos conforme os limites e custos reais do provedor, sem converter automaticamente esta demonstração em um serviço pago.
 
@@ -71,10 +75,10 @@ Web, PWA instalada e cópia local usam o mesmo código de proteção da API. Rep
 ## Empresas e contas (0.5.0)
 O cadastro e a publicação funcionam pela mesma interface no site, celular/PWA e instalação local. Consulte [CADASTRO-EMPRESAS.md](CADASTRO-EMPRESAS.md) para o fluxo, persistência e limites.
 ## Fila e acompanhamento (0.6.0)
-A aba E-mails e envios está disponível no site, PWA e pacote local. Usa o mesmo servidor, com atualização enquanto a tela está visível e conectada. Não há armazenamento do histórico privado no service worker. O pacote local mantém banco e chave em data; a hospedagem gratuita continua efêmera. Consulte [FILA-EMAILS.md](FILA-EMAILS.md).
+A aba E-mails e envios está disponível no site, PWA e pacote local. Usa o mesmo servidor, com atualização enquanto a tela está visível e conectada. Não há armazenamento do histórico privado no service worker. O pacote local mantém banco e chave em data; a hospedagem usa PostgreSQL persistente no Neon Free. Consulte [FILA-EMAILS.md](FILA-EMAILS.md).
 
 ## Revisão 0.6.1
 Site, PWA e download local incluem as correções de espera manual, monitor em lotes lentos e chave concorrente. A interface diferencia espera do serviço de tentativa automaticamente agendada. Veja [REVISAO-SEGURANCA-0.6.1.md](REVISAO-SEGURANCA-0.6.1.md).
 
 ## Armazenamento e backups (0.7.0)
-A API informa o modo operacional local, ephemeral ou persistent. O cadastro web/mobile mantém o aceite de dados fictícios e apresenta o aviso correspondente. A demonstração online atual continua efêmera; a ativação do banco durável depende de autorização de custo. O pacote local inclui backup.cmd e backup.sh. Consulte [ARMAZENAMENTO-BACKUPS.md](ARMAZENAMENTO-BACKUPS.md) e [o plano de ativação](PLANO-PERSISTENCIA-RENDER.md).
+A API informa o modo operacional local, ephemeral ou persistent. O cadastro web/mobile mantém o aceite de dados fictícios e apresenta o aviso correspondente. A demonstração online usa Neon Free, sem contratação paga. O pacote local inclui backup.cmd e backup.sh. Consulte [ARMAZENAMENTO-BACKUPS.md](ARMAZENAMENTO-BACKUPS.md) e [a configuração gratuita](PERSISTENCIA-GRATUITA.md).

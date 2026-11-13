@@ -4,7 +4,7 @@
 - Local H2: dados em arquivo e backup criptografado do banco junto da chave original dos e-mails.
 - PostgreSQL: exportação nativa consistente com pg_dump e restauração com pg_restore em banco vazio.
 - Web e mobile/PWA: usam o mesmo servidor e refletem o modo de armazenamento configurado. O navegador não guarda uma cópia do banco.
-- Render atual: demonstração gratuita ainda efêmera. A ativação de PostgreSQL pago está descrita em [PLANO-PERSISTENCIA-RENDER.md](PLANO-PERSISTENCIA-RENDER.md) e depende de autorização de custo.
+- Online: Render Free com PostgreSQL 17 no Neon Free e chave estável fora do banco; detalhes em [PERSISTENCIA-GRATUITA.md](PERSISTENCIA-GRATUITA.md). A proposta paga do Render foi recusada e não foi executada.
 
 Persistência conserva os dados entre reinícios; backup oferece uma cópia para recuperar perda ou alteração indevida. Um arquivo salvo no mesmo disco do banco não cobre a perda física desse disco.
 
@@ -61,7 +61,7 @@ Temporários ficam em tmp no pacote e .cache/tmp no projeto. Os arquivos interme
 Nenhum backup antigo é apagado automaticamente. Não foi criada tarefa agendada no computador. Faça cópias periódicas, confira sua recuperação e mantenha uma segunda cópia protegida fora do disco do banco. Não envie backups ou senhas ao GitHub público.
 
 ## PostgreSQL
-Instale ferramentas cliente PostgreSQL 17 compatíveis com o servidor, ou use as ferramentas do contêiner PostgreSQL existente. Docker e pg_dump não estão instalados neste computador; eles são opcionais para o uso local H2.
+Instale ferramentas cliente PostgreSQL 17 compatíveis com o servidor, ou use as ferramentas do contêiner PostgreSQL existente. Os clientes PostgreSQL 17.12 portáteis foram extraídos em D:/Projetos/AgendaClara/.cache/postgres-tools/pgsql/bin para validar o Neon. Não foi instalado serviço do Windows nem extensão do editor; clientes e Docker são opcionais para o uso local H2.
 
 Configure DB_URL (JDBC), DB_USER e DB_PASSWORD em um ambiente privado. Para acesso externo ao Render, use a URL externa e TLS conforme a documentação do provedor. Configure também MAIL_ENCRYPTION_KEY ou MAIL_KEY_FILE apontando para a chave original.
 
@@ -86,7 +86,7 @@ Não se converte H2 em PostgreSQL automaticamente. São motores diferentes, e um
 | Variável | Uso |
 | --- | --- |
 | STORAGE_MODE=local | arquivo local ou instalação própria; padrão |
-| STORAGE_MODE=ephemeral | hospedagem com armazenamento descartável, como a demonstração gratuita atual |
+| STORAGE_MODE=ephemeral | hospedagem com banco em disco descartável; não é o modo online atual |
 | STORAGE_MODE=persistent | PostgreSQL durável e chave de e-mail explicitamente estável |
 | AGENDA_DATA_DIR | pasta do banco H2/chave local |
 | MAIL_ENCRYPTION_KEY | chave da fila, mantida como segredo privado |

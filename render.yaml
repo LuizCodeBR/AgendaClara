@@ -10,13 +10,27 @@ services:
     autoDeployTrigger: 'off'
     envVars:
       - key: SPRING_PROFILES_ACTIVE
-        value: demo
+        value: postgres
+      - key: APP_DEMO_ENABLED
+        value: 'true'
+      - key: STORAGE_MODE
+        value: persistent
+      - key: DB_URL
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: MAIL_ENCRYPTION_KEY
+        sync: false
+      - key: SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE
+        value: '5'
+      - key: SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE
+        value: '0'
       - key: SERVER_ADDRESS
         value: 0.0.0.0
       - key: COOKIE_SECURE
         value: 'true'
-      - key: STORAGE_MODE
-        value: ephemeral
       - key: MAIL_MODE
         value: demo
       - key: APP_BASE_URL
@@ -31,5 +45,8 @@ services:
         value: '30'
       - key: SOURCE_URL
         value: https://github.com/LuizCodeBR/AgendaClara
-# Demonstração sem banco persistente. Não provisiona planos pagos.
-# H2 é reinicializado quando o armazenamento efêmero é descartado pela hospedagem.
+      - key: DEMO_DOWNLOAD_URL
+        value: https://github.com/LuizCodeBR/AgendaClara/releases/download/v0.7.0/AgendaClara-0.7.0-demo.zip
+# Banco externo Neon Free, criado separadamente; não provisiona recursos pagos.
+# Forneça as credenciais JDBC/TLS e a chave estável como entradas privadas.
+# Consulte docs/PERSISTENCIA-GRATUITA.md antes de implantar outra instalação.

@@ -25,7 +25,7 @@ O endereço compartilhado pertence à instalação atual. Um link com localhost/
 - O domínio @demo.agendaclara.dev é reservado às contas compartilhadas da demonstração.
 
 ## Armazenamento e limites de uso
-**Render gratuito:** os novos cadastros são contas de teste temporárias. O arquivo local do servidor não é persistente; reinícios e novas implantações podem apagar empresas, contas e reservas. Isso é informado no formulário e na confirmação.
+**Online gratuito:** o site e a PWA usam PostgreSQL persistente no Neon Free. Reinícios e novas implantações preservam empresas, contas e reservas; o formulário informa a persistência e continua exigindo dados fictícios. A instalação local tem banco próprio. Consulte [PERSISTENCIA-GRATUITA.md](PERSISTENCIA-GRATUITA.md).
 
 **Pacote local:** o H2 em arquivo preserva contas e agendamentos na pasta data entre reinícios. Não apague essa pasta e faça cópias de segurança com o aplicativo parado. A PWA usa o mesmo servidor, não um banco separado no celular.
 
@@ -53,7 +53,7 @@ CSRF, cookies HttpOnly/SameSite, renovação da sessão no login, limite de corp
 | --- | --- | --- |
 | REGISTRATION_ENABLED | true | Habilita/desabilita novos cadastros; contas existentes continuam funcionando |
 | REGISTRATION_REQUESTS_PER_MINUTE | 5 | Cota global de solicitações de cadastro por processo |
-| APP_PUBLIC_DEMO | false | Exige aceite de dados fictícios quando true; use true na hospedagem temporária |
+| APP_PUBLIC_DEMO | false | Exige aceite de dados fictícios quando true; use true na demonstração pública |
 | APP_DEMO_ENABLED | depende do perfil | Cria apenas os dois exemplos ausentes, sem impedir cadastro próprio |
 
 Os testes de navegador usam cota 30 por minuto para os roteiros automáticos. O padrão do aplicativo e da hospedagem continua 5.

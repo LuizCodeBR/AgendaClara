@@ -64,7 +64,7 @@ A persistência resiste ao reinício da aplicação quando o armazenamento é pr
 
 - Pacote local: banco H2 e chave na pasta data, com gravação síncrona do H2.
 - Docker Compose: PostgreSQL no volume postgres-data e chave no volume mail-data; ambos precisam de backup. O local físico dos volumes depende da configuração do Docker Desktop; configure seu armazenamento no D: se usar essa opção. Não execute down -v para preservar esses dados.
-- Render gratuito: banco e chave continuam em armazenamento efêmero. Reinício, nova publicação ou suspensão podem descartar contas e mensagens. Não foi contratado disco nem serviço pago.
+- Online: Render Free com banco PostgreSQL 17 no Neon Free; contas, mensagens e fila permanecem entre reinícios. MAIL_ENCRYPTION_KEY estável é preservada no serviço e em pasta privada no D:. Não foi contratado disco nem banco pago. Consulte [PERSISTENCIA-GRATUITA.md](PERSISTENCIA-GRATUITA.md).
 - Operação real: PostgreSQL durável, chave estável, backups, remetente autorizado, credenciais privadas, HTTPS e validação externa de entrega ainda precisam ser configurados.
 
 ## Validação e referências
