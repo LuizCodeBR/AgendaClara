@@ -1,4 +1,4 @@
-# Operação sob demanda: backups e limites — 0.8.1
+# Operação sob demanda: backups e limites — 0.9.0
 
 ## Decisão de execução
 Nesta etapa o usuário escolheu não agendar backup diário e consultar os limites somente sob demanda. Não há tarefa ativa no Codex, Agendador do Windows, GitHub Actions com horário, cron, Render ou Neon. Os comandos abaixo automatizam as etapas de uma execução solicitada, sem repetição posterior.

@@ -40,6 +40,6 @@ Cadastro, vínculos e semana são salvos na mesma transação, usando o bloqueio
 Autenticação, CSRF e isolamento por estabelecimento continuam obrigatórios. Não se aceita identificador enviado pelo navegador como autorização de outro negócio.
 
 ## Verificação
-Os novos testes cobrem API, constraints do banco, concorrência nas duas ordens, repetição segura da reserva, migração 6→7, preservação por backup e telas responsivas. Scripts/professional-services-smoke.mjs também verifica o JAR real e é executado no CI e na publicação.
+Os novos testes cobrem API, constraints do banco, concorrência nas duas ordens, repetição segura da reserva, migração 6→7, preservação por backup e telas responsivas. scripts/professional-services-smoke.mjs também verifica o JAR real e é executado no CI e na publicação.
 
 Resultados finais e links: [VALIDACAO-0.9.0.md](VALIDACAO-0.9.0.md).
