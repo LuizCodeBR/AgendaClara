@@ -2,7 +2,7 @@
 
 **Site:** https://agenda-clara-luizcodebr.onrender.com
 
-**Downloads:** https://github.com/LuizCodeBR/AgendaClara/releases/tag/v0.11.0
+**Downloads:** https://github.com/LuizCodeBR/AgendaClara/releases/tag/v0.11.1
 
 ## Três formas de acesso
 
@@ -96,5 +96,5 @@ Site, PWA e pacote local compartilham a seleção de Serviços atendidos em Equi
 
 Site, PWA e pacote local oferecem consulta, cancelamento e remarcação por link privado. O comprovante tem Gerenciar minha reserva; a agenda do responsável permite gerar e revogar acessos. O segredo sai do endereço após abrir e o cookie fica restrito à reserva. A cópia local tem banco independente; compartilhe links do site online para acesso em outro dispositivo. Recarregue a PWA após atualizar. Consulte [Minha reserva](MINHA-RESERVA.md).
 
-## Regras por empresa (0.11.0)
+## Regras por empresa (0.11.1)
 Web, PWA e pacote local incluem Regras de agendamento, prazos na confirmação e ações separadas em Minha reserva. A migração V9 preserva dados anteriores. Recarregue o aplicativo depois de atualizar. Consulte [o guia](REGRAS-AGENDAMENTO.md).

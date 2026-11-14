@@ -68,3 +68,7 @@ A ferramenta 0.11.0 aceita esquemas 6, 7, 8 e 9. Os backups incluem as regras at
 Não foi adicionada dependência, extensão ou instalação obrigatória. Site e PWA compartilham o servidor online; o pacote local tem banco independente. Recarregue a página/PWA depois de atualizar. Render e Neon permanecem Free e as rotinas de backup e limites continuam sob demanda.
 
 Consulte [a validação](VALIDACAO-0.11.0.md), [Minha reserva](MINHA-RESERVA.md) e [backup e recuperação](ARMAZENAMENTO-BACKUPS.md).
+
+## Revisão 0.11.1
+
+Os prazos são conferidos novamente após as consultas, no instante de decisão imediatamente anterior à gravação. Essa decisão e o registro usam o mesmo relógio. JSON fracionário não é convertido para minutos ou versões inteiros. Consulte [a revisão independente](REVISAO-REGRAS-0.11.1.md).

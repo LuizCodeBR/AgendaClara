@@ -137,8 +137,11 @@ public class ScheduleService {
         Instant end = start.plusSeconds(service.durationMinutes() * 60L);
         policy.requireBooking(start,clock.instant());
         requireFree(business, request.professionalId(), start, end, NO_APPOINTMENT);
+        // Decide at the write boundary, after availability/database work has completed.
+        Instant acceptedAt=clock.instant();
+        policy.requireBooking(start,acceptedAt);
         var saved = schedule.insert(business.id(), request, service.name(), service.priceCents(),
-                start, end, phone, fingerprint, clock.instant(),policy);
+                start, end, phone, fingerprint, acceptedAt,policy);
         if(customerKeys.available())
             customerAccess.save(business.id(),saved.id(),1,br.com.luizcode.agenda.customer.CustomerKeys.digest(customerKeys.token(saved.id(),1)),clock.instant(),null);
         return new BookingOutcome(customerReceipt(saved), true);
@@ -172,20 +175,33 @@ public class ScheduleService {
     public AppointmentView cancel(Business business, UUID id) { return cancel(business,id,null); }
 
     @Transactional(isolation=Isolation.READ_COMMITTED)
-    public AppointmentView cancel(Business business, UUID id,Integer version) {
+    public AppointmentView cancel(Business business, UUID id,Integer version) { return cancelInternal(business,id,version,false); }
+
+    @Transactional(isolation=Isolation.READ_COMMITTED)
+    public AppointmentView cancelCustomer(Business business,UUID id,int version){return cancelInternal(business,id,version,true);}
+
+    private AppointmentView cancelInternal(Business business,UUID id,Integer version,boolean customer){
         var first = schedule.appointment(business.id(), id);
         catalog.lockProfessional(business.id(), first.professionalId());
         var current = schedule.appointment(business.id(), id);
         if (current.status().equals("CANCELLED")) return current.view();
         requireVersion(current,version);
-        if (!current.startsAt().isAfter(clock.instant()))
+        Instant acceptedAt=clock.instant();
+        if (!current.startsAt().isAfter(acceptedAt))
             throw BusinessException.invalid("Só é possível cancelar atendimentos futuros.");
-        schedule.cancel(business.id(), id, clock.instant());
+        if(customer&&!current.bookingPolicy().allowsCancellation(current.startsAt(),acceptedAt))
+            throw BusinessException.conflict("O prazo de cancelamento online terminou. Fale com o estabelecimento.");
+        schedule.cancel(business.id(), id, acceptedAt);
         return schedule.appointment(business.id(), id).view();
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
-    public AppointmentView reschedule(Business business, UUID id, RescheduleRequest request) {
+    public AppointmentView reschedule(Business business, UUID id, RescheduleRequest request) {return rescheduleInternal(business,id,request,false);}
+
+    @Transactional(isolation=Isolation.READ_COMMITTED)
+    public AppointmentView rescheduleCustomer(Business business,UUID id,RescheduleRequest request){return rescheduleInternal(business,id,request,true);}
+
+    private AppointmentView rescheduleInternal(Business business,UUID id,RescheduleRequest request,boolean customer){
         var first = schedule.appointment(business.id(), id);
         catalog.lockProfessional(business.id(), first.professionalId());
         var current = schedule.appointment(business.id(), id);
@@ -200,7 +216,15 @@ public class ScheduleService {
         Instant start = request.startsAt().toInstant();
         Instant end = start.plus(Duration.between(current.startsAt(), current.endsAt()));
         requireFree(business, current.professionalId(), start, end, id);
-        schedule.move(business.id(), id, start, end, clock.instant());
+        Instant acceptedAt=clock.instant();
+        if(!current.startsAt().isAfter(acceptedAt)||!start.isAfter(acceptedAt))
+            throw BusinessException.conflict("Só é possível remarcar atendimentos futuros para horários futuros.");
+        if(customer){
+            if(!current.bookingPolicy().allowsReschedule(current.startsAt(),acceptedAt))
+                throw BusinessException.conflict("O prazo de remarcação online terminou. Fale com o estabelecimento.");
+            current.bookingPolicy().requireBooking(start,acceptedAt);
+        }
+        schedule.move(business.id(), id, start, end, acceptedAt);
         return schedule.appointment(business.id(), id).view();
     }
 

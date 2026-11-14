@@ -15,7 +15,7 @@ RUN mvn -B -ntp -DskipTests package
 FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
 RUN useradd --system --uid 10001 agenda && mkdir -p /app/data /app/tmp && chown -R agenda /app
-COPY --from=build --chown=agenda:agenda /build/target/agenda-clara-0.11.0.jar /app/agenda.jar
+COPY --from=build --chown=agenda:agenda /build/target/agenda-clara-0.11.1.jar /app/agenda.jar
 USER agenda
 EXPOSE 8080
 ENTRYPOINT ["java", "-Djava.io.tmpdir=/app/tmp", "-jar", "/app/agenda.jar"]

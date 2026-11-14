@@ -21,6 +21,9 @@ public class BookingPolicyService {
     }
     /** Caller holds a write transaction; use a non-key UPDATE so PostgreSQL FK checks remain compatible. */
     public BookingPolicy lock(UUID business){
+        if(!org.springframework.transaction.support.TransactionSynchronizationManager.isActualTransactionActive()
+                ||org.springframework.transaction.support.TransactionSynchronizationManager.isCurrentTransactionReadOnly())
+            throw new IllegalStateException("O bloqueio das regras exige uma transação de escrita.");
         if(jdbc.update("update business set booking_policy_version=booking_policy_version where id=?",business)!=1)throw BusinessException.notFound();
         return get(business);
     }

@@ -104,7 +104,7 @@ public class CustomerPortalService {
         var grant=lockedGrant(secret,reservation);var appointment=appointments.appointment(grant.businessId(),grant.appointmentId());
         if(!appointment.status().equals("CANCELLED")){requireChangeable(appointment);
             if(!appointment.bookingPolicy().allowsCancellation(appointment.startsAt(),clock.instant()))throw BusinessException.conflict("O prazo de cancelamento online terminou. Fale com o estabelecimento.");
-            schedule.cancel(catalog.business(grant.businessId()),grant.appointmentId(),change.version());}
+            schedule.cancelCustomer(catalog.business(grant.businessId()),grant.appointmentId(),change.version());}
         return view(grant);
     }
     @Transactional(isolation=Isolation.READ_COMMITTED)
@@ -113,7 +113,7 @@ public class CustomerPortalService {
         if(appointment.status().equals("BOOKED")&&move.version()==appointment.version()-1&&move.startsAt().toInstant().equals(appointment.startsAt()))return view(grant);
         requireChangeable(appointment);requireRescheduleWindow(appointment);
         appointment.bookingPolicy().requireBooking(move.startsAt().toInstant(),clock.instant());
-        schedule.reschedule(catalog.business(grant.businessId()),grant.appointmentId(),new RescheduleRequest(move.startsAt(),move.version()));
+        schedule.rescheduleCustomer(catalog.business(grant.businessId()),grant.appointmentId(),new RescheduleRequest(move.startsAt(),move.version()));
         return view(grant);
     }
     private void requireRescheduleWindow(ScheduleRepository.Appointment appointment){
