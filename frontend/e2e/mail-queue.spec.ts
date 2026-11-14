@@ -13,6 +13,11 @@ test('responsável acompanha seus e-mails e outra empresa não vê o histórico'
  await page.getByLabel('Senha',{exact:true}).fill(password);
  await page.getByRole('button',{name:'Entrar no painel',exact:true}).click();
  await page.getByRole('button',{name:'E-mails e envios',exact:true}).click();
+ await expect.poll(async()=>{
+  const response=await page.request.get('/api/admin/emails');if(!response.ok())return false;
+  const monitor=await response.json();return monitor.messages.some((message:{status:string})=>message.status==='ACCEPTED');
+ },{timeout:15000,intervals:[250,500,1000]}).toBe(true);
+ await page.getByRole('button',{name:'Atualizar envios',exact:true}).click();
  await expect(page.getByText('Disponível na caixa de teste',{exact:true})).toBeVisible();
  await expect(page.getByText('Confirmação de e-mail',{exact:true})).toBeVisible();
  await expect(page.getByText(email,{exact:true})).toHaveCount(0);

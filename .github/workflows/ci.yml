@@ -55,6 +55,7 @@ jobs:
       AGENDA_DATA_DIR: ./.cache/e2e-data
       REGISTRATION_REQUESTS_PER_MINUTE: 30
       ACCESS_REQUESTS_PER_MINUTE: 120
+      API_REQUESTS_PER_MINUTE: 5000
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-java@v6
