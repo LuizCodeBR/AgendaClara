@@ -81,5 +81,6 @@ test('código público não abre reserva e responsável pode revogar link privad
   await page.getByRole('dialog').getByRole('button',{name:'Fechar',exact:true}).last().click();
   await page.getByRole('button',{name:'Cancelar '+name,exact:true}).click();
   await page.getByRole('button',{name:'Sim, cancelar',exact:true}).click();
+  await expect(page.locator('article').filter({hasText:name}).getByText('Cancelado',{exact:true})).toBeVisible();
   await customer.close();
 });
