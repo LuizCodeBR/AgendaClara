@@ -1,4 +1,4 @@
-# Minha reserva — 0.10.0
+# Minha reserva — 0.11.0
 
 O cliente pode consultar, cancelar ou remarcar seu próprio atendimento sem criar uma conta. Web, PWA e cópia local usam a mesma funcionalidade.
 
@@ -15,7 +15,9 @@ O link é uma credencial: quem o possui pode realizar essas ações. Compartilhe
 
 O acesso vale até sete dias após o término do atendimento; acompanha o término atualizado em uma remarcação. Reservas canceladas ou já iniciadas ficam somente para consulta. A sessão dura no máximo uma hora; reabra o link se expirar. Não há renovação silenciosa nem acesso offline aos dados privados.
 
-A remarcação preserva serviço, profissional, duração e preço contratados. Valida expediente, folgas, bloqueios, vínculos e conflitos de horário. O estabelecimento precisa ter um profissional ativo com o serviço vinculado. Cliente e responsável devem atualizar a tela após um conflito de versão.
+Desde a versão 0.11.0, a empresa pode definir prazos independentes de cancelamento e remarcação. Minha reserva mostra as condições registradas na confirmação e disponibiliza cada ação enquanto o respectivo prazo permitir. Alterar as regras da empresa não modifica reservas anteriores. Consulte [Regras de agendamento](REGRAS-AGENDAMENTO.md).
+
+A remarcação preserva serviço, profissional, duração, preço e regras contratados. O novo início deve respeitar a antecedência mínima registrada; os prazos de cancelamento e remarcação são recalculados a partir dele. Valida expediente, folgas, bloqueios, vínculos e conflitos de horário. O estabelecimento precisa ter um profissional ativo com o serviço vinculado. Cliente e responsável devem atualizar a tela após um conflito de versão.
 
 ## Responsável
 
@@ -47,7 +49,7 @@ A alteração de acesso também incrementa a versão do atendimento. Uma tela an
 
 A migração V8 acrescenta controle de versão e as tabelas appointment_access e appointment_customer_session. Preserva reservas e não inventa credenciais para registros antigos.
 
-Encerre o servidor local e faça backup antes de atualizar. Mantenha banco e mail-outbox.key originais juntos. Instale o JAR novo em uma cópia de teste antes de substituir a instalação em uso. A ferramenta 0.10.0 aceita backups dos esquemas 6, 7 e 8; o formato ACBK0001 permanece. Não execute uma versão antiga sobre o banco migrado.
+Encerre o servidor local e faça backup antes de atualizar. Mantenha banco e mail-outbox.key originais juntos. Instale o JAR novo em uma cópia de teste antes de substituir a instalação em uso. A ferramenta 0.11.0 aceita backups dos esquemas 6, 7, 8 e 9; o formato ACBK0001 permanece. Não execute uma versão antiga sobre o banco migrado.
 
 A chave estável existente é suficiente no modo demo, no site e na cópia local. Em uma instalação própria com MAIL_MODE=disabled e sem chave, o agendamento continua funcionando, porém não oferece acesso privado; configure uma chave estável antes de usar essa função.
 
