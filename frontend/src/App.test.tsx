@@ -50,7 +50,7 @@ it('preserva o rascunho do expediente ao tentar sair pelo menu principal ou pelo
     if (path.endsWith('/catalog')) return catalog;
     if (path.includes('/agenda?')) return agenda;
     if (path.endsWith('/professionals')) return [{
-      id: 'professional', name: 'Ana Exemplo', specialty: 'Corte', active: true, version: 0, hours: [],
+      id: 'professional', name: 'Ana Exemplo', specialty: 'Corte', active: true, version: 0, serviceIds: ['service'], hours: [],
     }];
     throw new Error('Unexpected: ' + path);
   });

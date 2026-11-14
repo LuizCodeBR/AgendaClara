@@ -32,6 +32,10 @@ class BackupTest {
         UUID business=UUID.randomUUID(),user=UUID.randomUUID(),mail=UUID.randomUUID();
         jdbc.update("insert into business(id,slug,name,category,zone_id,address) values(?,?,?,?,?,?)",business,"restore-"+business,"Empresa preservada","Teste","America/Sao_Paulo","Online");
         jdbc.update("insert into app_user(id,business_id,email,password_hash,display_name) values(?,?,?,?,?)",user,business,"backup@example.test","hash-preservado","Ana");
+        UUID person=UUID.randomUUID(),service=UUID.randomUUID();
+        jdbc.update("insert into professional(id,business_id,name,specialty) values (?,?,?,?)",person,business,"Pessoa preservada","Teste");
+        jdbc.update("insert into service_offering(id,business_id,name,description,duration_minutes,price_cents) values (?,?,?,?,30,1200)",service,business,"Serviço preservado","Teste");
+        jdbc.update("insert into professional_service(business_id,professional_id,service_id) values (?,?,?)",business,person,service);
         String aad=mail+":"+business+":"+user+":VERIFY:demo";
         String payload=cipher.encrypt(aad,new MailQueueModels.Payload("from","backup@example.test","Assunto","Texto preservado","https://example.test/#/token"));
         var now=OffsetDateTime.now(ZoneOffset.UTC);
@@ -53,6 +57,7 @@ class BackupTest {
         assertThat(jdbc.queryForObject("select name from business where id=?",String.class,fixture.company())).isEqualTo("Empresa preservada");
         assertThat(jdbc.queryForObject("select password_hash from app_user where id=?",String.class,fixture.user())).isEqualTo("hash-preservado");
         var cipher=new MailPayloadCipher(jdbc,new ObjectMapper(),new MailSettings("demo","","","",true,false,false),Clock.systemUTC(),"",target.resolve("mail-outbox.key").toString());
+        assertThat(jdbc.queryForObject("select count(*) from professional_service where business_id=?",Integer.class,fixture.company())).isEqualTo(1);
         String payload=jdbc.queryForObject("select payload from mail_outbox where id=?",String.class,fixture.mail());
         assertThat(cipher.decrypt(fixture.aad(),payload).text()).isEqualTo("Texto preservado");
         assertThat(new String(Files.readAllBytes(archive),java.nio.charset.StandardCharsets.ISO_8859_1)).doesNotContain("Texto preservado");

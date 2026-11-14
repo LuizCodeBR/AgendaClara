@@ -66,6 +66,7 @@ test('responsável cadastra profissional, abre expediente e preserva reserva ao 
   await page.getByRole('button', { name: 'Cadastrar e configurar horários', exact: true }).click();
   await expect(page.getByLabel('Nome do profissional', { exact: true })).toHaveValue(name);
   const catalog = await (await page.request.get('/api/admin/catalog')).json();
+  await page.getByRole('checkbox', { name: 'Atende o serviço ' + catalog.services[0].name, exact: true }).check();
   const dayIndex = (new Date(catalog.suggestedDate + 'T12:00:00Z').getUTCDay() + 6) % 7;
   const day = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo'][dayIndex];
   await page.getByRole('checkbox', { name: 'Atende ' + day, exact: true }).check();
@@ -173,6 +174,7 @@ test('folga fecha a data; horário especial permite reservar; alterações prese
   await page.getByRole('button', { name: 'Cadastrar e configurar horários', exact: true }).click();
   await expect(page.getByLabel('Nome do profissional', { exact: true })).toHaveValue(name);
   const catalog = await (await page.request.get('/api/admin/catalog')).json();
+  await page.getByRole('checkbox', { name: 'Atende o serviço ' + catalog.services[0].name, exact: true }).check();
   const target = catalog.suggestedDate;
   const dayIndex = (new Date(target + 'T12:00:00Z').getUTCDay() + 6) % 7;
   const day = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo'][dayIndex];

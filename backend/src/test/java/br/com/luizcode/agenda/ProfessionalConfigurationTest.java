@@ -44,7 +44,7 @@ class ProfessionalConfigurationTest extends ApiTestBase {
         return new WeeklyWindow(day, LocalTime.parse(start), LocalTime.parse(end));
     }
     UpdateProfessional update(List<WeeklyWindow> hours, boolean active, Integer version) {
-        return new UpdateProfessional("Lucas Almeida", "Cortes e barba", active, version, hours);
+        return new UpdateProfessional("Lucas Almeida", "Cortes e barba", active, version, hours,List.of(SERVICE));
     }
     org.springframework.test.web.servlet.ResultActions putConfig(UUID id, UpdateProfessional request) throws Exception {
         return mvc.perform(put(TEAM + "/" + id).with(user(owner())).with(csrf())
@@ -74,9 +74,10 @@ class ProfessionalConfigurationTest extends ApiTestBase {
         assertThat(person.active()).isTrue();
         assertThat(person.version()).isZero();
         assertThat(person.hours()).isEmpty();
+        assertThat(person.serviceIds()).isEmpty();
         assertThat(jdbc.queryForObject("select business_id from professional where id = ?", UUID.class, person.id())).isEqualTo(BUSINESS);
         mvc.perform(get(AVAILABILITY).param("professionalId", person.id().toString()).param("serviceId", SERVICE.toString())
-                .param("date", DATE.toString())).andExpect(status().isOk()).andExpect(jsonPath("$.slots", hasSize(0)));
+                .param("date", DATE.toString())).andExpect(status().isConflict());
     }
     @Test void profileAndHoursAreSavedTogetherAndEnableBooking() throws Exception {
         var person = create("Novo profissional");
@@ -132,7 +133,7 @@ class ProfessionalConfigurationTest extends ApiTestBase {
     @Test void shrinkingHoursCannotStrandConfirmedBookingOrPartiallyRenameProfile() throws Exception {
         schedule.book(catalog.business(BUSINESS), request("09:00"));
         var before = teamRepository.find(BUSINESS, PROFESSIONAL);
-        var changed = new UpdateProfessional("Outro nome","Outra descrição",true,0,List.of(window(2,"09:00","09:30")));
+        var changed = new UpdateProfessional("Outro nome","Outra descrição",true,0,List.of(window(2,"09:00","09:30")),List.of(SERVICE));
         putConfig(PROFESSIONAL, changed).andExpect(status().isConflict())
                 .andExpect(jsonPath("$.detail",containsString("ficaria fora do expediente")));
         assertThat(teamRepository.find(BUSINESS, PROFESSIONAL)).isEqualTo(before);

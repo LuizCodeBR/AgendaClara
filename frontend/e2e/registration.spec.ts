@@ -41,13 +41,14 @@ test('responsável cria empresa, configura atendimento, publica, recebe reserva 
   await page.getByLabel('Descrição', { exact: true }).fill('Serviço fictício próprio');
   await page.getByLabel('Preço (R$)', { exact: true }).fill('50');
   await page.getByRole('button', { name: 'Adicionar ao catálogo', exact: true }).click();
-  await expect(page.getByText('Serviço adicionado ao catálogo.', { exact: true })).toBeVisible();
+  await expect(page.getByText('Serviço adicionado. Vincule-o aos profissionais em Equipe e horários para liberar reservas.', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Equipe e horários', exact: true }).click();
   await page.getByRole('button', { name: 'Cadastrar profissional', exact: true }).click();
   await page.getByLabel('Nome do novo profissional', { exact: true }).fill(person);
   await page.getByLabel('Especialidade do novo profissional', { exact: true }).fill('Consultoria');
   await page.getByRole('button', { name: 'Cadastrar e configurar horários', exact: true }).click();
   await expect(page.getByLabel('Nome do profissional', { exact: true })).toHaveValue(person);
+  await page.getByRole('checkbox', { name: 'Atende o serviço Consulta de teste', exact: true }).check();
   const dayIndex = (new Date(catalog.suggestedDate + 'T12:00:00Z').getUTCDay() + 6) % 7;
   const day = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo'][dayIndex];
   await page.getByRole('checkbox', { name: 'Atende ' + day, exact: true }).check();

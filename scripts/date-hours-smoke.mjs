@@ -23,7 +23,7 @@ const catalog=await expect('/api/admin/catalog','GET',undefined,200);
 const created=await expect('/api/admin/professionals','POST',{name:'Verificação de folgas '+Date.now(),specialty:'Dados fictícios'},201);
 const profile='/api/admin/professionals/'+created.id;
 const date=catalog.suggestedDate, weekday=(new Date(date+'T12:00:00Z').getUTCDay()+6)%7+1;
-const weekly=await expect(profile,'PUT',{...created,hours:[{weekday,opensAt:'09:00',closesAt:'12:00'}]},200);
+const weekly=await expect(profile,'PUT',{...created,serviceIds:[catalog.services[0].id],hours:[{weekday,opensAt:'09:00',closesAt:'12:00'}]},200);
 const endpoint=profile+'/exceptions';
 const query=new URLSearchParams({professionalId:created.id,serviceId:catalog.services[0].id,date});
 const availability='/api/public/barbearia-horizonte/availability?'+query;

@@ -59,6 +59,7 @@ jobs:
           node scripts/registration-smoke.mjs http://127.0.0.1:8080
           node scripts/account-access-smoke.mjs http://127.0.0.1:8080
           node scripts/mail-queue-smoke.mjs http://127.0.0.1:8080
+          node scripts/professional-services-smoke.mjs http://127.0.0.1:8080
           node scripts/storage-smoke.mjs before http://127.0.0.1:8080 .cache/release-storage-fixture.json
           kill "$APP_PID"
           wait "$APP_PID" || true

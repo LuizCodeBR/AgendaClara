@@ -75,6 +75,7 @@ class AccountAccessTest extends ApiTestBase {
         String code=token(account,"VERIFY");
         assertThat(code).matches("[A-Za-z0-9_-]{43}");
         assertThat(jdbc.queryForObject("select token_digest from account_action where user_id=?",String.class,account.id())).hasSize(64).isNotEqualTo(code);
+        jdbc.update("insert into professional_service(business_id,professional_id,service_id) select business_id,?,id from service_offering where business_id=?",person,account.businessId());
         mvc.perform(get("/api/admin/business").with(user(user))).andExpect(jsonPath("$.verificationRequired").value(true)).andExpect(jsonPath("$.ready").value(false));
         mvc.perform(put("/api/admin/business/publication").with(user(user)).with(csrf()).contentType("application/json")
                 .content("{\"published\":true,\"version\":0}")).andExpect(status().isBadRequest()).andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.containsString("Confirme")));

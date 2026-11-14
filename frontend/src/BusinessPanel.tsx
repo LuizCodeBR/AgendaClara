@@ -22,8 +22,9 @@ export default function BusinessPanel({ state, online, onUpdated, onConfigure }:
       <li><span>{state.services > 0 ? '✓' : '○'} Serviços cadastrados: {state.services}</span><button className="button quiet" disabled={pending} onClick={() => onConfigure('services')}>Configurar serviços</button></li>
       <li><span>{state.professionals > 0 ? '✓' : '○'} Profissionais ativos: {state.professionals}</span><button className="button quiet" disabled={pending} onClick={() => onConfigure('team')}>Configurar equipe</button></li>
       <li><span>{state.hasHours ? '✓ Horários de atendimento configurados' : '○ Falta configurar horários de atendimento'}</span><button className="button quiet" disabled={pending} onClick={() => onConfigure('team')}>Configurar expediente</button></li>
+      <li><span>{state.hasBookableProfessional ? '✓ Profissional com serviços e horários configurados' : '○ Falta vincular serviços a um profissional com horários'}</span><button className="button quiet" disabled={pending} onClick={() => onConfigure('team')}>Vincular serviços à equipe</button></li>
     </ul>
-    <p className="field-note">Para publicar, cadastre um serviço, um profissional ativo e um expediente semanal ou um horário especial dentro do período disponível para reservas. A disponibilidade real também considera reservas, folgas e bloqueios.</p>
+    <p className="field-note">Para publicar, vincule pelo menos um serviço a um profissional ativo que tenha expediente semanal ou horário especial dentro do período disponível para reservas. A disponibilidade real também considera reservas, folgas e bloqueios.</p>
     {state.published && <div className="business-share"><label htmlFor="business-share-url">Link para seus clientes</label><input id="business-share-url" readOnly value={window.location.origin + '/#/agendar/' + encodeURIComponent(state.business.slug)} onFocus={event => event.currentTarget.select()} /><small>Copie e compartilhe este link. Ele usa o endereço desta instalação.</small></div>}
     {!state.published && !state.ready && <Message>Conclua os itens acima para liberar a publicação.</Message>}
     {error && <Message>{error}</Message>}

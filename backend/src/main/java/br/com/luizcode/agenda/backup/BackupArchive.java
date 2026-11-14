@@ -13,7 +13,7 @@ import tools.jackson.databind.ObjectMapper;
 
 /** Operator-only encrypted archive; never exposed through a tenant HTTP endpoint. */
 public final class BackupArchive {
-    public static final String VERSION="0.8.1";
+    public static final String VERSION="0.9.0";
     static final int LIMIT=64*1024*1024;
     private static final byte[] MAGIC="ACBK0001".getBytes(java.nio.charset.StandardCharsets.US_ASCII);
     private static final SecureRandom RANDOM=new SecureRandom();

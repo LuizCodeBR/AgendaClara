@@ -16,7 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class BusinessSetupService {
     public record PublicationRequest(@NotNull Boolean published, @NotNull @PositiveOrZero Integer version) {}
     public record Setup(Business business, boolean published, int version, int services, int professionals,
-                        boolean hasHours, boolean emailVerified, boolean verificationRequired, boolean verificationSimulated, int horizonDays, boolean ready) {}
+                        boolean hasHours, boolean emailVerified, boolean verificationRequired, boolean verificationSimulated, int horizonDays, boolean ready, boolean hasBookableProfessional) {}
     private final JdbcTemplate jdbc;
     private final CatalogRepository catalog;
     private final Clock clock;
@@ -41,7 +41,7 @@ public class BusinessSetupService {
         if (request.published() && state.verificationRequired() && !state.emailVerified())
             throw BusinessException.invalid("Confirme seu e-mail antes de publicar a página de reservas.");
         if (request.published() && !state.ready())
-            throw BusinessException.invalid("Cadastre pelo menos um serviço, um profissional ativo e horários de atendimento antes de publicar.");
+            throw BusinessException.invalid("Vincule pelo menos um serviço a um profissional ativo com horários de atendimento antes de publicar.");
         jdbc.update("update business set public_booking_enabled=?,publication_version=publication_version+1 where id=?",
                 request.published(),businessId);
         return snapshot(businessId);
@@ -58,10 +58,17 @@ public class BusinessSetupService {
                   or exists(select 1 from date_hours d join date_hours_window w on w.business_id=d.business_id and w.exception_id=d.id
                     where d.business_id=p.business_id and d.professional_id=p.id and d.exception_date between ? and ?))
                 """,Integer.class,businessId,today,today.plusDays(horizon))>0;
+        boolean hasBookableProfessional=jdbc.queryForObject("""
+                select count(*) from professional p where p.business_id=? and p.active=true
+                  and exists(select 1 from professional_service ps where ps.business_id=p.business_id and ps.professional_id=p.id)
+                  and (exists(select 1 from weekly_hours h where h.business_id=p.business_id and h.professional_id=p.id)
+                    or exists(select 1 from date_hours d join date_hours_window w on w.business_id=d.business_id and w.exception_id=d.id
+                      where d.business_id=p.business_id and d.professional_id=p.id and d.exception_date between ? and ?))
+                """,Integer.class,businessId,today,today.plusDays(horizon))>0;
         boolean[] status=jdbc.query("select email_verified_at,demo_email_verified_at,email_verification_required from app_user where business_id=?",
                 (rs,row)->new boolean[]{rs.getObject(1)!=null||(mail.demo()&&rs.getObject(2)!=null),rs.getBoolean(3),rs.getObject(1)==null&&mail.demo()&&rs.getObject(2)!=null},businessId).stream().findFirst().orElse(new boolean[]{false,false,false});
         return jdbc.query("select public_booking_enabled,publication_version from business where id=?",
                 (rs,row)->new Setup(business,rs.getBoolean(1)&&(!status[1]||status[0]),rs.getInt(2),services,professionals,hasHours,status[0],status[1],status[2],horizon,
-                        services>0 && professionals>0 && hasHours && (!status[1]||status[0])),businessId).getFirst();
+                        hasBookableProfessional && (!status[1]||status[0]), hasBookableProfessional),businessId).getFirst();
     }
 }

@@ -50,8 +50,8 @@ const person=await first.expect('/api/admin/professionals','POST',{name:'Profiss
 const catalog=await first.expect('/api/admin/catalog','GET',undefined,200);
 assert.equal(catalog.services.length,0);
 const date=catalog.suggestedDate, weekday=(new Date(date+'T12:00:00Z').getUTCDay()+6)%7+1;
-await first.expect('/api/admin/professionals/'+person.id,'PUT',{...person,hours:[{weekday,opensAt:'09:00',closesAt:'18:00'}]},200);
 const service=await first.expect('/api/admin/services','POST',{name:'Serviço fictício próprio',description:'Apenas teste',durationMinutes:30,priceCents:1000},201);
+await first.expect('/api/admin/professionals/'+person.id,'PUT',{...person,serviceIds:[service.id],hours:[{weekday,opensAt:'09:00',closesAt:'18:00'}]},200);
 const message=(await first.expect('/api/auth/demo-mailbox','GET',undefined,200)).find(item=>item.purpose==='VERIFY');
 assert.ok(message);
 await first.expect('/api/auth/email/confirm','POST',{token:new URL(message.actionUrl).hash.split('token=')[1]},200);

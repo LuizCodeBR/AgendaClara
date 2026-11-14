@@ -10,7 +10,7 @@ const calendar: DateCalendar = {
   version: 7, firstDate: '2030-06-03', lastDate: '2031-06-03', exceptions: [],
   weeklyHours: [{ weekday: 1, opensAt: '09:00:00', closesAt: '12:00:00' }],
 };
-const person: ProfessionalConfiguration = { id: 'p1', name: 'Ana Exemplo', specialty: 'Cortes', active: true, version: 7, hours: calendar.weeklyHours };
+const person: ProfessionalConfiguration = { id: 'p1', name: 'Ana Exemplo', specialty: 'Cortes', serviceIds: ['service'], active: true, version: 7, hours: calendar.weeklyHours };
 beforeEach(() => {
   mocked.mockReset();
   HTMLDialogElement.prototype.showModal = function () { this.setAttribute('open', ''); };

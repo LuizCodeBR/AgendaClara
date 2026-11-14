@@ -1,10 +1,10 @@
-# Profissionais e expediente — versão 0.2.0
+# Profissionais, serviços e expediente — versão 0.9.0
 
 ## Como usar
 1. Abra **Meu negócio** e entre com uma conta fictícia.
 2. Selecione **Equipe e horários**.
 3. Clique em **Cadastrar profissional**, informe nome e especialidade e confirme.
-4. O cadastro nasce ativo, mas sem expediente. Ative os dias desejados e ajuste os intervalos.
+4. O cadastro nasce ativo, sem serviços e sem expediente. Marque os Serviços atendidos, ative os dias desejados e ajuste os intervalos.
 5. Clique em **Salvar cadastro e horários**. As reservas públicas passam a usar essa configuração.
 
 O mesmo painel funciona no site, no celular e na PWA instalada. No celular os controles ficam empilhados; não há uma segunda base de código.
@@ -43,3 +43,7 @@ O campo profissional representa alguém que atende clientes. Ele não cria uma c
 
 ## Validação
 A suíte da API inclui 58 casos (26 desta etapa); a interface inclui 15 casos (6 desta etapa). O fluxo de navegador cobre cadastro, configuração, reserva pública, rejeição de redução incompatível e inativação após cancelamento, em desktop e celular. Os resultados efetivamente executados e links dos relatórios ficam em VALIDACAO-0.2.0.md.
+
+## Vínculos de serviços (0.9.0)
+
+A configuração inclui serviceIds e protege a retirada de serviços utilizados em reservas futuras ou em andamento. A migração preserva os vínculos anteriores. Consulte [SERVICOS-PROFISSIONAIS.md](SERVICOS-PROFISSIONAIS.md) e [VALIDACAO-0.9.0.md](VALIDACAO-0.9.0.md).

@@ -11,7 +11,7 @@ export function useAvailability(slug: string, professionalId: string, serviceId:
   const [error, setError] = useState('');
   useEffect(() => {
     setSlots([]); setError('');
-    if (!slug || !professionalId || !serviceId || !date) return;
+    if (!slug || !professionalId || !serviceId || !date) { setLoading(false); return; }
     const controller = new AbortController(); setLoading(true);
     const query = new URLSearchParams({ professionalId, serviceId, date });
     api<Availability>('/api/public/' + encodeURIComponent(slug) + '/availability?' + query, { signal: controller.signal })

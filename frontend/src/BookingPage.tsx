@@ -20,6 +20,7 @@ export default function BookingPage({ slug, businesses, onSelectBusiness, online
   const [pending, setPending] = useState(false);
   const [receipt, setReceipt] = useState<Receipt | null>(null);
   const [refresh, setRefresh] = useState(0);
+  const [catalogRevision, setCatalogRevision] = useState(0);
   useEffect(() => { if (receipt) document.getElementById('booking-receipt')?.focus(); }, [receipt]);
   const request = useRef({ signature: '', key: '' });
   const availability = useAvailability(slug, professionalId, serviceId, date, refresh);
@@ -29,16 +30,26 @@ export default function BookingPage({ slug, businesses, onSelectBusiness, online
     api<Catalog>('/api/public/' + encodeURIComponent(slug) + '/catalog', { signal: controller.signal })
       .then(result => {
         if (controller.signal.aborted) return;
-        setCatalog(result); setServiceId(result.services[0]?.id ?? '');
-        setProfessionalId(result.professionals[0]?.id ?? ''); setDate(result.suggestedDate);
+        const chosenService = result.services.some(item => item.id === serviceId) ? serviceId : result.services[0]?.id ?? '';
+        const eligible = result.professionals.filter(item => item.serviceIds.includes(chosenService));
+        setCatalog(result); setServiceId(chosenService);
+        setProfessionalId(current => eligible.some(item => item.id === current) ? current : eligible[0]?.id ?? '');
+        setDate(current => catalog?.business.slug === slug && current ? current : result.suggestedDate);
+        setSlot(null);
       }).catch(error => { if (!controller.signal.aborted) setError(errorMessage(error)); })
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
-  }, [slug]);
+  }, [slug, catalogRevision]);
   useEffect(() => { setSlot(null); }, [serviceId, professionalId, date, refresh]);
 
   const service = catalog?.services.find(item => item.id === serviceId);
-  const professional = catalog?.professionals.find(item => item.id === professionalId);
+  const eligibleProfessionals = catalog?.professionals.filter(item => item.serviceIds.includes(serviceId)) ?? [];
+  const professional = eligibleProfessionals.find(item => item.id === professionalId);
+  function chooseService(id: string) {
+    setServiceId(id); setSlot(null); setReceipt(null);
+    const eligible = catalog?.professionals.filter(item => item.serviceIds.includes(id)) ?? [];
+    setProfessionalId(current => eligible.some(item => item.id === current) ? current : eligible[0]?.id ?? '');
+  }
   const zone = catalog?.business.zoneId ?? 'America/Sao_Paulo';
 
   async function submit(event: FormEvent) {
@@ -55,7 +66,7 @@ export default function BookingPage({ slug, businesses, onSelectBusiness, online
       setReceipt(result); setRefresh(value => value + 1);
     } catch (error) {
       setError(errorMessage(error));
-      if (error instanceof ApiError && error.status === 409) { request.current = { signature: '', key: '' }; setRefresh(value => value + 1); }
+      if (error instanceof ApiError && error.status === 409) { request.current = { signature: '', key: '' }; setSlot(null); setRefresh(value => value + 1); setCatalogRevision(value => value + 1); }
     } finally { setPending(false); }
   }
 
@@ -80,14 +91,16 @@ export default function BookingPage({ slug, businesses, onSelectBusiness, online
       <div className="booking-columns">
         <div className="booking-steps">
           <section className="booking-section" aria-labelledby="service-title"><div className="section-title"><span className="step-number">01</span><h2 id="service-title">Qual vai ser o cuidado?</h2><span className="section-hint">{catalog.services.length} serviços</span></div>
-            <div className="services-list">{catalog.services.map(item => <button type="button" key={item.id} className={'service-card ' + (serviceId === item.id ? 'selected' : '')} aria-pressed={serviceId === item.id} onClick={() => { setServiceId(item.id); setReceipt(null); }}>
+            <div className="services-list">{catalog.services.map(item => <button type="button" key={item.id} className={'service-card ' + (serviceId === item.id ? 'selected' : '')} aria-pressed={serviceId === item.id} onClick={() => chooseService(item.id)}>
               <span className="service-symbol"><Scissors size={21} strokeWidth={1.4} /></span><span className="service-copy"><strong>{item.name}</strong><span><Clock3 size={12} /> {item.durationMinutes} min <span className="dot-separator">·</span> {item.description}</span></span><span className="service-price">{money(item.priceCents)}</span><span className="radio-indicator">{serviceId === item.id && <Check size={13} />}</span>
             </button>)}</div>
           </section>
           <section className="booking-section" aria-labelledby="schedule-title"><div className="section-title"><span className="step-number">02</span><h2 id="schedule-title">Com quem e quando?</h2></div>
-            <div className="professional-list" aria-label="Profissionais">{catalog.professionals.map((item, index) => <button type="button" key={item.id} aria-pressed={professionalId === item.id} className={'professional-chip ' + (professionalId === item.id ? 'selected' : '')} onClick={() => { setProfessionalId(item.id); setReceipt(null); }}><span className={'initial-avatar tone-' + index}>{initials(item.name)}</span><span><strong>{item.name}</strong><small>Profissional</small></span>{professionalId === item.id && <CheckCircle2 size={17} />}</button>)}</div>
+            <div className="professional-list" aria-label="Profissionais">{eligibleProfessionals.map((item, index) => <button type="button" key={item.id} aria-pressed={professionalId === item.id} className={'professional-chip ' + (professionalId === item.id ? 'selected' : '')} onClick={() => { setProfessionalId(item.id); setReceipt(null); }}><span className={'initial-avatar tone-' + index}>{initials(item.name)}</span><span><strong>{item.name}</strong><small>Profissional</small></span>{professionalId === item.id && <CheckCircle2 size={17} />}</button>)}</div>
+            {!eligibleProfessionals.length && <Message>Nenhum profissional está configurado para atender este serviço. Escolha outro serviço ou entre em contato com o estabelecimento.</Message>}
+            <button type="button" className="button quiet" disabled={!online || pending} onClick={() => setCatalogRevision(value => value + 1)}>Atualizar serviços e profissionais</button>
             <DatePicker date={date} today={today} max={plusDays(today, catalog.horizonDays)} onChange={value => { setDate(value); setReceipt(null); }} />
-            <TimeSlots {...availability} selected={slot?.startsAt ?? ''} onSelect={value => { setSlot(value); setReceipt(null); }} zone={zone} />
+            {professional && <TimeSlots {...availability} selected={slot?.startsAt ?? ''} onSelect={value => { setSlot(value); setReceipt(null); }} zone={zone} />}
             <p className="timezone-note"><Clock3 size={12} /> Todos os horários seguem o fuso do estabelecimento: {zone === 'America/Sao_Paulo' ? 'Brasília' : zone}.</p>
           </section>
           <section className="booking-section details-section" aria-labelledby="details-title"><div className="section-title"><span className="step-number">03</span><h2 id="details-title">Como podemos chamar você?</h2></div>
@@ -106,7 +119,7 @@ export default function BookingPage({ slug, businesses, onSelectBusiness, online
             <div className="summary-line"><CalendarDays size={16} /><div><span>Data e horário</span><strong>{date ? dayLabel(date) : 'Escolha uma data'}</strong><small className={slot ? 'chosen-time' : ''}>{slot ? time(slot.startsAt, zone) + ' – ' + time(slot.endsAt, zone) : 'Selecione um horário disponível'}</small></div></div>
             <div className="summary-total"><span>Total do serviço</span><strong>{money(service?.priceCents ?? 0)}</strong></div><p className="payment-note">Pagamento diretamente no estabelecimento.</p>
             {error && <Message>{error}</Message>}
-            <button type="submit" form="booking-form" className="button primary full confirm-button" disabled={!slot || !name.trim() || phone.replace(/\D/g, '').length < 8 || !online || pending} aria-busy={pending}>{pending ? 'Confirmando…' : 'Confirmar agendamento'}{!pending && <ArrowRight size={17} />}</button>
+            <button type="submit" form="booking-form" className="button primary full confirm-button" disabled={!slot || !professional || !name.trim() || phone.replace(/\D/g, '').length < 8 || !online || pending} aria-busy={pending}>{pending ? 'Confirmando…' : 'Confirmar agendamento'}{!pending && <ArrowRight size={17} />}</button>
             <p className="summary-assurance"><ShieldCheck size={13} /> Seu horário é conferido antes da confirmação.</p>
           </>}
           <div className="summary-footnote"><Sparkles size={15} /><span>Menos espera.<br /><strong>Mais tempo para você.</strong></span></div>

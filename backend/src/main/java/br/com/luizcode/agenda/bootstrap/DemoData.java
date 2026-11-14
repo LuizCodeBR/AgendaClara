@@ -59,6 +59,11 @@ public class DemoData implements ApplicationRunner {
                     i == 0 ? "Seu momento de cuidado, no seu ritmo." : "Atendimento com atenção a cada detalhe.",
                     durations[i], prices[i]);
         }
+        jdbc.update("""
+                insert into professional_service(business_id, professional_id, service_id)
+                select p.business_id, p.id, s.id from professional p join service_offering s on s.business_id=p.business_id
+                where p.business_id=?
+                """, businessId);
         ZoneId zone = ZoneId.of("America/Sao_Paulo");
         LocalDate date = LocalDate.now(clock.withZone(zone)).plusDays(1);
         if (date.getDayOfWeek() == DayOfWeek.SUNDAY) date = date.plusDays(1);

@@ -150,3 +150,7 @@ A espera do provedor permanece em next_attempt_at após falha definitiva do cicl
 
 ## Armazenamento e recuperação (0.7.0)
 Ferramentas de backup executam por modo de linha de comando antes da inicialização do Spring, sem endpoint HTTP de exportação integral. Arquivos ACBK0001 usam AES-256-GCM e derivação PBKDF2-HMAC-SHA256, guardando banco e chave com manifesto autenticado e hashes. H2 exige banco fechado e bloqueio exclusivo do arquivo; PostgreSQL usa pg_dump custom e pg_restore em transação única para banco vazio. A restauração não substitui instalação existente. STORAGE_MODE explicita o ambiente; persistent exige PostgreSQL e segredo estável para envio ativo. Consulte [ARMAZENAMENTO-BACKUPS.md](ARMAZENAMENTO-BACKUPS.md).
+
+## Serviços por profissional (0.9.0)
+
+A migração V7 cria professional_service com chave por estabelecimento/profissional/serviço e FKs compostas. A configuração da equipe grava os vínculos junto do perfil e semana, sob o bloqueio e version já existentes. Disponibilidade, reserva e remarcação validam a associação. A publicação exige serviço e expediente no mesmo profissional ativo. A migração preserva as combinações anteriores; novos cadastros exigem escolha explícita. Consulte [SERVICOS-PROFISSIONAIS.md](SERVICOS-PROFISSIONAIS.md).

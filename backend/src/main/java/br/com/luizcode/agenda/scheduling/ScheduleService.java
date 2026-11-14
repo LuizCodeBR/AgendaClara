@@ -50,6 +50,7 @@ public class ScheduleService {
     public Availability availability(Business business, UUID professionalId, UUID serviceId, LocalDate date) {
         catalog.professional(business.id(), professionalId);
         var service = catalog.service(business.id(), serviceId);
+        catalog.requireServiceAssignment(business.id(), professionalId, serviceId);
         ZoneId zone = ZoneId.of(business.zoneId());
         validateDate(date, zone);
         Instant dayStart = date.atStartOfDay(zone).toInstant();
@@ -91,6 +92,7 @@ public class ScheduleService {
         }
         catalog.professional(business.id(), request.professionalId());
         var service = catalog.service(business.id(), request.serviceId());
+        catalog.requireServiceAssignment(business.id(), request.professionalId(), request.serviceId());
         Instant start = request.startsAt().toInstant();
         Instant end = start.plusSeconds(service.durationMinutes() * 60L);
         requireFree(business, request.professionalId(), start, end, NO_APPOINTMENT);
@@ -129,6 +131,7 @@ public class ScheduleService {
         var first = schedule.appointment(business.id(), id);
         catalog.lockProfessional(business.id(), first.professionalId());
         var current = schedule.appointment(business.id(), id);
+        catalog.requireServiceAssignment(business.id(), current.professionalId(), current.serviceId());
         if (!current.status().equals("BOOKED"))
             throw BusinessException.conflict("Um agendamento cancelado não pode ser remarcado.");
         if (!current.startsAt().isAfter(clock.instant()))

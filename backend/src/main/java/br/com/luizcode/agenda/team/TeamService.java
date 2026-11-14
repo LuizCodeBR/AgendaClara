@@ -44,6 +44,14 @@ public class TeamService {
         var current = team.find(businessId, id);
         if (current.version() != request.version())
             throw BusinessException.conflict("Os dados foram alterados em outra sessão. Recarregue antes de salvar.");
+        if (request.serviceIds() == null || request.serviceIds().size() > 500 || request.serviceIds().stream().anyMatch(java.util.Objects::isNull))
+            throw BusinessException.invalid("Informe os serviços atendidos pelo profissional.");
+        var serviceIds = new java.util.HashSet<>(request.serviceIds());
+        if (serviceIds.size() != request.serviceIds().size())
+            throw BusinessException.invalid("Não repita um serviço na mesma configuração.");
+        var ownedServices = catalog.services(businessId).stream().map(br.com.luizcode.agenda.catalog.CatalogModels.Service::id).collect(java.util.stream.Collectors.toSet());
+        if (!ownedServices.containsAll(serviceIds))
+            throw BusinessException.invalid("Escolha apenas serviços cadastrados neste estabelecimento.");
         var hours = normalized(request.hours());
         var commitments = team.upcoming(businessId, id, clock.instant());
         if (!request.active() && !commitments.isEmpty())
@@ -54,6 +62,9 @@ public class TeamService {
                 commitments.getFirst().startsAt().atZone(zone).toLocalDate(),
                 commitments.getLast().startsAt().atZone(zone).toLocalDate());
         for (var commitment : commitments) {
+            if (!serviceIds.contains(commitment.serviceId()))
+                throw BusinessException.conflict("O agendamento " + commitment.reference()
+                        + " utiliza um serviço que seria removido deste profissional. Remarque ou cancele antes de alterar os serviços atendidos.");
             LocalDate date=commitment.startsAt().atZone(zone).toLocalDate();
             var special=exceptions.get(date);
             var windows = special==null ? hours.stream()

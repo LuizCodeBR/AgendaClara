@@ -2,7 +2,7 @@ import type { Appointment, Catalog, CurrentUser, DayAgenda } from '../types';
 export const catalog: Catalog = {
   business: { id: 'business', slug: 'teste', name: 'Negócio Teste', category: 'Barbearia', zoneId: 'America/Sao_Paulo', address: 'Rua Teste' },
   services: [{ id: 'service', name: 'Corte', description: 'Atendimento', durationMinutes: 30, priceCents: 5000 }],
-  professionals: [{ id: 'professional', name: 'Ana Exemplo', specialty: 'Corte' }],
+  professionals: [{ id: 'professional', name: 'Ana Exemplo', specialty: 'Corte', serviceIds: ['service'] }],
   suggestedDate: '2030-06-04', horizonDays: 60,
 };
 export const owner: CurrentUser = { name: 'Marina', email: 'marina@example.com', business: catalog.business };

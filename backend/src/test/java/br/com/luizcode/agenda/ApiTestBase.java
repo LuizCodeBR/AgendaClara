@@ -46,6 +46,8 @@ abstract class ApiTestBase {
         jdbc.update("delete from date_hours");
         jdbc.update("delete from appointment");
         jdbc.update("delete from time_block");
+        jdbc.update("delete from professional_service");
+        jdbc.update("insert into professional_service(business_id,professional_id,service_id) select p.business_id,p.id,s.id from professional p join service_offering s on s.business_id=p.business_id");
     }
     static UUID id(String key) { return UUID.nameUUIDFromBytes(key.getBytes(StandardCharsets.UTF_8)); }
     static OffsetDateTime at(String time) { return DATE.atTime(LocalTime.parse(time)).atZone(ZONE).toOffsetDateTime(); }

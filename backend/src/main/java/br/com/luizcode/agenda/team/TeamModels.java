@@ -11,11 +11,12 @@ public final class TeamModels {
 
     public record WeeklyWindow(@Min(1) @Max(7) int weekday, @NotNull LocalTime opensAt, @NotNull LocalTime closesAt) {}
     public record ProfessionalConfiguration(UUID id, String name, String specialty, boolean active,
-                                            int version, List<WeeklyWindow> hours) {}
+                                            int version, List<WeeklyWindow> hours, List<UUID> serviceIds) {}
     public record CreateProfessional(@NotBlank @Size(max = 100) String name,
                                      @NotBlank @Size(max = 160) String specialty) {}
     public record UpdateProfessional(@NotBlank @Size(max = 100) String name,
                                      @NotBlank @Size(max = 160) String specialty,
                                      @NotNull Boolean active, @NotNull @Min(0) Integer version,
-                                     @NotNull @Size(max = 28) List<@NotNull @Valid WeeklyWindow> hours) {}
+                                     @NotNull @Size(max = 28) List<@NotNull @Valid WeeklyWindow> hours,
+                                     @NotNull @Size(max = 500) List<@NotNull UUID> serviceIds) {}
 }

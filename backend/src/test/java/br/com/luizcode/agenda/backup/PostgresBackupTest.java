@@ -36,6 +36,10 @@ class PostgresBackupTest {
                 UUID business=UUID.randomUUID(),owner=UUID.randomUUID(),mail=UUID.randomUUID();
                 jdbc.update("insert into business(id,slug,name,category,zone_id,address) values(?,?,?,?,?,?)",business,"native-test","Empresa preservada PG","Teste","America/Sao_Paulo","Online");
                 jdbc.update("insert into app_user(id,business_id,email,password_hash,display_name) values(?,?,?,?,?)",owner,business,"native@example.test","hash-preservado","Ana");
+                UUID person=UUID.randomUUID(),service=UUID.randomUUID();
+                jdbc.update("insert into professional(id,business_id,name,specialty) values (?,?,?,?)",person,business,"Pessoa preservada","Teste");
+                jdbc.update("insert into service_offering(id,business_id,name,description,duration_minutes,price_cents) values (?,?,?,?,30,1200)",service,business,"Serviço preservado","Teste");
+                jdbc.update("insert into professional_service(business_id,professional_id,service_id) values (?,?,?)",business,person,service);
                 String aad=mail+":"+business+":"+owner+":VERIFY:demo";
                 String payload=cipher.encrypt(aad,new MailQueueModels.Payload("from","native@example.test","Teste","Mensagem restaurada","link"));
                 var now=OffsetDateTime.now(ZoneOffset.UTC);
@@ -62,6 +66,7 @@ class PostgresBackupTest {
                 }
                 var restored=new JdbcTemplate(new DriverManagerDataSource(target,user,password));
                 assertThat(restored.queryForObject("select name from business where id=?",String.class,business)).isEqualTo("Empresa preservada PG");
+                assertThat(restored.queryForObject("select count(*) from professional_service where business_id=?",Integer.class,business)).isEqualTo(1);
                 assertThat(Files.readAllBytes(restoredKey.resolve("mail-outbox.key"))).isEqualTo(Files.readAllBytes(directory.resolve("mail-outbox.key")));
                 assertThat(cipher.decrypt(aad,restored.queryForObject("select payload from mail_outbox where id=?",String.class,mail)).text()).isEqualTo("Mensagem restaurada");
                 restored.update("insert into mail_outbox(id,business_id,user_id,purpose,delivery_mode,status,created_at,expires_at,send_deadline) values(?,?,?,'CHANGED','resend','ACCEPTED',?,?,?)",

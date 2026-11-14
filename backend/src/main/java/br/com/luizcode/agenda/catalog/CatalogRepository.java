@@ -22,7 +22,7 @@ public class CatalogRepository {
             new Business(rs.getObject("id", UUID.class), rs.getString("slug"), rs.getString("name"),
                     rs.getString("category"), rs.getString("zone_id"), rs.getString("address"));
     private static final RowMapper<Professional> PROFESSIONAL = (rs, row) ->
-            new Professional(rs.getObject("id", UUID.class), rs.getString("name"), rs.getString("specialty"));
+            new Professional(rs.getObject("id", UUID.class), rs.getString("name"), rs.getString("specialty"), List.of());
     private static final RowMapper<Service> SERVICE = (rs, row) ->
             new Service(rs.getObject("id", UUID.class), rs.getString("name"),
                     rs.getString("description"), rs.getInt("duration_minutes"), rs.getInt("price_cents"));
@@ -44,13 +44,33 @@ public class CatalogRepository {
     }
 
     public List<Professional> professionals(UUID businessId) {
-        return jdbc.query("select * from professional where business_id = ? and active = TRUE order by name",
+        var profiles = jdbc.query("select * from professional where business_id = ? and active = TRUE order by name, id",
                 PROFESSIONAL, businessId);
+        var assignments = new java.util.HashMap<UUID, java.util.List<UUID>>();
+        jdbc.query("select professional_id, service_id from professional_service where business_id=? order by professional_id, service_id",
+                rs -> { assignments.computeIfAbsent(rs.getObject(1, UUID.class), key -> new java.util.ArrayList<>()).add(rs.getObject(2, UUID.class)); }, businessId);
+        return profiles.stream().map(p -> new Professional(p.id(), p.name(), p.specialty(),
+                List.copyOf(assignments.getOrDefault(p.id(), List.of())))).toList();
     }
 
     public Professional professional(UUID businessId, UUID id) {
-        return jdbc.query("select * from professional where business_id = ? and id = ? and active = TRUE",
-                PROFESSIONAL, businessId, id).stream().findFirst().orElseThrow(BusinessException::notFound);
+        return jdbc.query("""
+                select p.id,p.name,p.specialty,ps.service_id from professional p
+                left join professional_service ps on ps.business_id=p.business_id and ps.professional_id=p.id
+                where p.business_id=? and p.id=? and p.active=true order by ps.service_id
+                """, rs -> {
+                    if (!rs.next()) throw BusinessException.notFound();
+                    String name=rs.getString("name"),specialty=rs.getString("specialty");
+                    var serviceIds=new java.util.ArrayList<UUID>();
+                    do { UUID serviceId=rs.getObject("service_id",UUID.class); if(serviceId!=null)serviceIds.add(serviceId); } while(rs.next());
+                    return new Professional(id,name,specialty,List.copyOf(serviceIds));
+                },businessId,id);
+    }
+
+    public void requireServiceAssignment(UUID businessId, UUID professionalId, UUID serviceId) {
+        if (jdbc.queryForObject("select count(*) from professional_service where business_id=? and professional_id=? and service_id=?",
+                Integer.class, businessId, professionalId, serviceId) != 1)
+            throw BusinessException.conflict("Este profissional não atende o serviço escolhido. Atualize as opções e escolha outro profissional.");
     }
 
     public void lockProfessional(UUID businessId, UUID id) {

@@ -35,7 +35,7 @@ class DateHoursTest extends ApiTestBase {
             windows.add(new WeeklyWindow(day,LocalTime.of(9,0),LocalTime.NOON));
             windows.add(new WeeklyWindow(day,LocalTime.of(13,0),LocalTime.of(18,0)));
         }
-        team.update(BUSINESS,person,new UpdateProfessional(created.name(),created.specialty(),true,0,windows));
+        team.update(BUSINESS,person,new UpdateProfessional(created.name(),created.specialty(),true,0,windows,List.of(SERVICE)));
     }
     @AfterEach void cleanProfessional() {
         jdbc.update("delete from date_hours_window"); jdbc.update("delete from date_hours");
@@ -153,7 +153,7 @@ class DateHoursTest extends ApiTestBase {
         dates.save(BUSINESS,person,DATE,draft(List.of(window("19:00","20:00"))));
         schedule.book(catalog.business(BUSINESS),booking(DATE,"19:00"));
         var current=people.find(BUSINESS,person);
-        team.update(BUSINESS,person,new UpdateProfessional(current.name(),current.specialty(),true,current.version(),List.of()));
+        team.update(BUSINESS,person,new UpdateProfessional(current.name(),current.specialty(),true,current.version(),List.of(),List.of(SERVICE)));
         assertThat(people.find(BUSINESS,person).hours()).isEmpty();
         assertThatThrownBy(()->dates.remove(BUSINESS,person,DATE,version())).isInstanceOf(BusinessException.class);
     }
@@ -162,7 +162,7 @@ class DateHoursTest extends ApiTestBase {
         dates.save(BUSINESS,person,DATE,draft(List.of()));
         save(DATE.plusDays(1),new SaveException(previous,"Outro rascunho",List.of())).andExpect(status().isConflict());
         var profile=people.find(BUSINESS,person);
-        assertThatThrownBy(()->team.update(BUSINESS,person,new UpdateProfessional(profile.name(),profile.specialty(),true,previous,profile.hours())))
+        assertThatThrownBy(()->team.update(BUSINESS,person,new UpdateProfessional(profile.name(),profile.specialty(),true,previous,profile.hours(),List.of(SERVICE))))
                 .isInstanceOf(BusinessException.class);
     }
     @Test void invalidWindowsDatesAndMissingDataAreRejectedAtomically() throws Exception {
@@ -190,7 +190,7 @@ class DateHoursTest extends ApiTestBase {
     @Test void inactiveProfessionalRemainsUnavailableDespiteSpecialOpening() throws Exception {
         dates.save(BUSINESS,person,DATE,draft(List.of(window("09:00","12:00"))));
         var profile=people.find(BUSINESS,person);
-        team.update(BUSINESS,person,new UpdateProfessional(profile.name(),profile.specialty(),false,profile.version(),profile.hours()));
+        team.update(BUSINESS,person,new UpdateProfessional(profile.name(),profile.specialty(),false,profile.version(),profile.hours(),List.of(SERVICE)));
         available(DATE).andExpect(status().isNotFound());
     }
 

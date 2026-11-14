@@ -4,7 +4,7 @@ import path from 'node:path';
 import { createHash } from 'node:crypto';
 const root=path.resolve(process.argv[2]??'operations');
 const report=JSON.parse(fs.readFileSync(path.join(root,'latest.json'),'utf8'));
-assert.equal(report.format,2);assert.equal(report.version,'0.8.1');assert.equal(report.onDemandOnly,true);
+assert.equal(report.format,2);assert.equal(report.version,'0.9.0');assert.equal(report.onDemandOnly,true);
 assert.equal(report.backup.status,'VERIFIED');assert.equal(report.backup.fileMatches,true);
 const v=report.backup.lastVerified;assert.equal(path.basename(v.filename),v.filename);
 const archive=fs.readFileSync(path.join(root,'backups',v.filename));

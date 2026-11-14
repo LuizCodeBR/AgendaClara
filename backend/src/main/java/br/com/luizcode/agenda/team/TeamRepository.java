@@ -35,8 +35,11 @@ public class TeamRepository {
                     hours.computeIfAbsent(rs.getObject(1, UUID.class), key -> new ArrayList<>())
                             .add(new WeeklyWindow(rs.getInt(2), rs.getObject(3, LocalTime.class), rs.getObject(4, LocalTime.class)));
                 }, businessId);
+        Map<UUID, List<UUID>> services = new HashMap<>();
+        jdbc.query("select professional_id, service_id from professional_service where business_id=? order by professional_id, service_id",
+                rs -> { services.computeIfAbsent(rs.getObject(1, UUID.class), key -> new ArrayList<>()).add(rs.getObject(2, UUID.class)); }, businessId);
         return profiles.stream().map(profile -> new ProfessionalConfiguration(profile.id(), profile.name(),
-                profile.specialty(), profile.active(), profile.version(), List.copyOf(hours.getOrDefault(profile.id(), List.of())))).toList();
+                profile.specialty(), profile.active(), profile.version(), List.copyOf(hours.getOrDefault(profile.id(), List.of())), List.copyOf(services.getOrDefault(profile.id(), List.of())))).toList();
     }
 
     public ProfessionalConfiguration find(UUID businessId, UUID id) {
@@ -52,7 +55,9 @@ public class TeamRepository {
                 """, (rs, row) -> new WeeklyWindow(rs.getInt(1), rs.getObject(2, LocalTime.class),
                         rs.getObject(3, LocalTime.class)), businessId, profile.id());
         return new ProfessionalConfiguration(profile.id(), profile.name(), profile.specialty(), profile.active(),
-                profile.version(), hours);
+                profile.version(), hours, jdbc.query(
+                        "select service_id from professional_service where business_id=? and professional_id=? order by service_id",
+                        (rs,row) -> rs.getObject(1, UUID.class), businessId, profile.id()));
     }
 
     public ProfessionalConfiguration create(UUID businessId, CreateProfessional request) {
@@ -69,6 +74,9 @@ public class TeamRepository {
                 """, request.name().strip(), request.specialty().strip(), request.active(), businessId, id,
                 request.version());
         if (changed != 1) throw BusinessException.conflict("Os dados foram alterados em outra sessão. Recarregue antes de salvar.");
+        jdbc.update("delete from professional_service where business_id=? and professional_id=?", businessId, id);
+        for (UUID serviceId : request.serviceIds())
+            jdbc.update("insert into professional_service(business_id,professional_id,service_id) values (?,?,?)", businessId, id, serviceId);
         jdbc.update("delete from weekly_hours where business_id = ? and professional_id = ?", businessId, id);
         for (var window : hours) jdbc.update("""
                 insert into weekly_hours(id, business_id, professional_id, weekday, opens_at, closes_at)
@@ -84,22 +92,22 @@ public class TeamRepository {
 
     public List<Commitment> upcomingOnDate(UUID businessId, UUID professionalId, Instant now, Instant start, Instant end) {
         return jdbc.query("""
-                select starts_at, ends_at, reference from appointment
+                select starts_at, ends_at, reference, service_id from appointment
                 where business_id=? and professional_id=? and status='BOOKED' and ends_at>?
                   and starts_at<? and ends_at>? order by starts_at
                 """,(rs,row)->new Commitment(rs.getObject(1,OffsetDateTime.class).toInstant(),
-                        rs.getObject(2,OffsetDateTime.class).toInstant(),rs.getString(3)),
+                        rs.getObject(2,OffsetDateTime.class).toInstant(),rs.getString(3),rs.getObject(4,UUID.class)),
                 businessId,professionalId,now.atOffset(ZoneOffset.UTC),end.atOffset(ZoneOffset.UTC),start.atOffset(ZoneOffset.UTC));
     }
 
-    public record Commitment(Instant startsAt, Instant endsAt, String reference) {}
+    public record Commitment(Instant startsAt, Instant endsAt, String reference, UUID serviceId) {}
     public List<Commitment> upcoming(UUID businessId, UUID professionalId, Instant now) {
         return jdbc.query("""
-                select starts_at, ends_at, reference from appointment
+                select starts_at, ends_at, reference, service_id from appointment
                 where business_id = ? and professional_id = ? and status = 'BOOKED' and ends_at > ?
                 order by starts_at
                 """, (rs, row) -> new Commitment(rs.getObject(1, OffsetDateTime.class).toInstant(),
-                        rs.getObject(2, OffsetDateTime.class).toInstant(), rs.getString(3)),
+                        rs.getObject(2, OffsetDateTime.class).toInstant(), rs.getString(3), rs.getObject(4, UUID.class)),
                 businessId, professionalId, now.atOffset(ZoneOffset.UTC));
     }
 }

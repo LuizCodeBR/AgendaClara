@@ -9,7 +9,7 @@ public final class CatalogModels {
     private CatalogModels() {}
 
     public record Business(UUID id, String slug, String name, String category, String zoneId, String address) {}
-    public record Professional(UUID id, String name, String specialty) {}
+    public record Professional(UUID id, String name, String specialty, List<UUID> serviceIds) {}
     public record Service(UUID id, String name, String description, int durationMinutes, int priceCents) {}
     public record Catalog(Business business, List<Service> services, List<Professional> professionals,
                           LocalDate suggestedDate, int horizonDays) {}

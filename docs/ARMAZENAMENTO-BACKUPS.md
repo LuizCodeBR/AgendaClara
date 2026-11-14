@@ -106,3 +106,7 @@ Não existe endpoint para baixar ou restaurar o banco pelo painel das empresas. 
 
 ## Rotina sob demanda (0.8.0)
 O responsável pela instalação pode criar e verificar uma cópia, preservar o último resultado válido e consultar um relatório privado de limites com operacao.cmd/operacao.sh. Site e PWA seguem usando o mesmo banco persistente; não há nova exportação global por HTTP. Conforme a escolha do usuário, nenhum agendamento foi ativado. Consulte [OPERACAO-BACKUPS-LIMITES.md](OPERACAO-BACKUPS-LIMITES.md).
+
+## Compatibilidade na 0.9.0
+
+A inspeção aceita os esquemas 6 e 7. A migração V7 acrescenta os serviços por profissional; a cópia e restauração incluem essa tabela. O formato ACBK0001 permanece. Use ferramenta da versão nova para restaurar banco migrado e preserve banco e chave em conjunto.

@@ -152,12 +152,14 @@ class RegistrationTest extends ApiTestBase {
         var created=mvc.perform(post("/api/admin/professionals").with(user(owner)).with(csrf()).contentType("application/json")
                 .content(json(Map.of("name","Pessoa própria","specialty","Consultoria")))).andExpect(status().isCreated()).andReturn();
         UUID person=UUID.fromString(mapper.readTree(created.getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8)).get("id").asText());
-        mvc.perform(put("/api/admin/professionals/"+person).with(user(owner)).with(csrf()).contentType("application/json")
-                .content(json(Map.of("name","Pessoa própria","specialty","Consultoria","active",true,"version",0,
-                        "hours",List.of(Map.of("weekday",2,"opensAt","09:00","closesAt","18:00")))))).andExpect(status().isOk());
+
         mvc.perform(post("/api/admin/services").with(user(owner)).with(csrf()).contentType("application/json")
                 .content(json(Map.of("name","Consulta própria","description","Atendimento teste","durationMinutes",30,"priceCents",5000))))
                 .andExpect(status().isCreated());
+        mvc.perform(put("/api/admin/professionals/"+person).with(user(owner)).with(csrf()).contentType("application/json")
+                .content(json(Map.of("name","Pessoa própria","specialty","Consultoria","active",true,"version",0,
+                        "hours",List.of(Map.of("weekday",2,"opensAt","09:00","closesAt","18:00")),
+                        "serviceIds",catalog.services(business).stream().map(br.com.luizcode.agenda.catalog.CatalogModels.Service::id).toList())))).andExpect(status().isOk());
         return person;
     }
     @Test void publicationRequiresSetupAndOptimisticVersionAndCanHideWithoutDeletingAppointments() throws Exception {
@@ -193,7 +195,7 @@ class RegistrationTest extends ApiTestBase {
         mvc.perform(get("/api/admin/business?businessId="+a).with(user(ownB))).andExpect(jsonPath("$.business.id").value(b.toString()));
         mvc.perform(get("/api/admin/professionals").with(user(ownB))).andExpect(content().json("[]"));
         mvc.perform(put("/api/admin/professionals/"+person).with(user(ownB)).with(csrf()).contentType("application/json")
-                .content(json(Map.of("name","Intruso","specialty","Teste","active",true,"version",1,"hours",List.of())))).andExpect(status().isNotFound());
+                .content(json(Map.of("name","Intruso","specialty","Teste","active",true,"version",1,"hours",List.of(),"serviceIds",List.of())))).andExpect(status().isNotFound());
         mvc.perform(get("/api/admin/professionals/"+person+"/exceptions").with(user(ownB))
                 .param("from",DATE.toString()).param("to",DATE.plusDays(1).toString())).andExpect(status().isNotFound());
         mvc.perform(put("/api/admin/business/publication").with(user(ownB)).with(csrf()).contentType("application/json")
@@ -213,6 +215,7 @@ class RegistrationTest extends ApiTestBase {
         UUID person=UUID.randomUUID(), exception=UUID.randomUUID();
         jdbc.update("insert into professional(id,business_id,name,specialty) values(?,?,?,?)",person,id,"Pessoa própria","Teste");
         jdbc.update("insert into service_offering(id,business_id,name,description,duration_minutes,price_cents) values(?,?,?,?,30,1000)",UUID.randomUUID(),id,"Teste","Teste");
+        jdbc.update("insert into professional_service(business_id,professional_id,service_id) select business_id,?,id from service_offering where business_id=?",person,id);
         jdbc.update("insert into date_hours(id,business_id,professional_id,exception_date,reason) values(?,?,?,?,?)",exception,id,person,DATE,"Teste");
         mvc.perform(get("/api/admin/business").with(user(own))).andExpect(jsonPath("$.hasHours").value(false)).andExpect(jsonPath("$.ready").value(false));
         jdbc.update("insert into date_hours_window(id,business_id,exception_id,opens_at,closes_at) values(?,?,?,'09:00','12:00')",UUID.randomUUID(),id,exception);

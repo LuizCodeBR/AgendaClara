@@ -2,7 +2,7 @@
 
 **Site:** https://agenda-clara-luizcodebr.onrender.com
 
-**Downloads:** https://github.com/LuizCodeBR/AgendaClara/releases/tag/v0.8.1
+**Downloads:** https://github.com/LuizCodeBR/AgendaClara/releases/tag/v0.9.0
 
 ## Três formas de acesso
 
@@ -87,3 +87,7 @@ A API informa o modo operacional local, ephemeral ou persistent. O cadastro web/
 O responsável pela instalação pode criar e verificar uma cópia, preservar o último resultado válido e consultar um relatório privado de limites com operacao.cmd/operacao.sh. Site e PWA seguem usando o mesmo banco persistente; não há nova exportação global por HTTP. Conforme a escolha do usuário, nenhum agendamento foi ativado. Consulte [OPERACAO-BACKUPS-LIMITES.md](OPERACAO-BACKUPS-LIMITES.md).
 
 A versão 0.8.1 reforça as ferramentas do operador sem novos endpoints globais ou mudanças de esquema. Consulte [a revisão](REVISAO-BACKUPS-0.8.1.md).
+
+## Serviços por profissional (0.9.0)
+
+Site, PWA e pacote local compartilham a seleção de Serviços atendidos em Equipe e horários e o filtro de profissionais por serviço. A nova versão requer migração V7; preserve data e a chave ao atualizar localmente e recarregue a página/PWA após a publicação. Consulte [o guia](SERVICOS-PROFISSIONAIS.md).
