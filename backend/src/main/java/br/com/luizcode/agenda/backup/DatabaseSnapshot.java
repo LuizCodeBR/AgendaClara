@@ -20,7 +20,7 @@ public final class DatabaseSnapshot {
             if(!rows.next())throw new IOException("O banco não contém as migrações da Agenda Clara.");
             schema=rows.getString(1);
         }
-        if(!Set.of("6","7","8","9").contains(schema))throw new IOException("Versão de esquema incompatível com esta ferramenta.");
+        if(!Set.of("6","7","8","9","10").contains(schema))throw new IOException("Versão de esquema incompatível com esta ferramenta.");
         String expected=null;
         try(var statement=connection.createStatement();var rows=statement.executeQuery("select key_id from mail_key_identity where id=1")){if(rows.next())expected=rows.getString(1);}
         String actual=null;

@@ -60,3 +60,14 @@ it('mantém o erro do catálogo visível e permite recuperar a abertura inicial 
   await screen.findByRole('heading', { name: 'Cliente do dia anterior' });
   expect(screen.queryByText('Catálogo indisponível.')).not.toBeInTheDocument();
 });
+
+it('mostra resultados e ações apenas para atendimentos encerrados',async()=>{
+ vi.setSystemTime(new Date('2030-06-04T13:00:00Z'));
+ mocked.mockImplementation(async path=>path.endsWith('/catalog')?catalog:{...agenda,appointments:[...agenda.appointments,{...agenda.appointments[0],id:'done',customerName:'Cliente concluído',status:'COMPLETED'}]});
+ try{mount();await screen.findByRole('heading',{name:'Cliente concluído'});expect(screen.getByText('Concluídos: 1')).toBeInTheDocument();expect(screen.getByText('Aguardando resultado: 1')).toBeInTheDocument();expect(screen.getByRole('button',{name:'Concluir Cliente do dia anterior'})).toBeEnabled();expect(screen.getByRole('button',{name:'Corrigir resultado de Cliente concluído'})).toBeEnabled();expect(screen.queryByRole('button',{name:'Cancelar Cliente concluído'})).not.toBeInTheDocument();}
+ finally{vi.useRealTimers();}
+});
+it('filtra faltas sem apresentar reservas de outra situação',async()=>{
+ mocked.mockImplementation(async path=>path.endsWith('/catalog')?catalog:{...agenda,appointments:[...agenda.appointments,{...agenda.appointments[0],id:'absent',customerName:'Cliente ausente',status:'NO_SHOW'}]});
+ mount();await screen.findByRole('heading',{name:'Cliente ausente'});await userEvent.setup().click(screen.getByRole('button',{name:'Faltas'}));expect(screen.queryByRole('heading',{name:'Cliente do dia anterior'})).not.toBeInTheDocument();expect(screen.getByRole('heading',{name:'Cliente ausente'})).toBeInTheDocument();
+});

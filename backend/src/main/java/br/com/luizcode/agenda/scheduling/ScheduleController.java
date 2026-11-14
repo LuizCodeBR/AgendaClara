@@ -36,7 +36,7 @@ public class ScheduleController {
         this.publicDemo = publicDemo; this.sourceUrl = sourceUrl; this.downloadUrl = downloadUrl;
     }
     @GetMapping("/api/public/config")
-    Map<String, Object> config() { return Map.of("demo", demo, "publicDemo", publicDemo, "registrationEnabled", registrationEnabled, "mailMode", mailSettings.mode(), "version", "0.11.1", "storageMode", storage.mode(),
+    Map<String, Object> config() { return Map.of("demo", demo, "publicDemo", publicDemo, "registrationEnabled", registrationEnabled, "mailMode", mailSettings.mode(), "version", "0.12.0", "storageMode", storage.mode(),
             "distribution", Map.of("sourceUrl", sourceUrl, "downloadUrl", downloadUrl)); }
     @GetMapping("/api/public/businesses")
     List<Business> businesses() { return catalog.businesses(); }
@@ -66,12 +66,12 @@ public class ScheduleController {
     }
     @PostMapping("/api/admin/appointments/{id}/cancel")
     AppointmentView cancel(@AuthenticationPrincipal AgendaUser user, @PathVariable UUID id, @Valid @RequestBody(required=false) CancelRequest request) {
-        return schedule.cancel(catalog.business(user.businessId()), id,request==null?null:request.version());
+        return schedule.cancelOwner(catalog.business(user.businessId()), id,request==null?null:request.version(),user);
     }
     @PatchMapping("/api/admin/appointments/{id}/reschedule")
     AppointmentView reschedule(@AuthenticationPrincipal AgendaUser user, @PathVariable UUID id,
                                @Valid @RequestBody RescheduleRequest request) {
-        return schedule.reschedule(catalog.business(user.businessId()), id, request);
+        return schedule.rescheduleOwner(catalog.business(user.businessId()), id, request,user);
     }
     @PostMapping("/api/admin/blocks")
     ResponseEntity<BlockView> block(@AuthenticationPrincipal AgendaUser user, @Valid @RequestBody BlockRequest request) {

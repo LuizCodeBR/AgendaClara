@@ -100,6 +100,9 @@ public class ScheduleRepository {
         jdbc.update("update appointment set starts_at = ?, ends_at = ?, version=version+1, updated_at = ? where business_id = ? and id = ?",
                 utc(start), utc(end), utc(now), businessId, id);
     }
+    public void result(UUID business,UUID appointment,String status,Instant now){
+        jdbc.update("update appointment set status=?,version=version+1,updated_at=? where business_id=? and id=?",status,utc(now),business,appointment);
+    }
     public void advanceVersion(UUID business,UUID appointment,Instant now){
         jdbc.update("update appointment set version=version+1,updated_at=? where business_id=? and id=?",utc(now),business,appointment);
     }

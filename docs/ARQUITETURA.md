@@ -170,3 +170,6 @@ V9 acrescenta os intervalos de reserva, cancelamento e remarcação e sua revis�
 BookingPolicyService coordena edição e captura com um UPDATE de coluna não chave na empresa, antes de bloquear o profissional na confirmação. A revisão é relida após a espera. O servidor verifica publicação, antecedência e disponibilidade na mesma transação. O caminho público reconfirma a publicação; a preparação interna de cadastros privados permanece separada.
 
 CustomerPortalService aplica as condições da reserva e calcula permissões e prazos individuais. A remarcação preserva valores e recalcula datas pelo novo início. O responsável pode atender exceções futuras. Relógio do servidor e instantes garantem limites precisos; a interface mostra o fuso da empresa. Consulte [o guia](REGRAS-AGENDAMENTO.md).
+
+## Resultados e histórico — 0.12.0
+AppointmentOutcomeService usa o bloqueio de profissional e a versão da reserva. AppointmentHistory recebe os eventos dentro da mesma transação. A migração Java V10 substitui o CHECK anterior pelo nome descoberto em information_schema, para compatibilidade com os nomes gerados por H2/PostgreSQL, sem alterar migrações históricas. O histórico é paginado e isolado por empresa. Consulte RESULTADOS-ATENDIMENTOS.md.

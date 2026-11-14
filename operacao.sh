@@ -5,4 +5,4 @@ cd "$ROOT"
 mkdir -p .cache/tmp
 export TMPDIR="$ROOT/.cache/tmp"
 if [[ $# -eq 0 ]]; then set -- --operations=report; fi
-exec java -Xmx512m "-Djava.io.tmpdir=$ROOT/.cache/tmp" -jar "$ROOT/target/agenda-clara-0.11.1.jar" "$@"
+exec java -Xmx512m "-Djava.io.tmpdir=$ROOT/.cache/tmp" -jar "$ROOT/target/agenda-clara-0.12.0.jar" "$@"

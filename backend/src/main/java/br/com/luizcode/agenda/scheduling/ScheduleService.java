@@ -30,12 +30,13 @@ public class ScheduleService {
     private final br.com.luizcode.agenda.customer.CustomerAccessRepository customerAccess;
     private final br.com.luizcode.agenda.customer.CustomerKeys customerKeys;
     private final int horizonDays;
+    private final AppointmentHistory history;
     private final br.com.luizcode.agenda.policy.BookingPolicyService policies;
 
     public ScheduleService(CatalogRepository catalog, ScheduleRepository schedule, Clock clock, EffectiveHours hours, br.com.luizcode.agenda.customer.CustomerAccessRepository customerAccess,
                            br.com.luizcode.agenda.customer.CustomerKeys customerKeys,
-                           br.com.luizcode.agenda.policy.BookingPolicyService policies,@Value("${app.booking.horizon-days:60}") int horizonDays) {
-        this.policies=policies;
+                           br.com.luizcode.agenda.policy.BookingPolicyService policies,AppointmentHistory history,@Value("${app.booking.horizon-days:60}") int horizonDays) {
+        this.policies=policies;this.history=history;
         this.customerAccess=customerAccess;this.customerKeys=customerKeys;
         this.catalog = catalog;
         this.hours = hours;
@@ -142,6 +143,7 @@ public class ScheduleService {
         policy.requireBooking(start,acceptedAt);
         var saved = schedule.insert(business.id(), request, service.name(), service.priceCents(),
                 start, end, phone, fingerprint, acceptedAt,policy);
+        history.append(null,saved,"CREATED",requirePublic?AppointmentHistory.Actor.customer():AppointmentHistory.Actor.system(),"",acceptedAt,null,null);
         if(customerKeys.available())
             customerAccess.save(business.id(),saved.id(),1,br.com.luizcode.agenda.customer.CustomerKeys.digest(customerKeys.token(saved.id(),1)),clock.instant(),null);
         return new BookingOutcome(customerReceipt(saved), true);
@@ -175,12 +177,16 @@ public class ScheduleService {
     public AppointmentView cancel(Business business, UUID id) { return cancel(business,id,null); }
 
     @Transactional(isolation=Isolation.READ_COMMITTED)
-    public AppointmentView cancel(Business business, UUID id,Integer version) { return cancelInternal(business,id,version,false); }
+    public AppointmentView cancel(Business business, UUID id,Integer version) { return cancelInternal(business,id,version,false,AppointmentHistory.Actor.system()); }
 
     @Transactional(isolation=Isolation.READ_COMMITTED)
-    public AppointmentView cancelCustomer(Business business,UUID id,int version){return cancelInternal(business,id,version,true);}
+    public AppointmentView cancelCustomer(Business business,UUID id,int version){return cancelInternal(business,id,version,true,AppointmentHistory.Actor.customer());}
 
-    private AppointmentView cancelInternal(Business business,UUID id,Integer version,boolean customer){
+    @Transactional(isolation=Isolation.READ_COMMITTED)
+    public AppointmentView cancelOwner(Business business,UUID id,Integer version,br.com.luizcode.agenda.identity.AgendaUser user){
+        return cancelInternal(business,id,version,false,AppointmentHistory.Actor.owner(user));
+    }
+    private AppointmentView cancelInternal(Business business,UUID id,Integer version,boolean customer,AppointmentHistory.Actor actor){
         var first = schedule.appointment(business.id(), id);
         catalog.lockProfessional(business.id(), first.professionalId());
         var current = schedule.appointment(business.id(), id);
@@ -192,16 +198,22 @@ public class ScheduleService {
         if(customer&&!current.bookingPolicy().allowsCancellation(current.startsAt(),acceptedAt))
             throw BusinessException.conflict("O prazo de cancelamento online terminou. Fale com o estabelecimento.");
         schedule.cancel(business.id(), id, acceptedAt);
-        return schedule.appointment(business.id(), id).view();
+        var after=schedule.appointment(business.id(),id);
+        history.append(current,after,"CANCELLED",actor,"",acceptedAt,null,null);
+        return after.view();
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
-    public AppointmentView reschedule(Business business, UUID id, RescheduleRequest request) {return rescheduleInternal(business,id,request,false);}
+    public AppointmentView reschedule(Business business, UUID id, RescheduleRequest request) {return rescheduleInternal(business,id,request,false,AppointmentHistory.Actor.system());}
 
     @Transactional(isolation=Isolation.READ_COMMITTED)
-    public AppointmentView rescheduleCustomer(Business business,UUID id,RescheduleRequest request){return rescheduleInternal(business,id,request,true);}
+    public AppointmentView rescheduleCustomer(Business business,UUID id,RescheduleRequest request){return rescheduleInternal(business,id,request,true,AppointmentHistory.Actor.customer());}
 
-    private AppointmentView rescheduleInternal(Business business,UUID id,RescheduleRequest request,boolean customer){
+    @Transactional(isolation=Isolation.READ_COMMITTED)
+    public AppointmentView rescheduleOwner(Business business,UUID id,RescheduleRequest request,br.com.luizcode.agenda.identity.AgendaUser user){
+        return rescheduleInternal(business,id,request,false,AppointmentHistory.Actor.owner(user));
+    }
+    private AppointmentView rescheduleInternal(Business business,UUID id,RescheduleRequest request,boolean customer,AppointmentHistory.Actor actor){
         var first = schedule.appointment(business.id(), id);
         catalog.lockProfessional(business.id(), first.professionalId());
         var current = schedule.appointment(business.id(), id);
@@ -225,7 +237,9 @@ public class ScheduleService {
             current.bookingPolicy().requireBooking(start,acceptedAt);
         }
         schedule.move(business.id(), id, start, end, acceptedAt);
-        return schedule.appointment(business.id(), id).view();
+        var after=schedule.appointment(business.id(),id);
+        history.append(current,after,"RESCHEDULED",actor,"",acceptedAt,null,null);
+        return after.view();
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)

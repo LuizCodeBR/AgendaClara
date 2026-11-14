@@ -18,6 +18,12 @@ final class CustomerBackupFixture {
             """,appointment,business,person,service,"Serviço histórico",now.plusDays(1),now.plusDays(1).plusMinutes(30),
             UUID.randomUUID().toString().substring(0,10),UUID.randomUUID(),"f".repeat(64),now,now);
         jdbc.update("update appointment set booking_notice_minutes=60,cancel_notice_minutes=120,reschedule_notice_minutes=180,policy_version=2 where id=?",appointment);
+        jdbc.update("update appointment set status='COMPLETED' where id=?",appointment);
+        jdbc.update("""
+            insert into appointment_history(id,business_id,appointment_id,appointment_version,action,from_status,to_status,
+            from_start,from_end,to_start,to_end,actor_type,actor_name,reason,occurred_at)
+            values(?,?,?,4,'OUTCOME','BOOKED','COMPLETED',?,?,?,?,'SYSTEM','Sistema','Resultado preservado no backup',?)
+            """,UUID.randomUUID(),business,appointment,now.minusHours(1),now.minusMinutes(30),now.minusHours(1),now.minusMinutes(30),now);
         var keys=new CustomerKeys(cipher);var access=new CustomerAccessRepository(jdbc);
         access.save(business,appointment,3,CustomerKeys.digest(keys.token(appointment,3)),now.toInstant(),UUID.randomUUID());
         access.createGrant(access.access(business,appointment).orElseThrow(),CustomerKeys.digest("s".repeat(43)),null,now.toInstant(),now.plusHours(1).toInstant());
@@ -30,6 +36,8 @@ final class CustomerBackupFixture {
         var appointmentPolicy=jdbc.queryForObject("select cancel_notice_minutes from appointment where id=?",Integer.class,id);
         assertThat(appointmentPolicy).isEqualTo(120);
         assertThat(jdbc.queryForObject("select policy_version from appointment where id=?",Integer.class,id)).isEqualTo(2);
+        assertThat(jdbc.queryForObject("select status from appointment where id=?",String.class,id)).isEqualTo("COMPLETED");
+        assertThat(jdbc.queryForObject("select reason from appointment_history where appointment_id=?",String.class,id)).isEqualTo("Resultado preservado no backup");
         var access=new CustomerAccessRepository(jdbc);
         var current=access.access(business,id).orElseThrow();
         String token=new CustomerKeys(restored).token(id,3);

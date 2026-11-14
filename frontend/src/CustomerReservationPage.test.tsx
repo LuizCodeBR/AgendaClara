@@ -93,3 +93,7 @@ it('continua permitindo consulta quando os dois prazos terminaram',async()=>{
   expect(screen.queryByRole('button',{name:'Remarcar minha reserva'})).not.toBeInTheDocument();
   expect(screen.getByText('Cliente fictício')).toBeVisible();
 });
+
+it.each([['COMPLETED','Atendimento concluído'],['NO_SHOW','Não compareceu']] as const)('apresenta o resultado %s sem permitir alterações',async(status,label)=>{
+ mocked.mockResolvedValue({...sample,status,canChange:false,canCancel:false,canReschedule:false});mount();await screen.findByText(label);expect(screen.queryByRole('button',{name:'Cancelar minha reserva'})).not.toBeInTheDocument();expect(screen.queryByRole('button',{name:'Remarcar minha reserva'})).not.toBeInTheDocument();
+});

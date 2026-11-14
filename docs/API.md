@@ -188,3 +188,9 @@ Catalog inclui bookingPolicy. BookingRequest acrescenta policyVersion: use booki
 BookingReceipt e AppointmentView incluem bookingPolicy da confirmação. A visão privada acrescenta bookingPolicy, canCancel, canReschedule, cancelUntil e rescheduleUntil. canChange continua indicando atendimento futuro confirmado; as duas novas permissões indicam cada ação disponível. Datas dos prazos são instantes UTC, exibidos no fuso da empresa.
 
 Ações do cliente exigem prazo válido e antecedência do novo horário. O responsável mantém o atendimento de exceções futuras. Regras novas não são aplicadas retroativamente. Consulte [Regras de agendamento](REGRAS-AGENDAMENTO.md).
+
+## Resultados e histórico — 0.12.0
+
+POST /api/admin/appointments/{id}/outcome recebe {status:"COMPLETED"|"NO_SHOW",version,requestKey,reason?}. Exige responsável, CSRF e versão vigente. Somente após endsAt no servidor. Correção entre resultados exige reason com 5 a 500 caracteres; status inicial aceita motivo opcional. Cancelada não pode ser classificada. Repetição da mesma chave/dados retorna a situação atual sem novo evento. Conflitos retornam 409, entradas inválidas 400.
+
+GET /api/admin/appointments/{id}/history?beforeVersion=N exige responsável da mesma empresa. Retorna {events,nextBeforeVersion}, até 50 eventos ordenados por versão decrescente. beforeVersion é exclusivo, inteiro não negativo. Não retorna chaves de tentativa, credenciais, IDs de acesso, telefone ou e-mail. Consulte RESULTADOS-ATENDIMENTOS.md.

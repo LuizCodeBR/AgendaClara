@@ -1,4 +1,4 @@
-# Agenda Clara — demonstração 0.11.1
+# Agenda Clara — demonstração 0.12.0
 
 1. Instale Java 21 ou mais recente até a versão 27, caso ainda não possua.
 2. Extraia todos os arquivos deste ZIP em uma pasta gravável.
@@ -41,7 +41,7 @@ Para verificar: backup.cmd --backup=verify --input="D:\Backups\copia.acbackup"
 Para restaurar: backup.cmd --backup=restore --input="D:\Backups\copia.acbackup" --target-dir="D:\AgendaRestaurada\data"
 O destino deve ser uma pasta nova. Preserve a senha fora do arquivo e mantenha outra cópia protegida fora do disco do banco. As instruções completas estão em docs/ARMAZENAMENTO-BACKUPS.md no repositório.
 
-Na versão 0.11.1, escolha os Serviços atendidos de cada profissional em Equipe e horários. Novos profissionais começam sem vínculos; novos serviços precisam ser vinculados à equipe. A migração preserva as combinações anteriores e as reservas existentes. Retirar um serviço com atendimento confirmado futuro ou em andamento exige resolver esse atendimento primeiro. Preço e duração continuam definidos no catálogo.
+Na versão 0.12.0, escolha os Serviços atendidos de cada profissional em Equipe e horários. Novos profissionais começam sem vínculos; novos serviços precisam ser vinculados à equipe. A migração preserva as combinações anteriores e as reservas existentes. Retirar um serviço com atendimento confirmado futuro ou em andamento exige resolver esse atendimento primeiro. Preço e duração continuam definidos no catálogo.
 
 ## Minha reserva
 
@@ -51,3 +51,5 @@ A cópia local tem banco próprio. Um link localhost funciona somente no computa
 
 ## Regras de agendamento por empresa
 No painel, abra Regras de agendamento para definir a antecedência mínima e os prazos de cancelamento e remarcação do cliente. Alterações valem para novas reservas; as já confirmadas preservam as condições anteriores. O responsável pode atender exceções futuras. O backup novo inclui essas regras e aceita esquemas 6 a 9.
+
+Na versão 0.12.0, após o término previsto, use Concluir atendimento ou Registrar falta em Minha agenda. Corrigir resultado exige justificativa e preserva o registro anterior. Histórico mostra as mudanças feitas a partir desta versão; reservas antigas continuam preservadas, sem classificação automática. A ferramenta de backup aceita esquemas 6 a 10. Consulte RESULTADOS-ATENDIMENTOS.md no repositório.

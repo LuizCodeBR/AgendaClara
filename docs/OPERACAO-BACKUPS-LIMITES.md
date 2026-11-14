@@ -1,4 +1,4 @@
-# Operação sob demanda: backups e limites — 0.11.1
+# Operação sob demanda: backups e limites — 0.12.0
 
 ## Decisão de execução
 Nesta etapa o usuário escolheu não agendar backup diário e consultar os limites somente sob demanda. Não há tarefa ativa no Codex, Agendador do Windows, GitHub Actions com horário, cron, Render ou Neon. Os comandos abaixo automatizam as etapas de uma execução solicitada, sem repetição posterior.
@@ -29,7 +29,7 @@ Para criar, verificar e registrar um backup do H2, primeiro encerre o servidor l
 
 A senha exclusiva é solicitada e confirmada sem aparecer no terminal. Não informe senha como argumento. Para automação não interativa, AGENDA_BACKUP_PASSWORD pode ser fornecida por um ambiente privado. Nenhum agendamento é criado.
 
-No Linux/macOS, use bash operacao.sh com as mesmas opções. No código-fonte, compile antes com iniciar.cmd e encerre o servidor. A rotina usa o JAR 0.11.1; o pacote distribuído usa agenda-clara.jar.
+No Linux/macOS, use bash operacao.sh com as mesmas opções. No código-fonte, compile antes com iniciar.cmd e encerre o servidor. A rotina usa o JAR 0.12.0; o pacote distribuído usa agenda-clara.jar.
 
 O resultado fica em operations/latest.html e operations/latest.json, com cópias em operations/backups. A pasta operations é privada e ignorada pelo Git. Para escolher outra pasta, use --work-dir apontando a uma pasta nova ou vazia. A ferramenta recusa pastas existentes com outros arquivos, links simbólicos e troca de motor ou de origem no mesmo histórico.
 

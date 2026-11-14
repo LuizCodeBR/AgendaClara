@@ -1,0 +1,36 @@
+import {test,expect} from '@playwright/test';
+import {catalog,owner,appointment} from '../src/test/fixtures';
+test('interface de resultados e histórico com respostas controladas',async({page},info)=>{
+ const date=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(Date.now()-86400000));
+ let item={...appointment,id:'11111111-1111-1111-1111-111111111111',startsAt:date+'T12:00:00Z',endsAt:date+'T12:30:00Z'};
+ const events:Array<Record<string,unknown>>=[];
+ await page.route('**/api/auth/me',route=>route.fulfill({json:owner}));
+ await page.route('**/api/admin/catalog',route=>route.fulfill({json:{...catalog,suggestedDate:date}}));
+ await page.route('**/api/admin/business',route=>route.fulfill({json:{business:catalog.business,published:true,emailVerified:true,ready:true,version:0}}));
+ await page.route('**/api/admin/agenda?*',route=>route.fulfill({json:{date,zoneId:'America/Sao_Paulo',appointments:[item],blocks:[]}}));
+ await page.route('**/api/admin/appointments/*/outcome',async route=>{
+  const body=route.request().postDataJSON();expect(body.version).toBe(item.version);expect(body.requestKey).toMatch(/^[\da-f-]{36}$/);
+  const previous=item.status;item={...item,status:body.status,version:item.version+1};
+  events.unshift({id:crypto.randomUUID(),version:item.version,action:item.version===1?'OUTCOME':'CORRECTION',fromStatus:previous,toStatus:item.status,fromStart:item.startsAt,fromEnd:item.endsAt,toStart:item.startsAt,toEnd:item.endsAt,actorType:'OWNER',actorName:'Marina',reason:body.reason,occurredAt:new Date().toISOString()});
+  await route.fulfill({json:item});
+ });
+ await page.route('**/api/admin/appointments/*/history',route=>route.fulfill({json:{events,nextBeforeVersion:null}}));
+ await page.goto('/#/painel');
+ await expect(page.getByText('Resultado ainda não registrado',{exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'Concluir '+item.customerName,exact:true}).click();
+ await page.getByRole('button',{name:'Confirmar resultado',exact:true}).click();
+ await expect(page.getByText('Resultado atualizado. O histórico foi preservado.',{exact:true})).toBeVisible();
+ await expect(page.getByText('Concluídos: 1',{exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'Corrigir resultado de '+item.customerName,exact:true}).click();
+ await expect(page.getByRole('button',{name:'Confirmar resultado',exact:true})).toBeDisabled();
+ await page.getByLabel('Justificativa da correção',{exact:true}).fill('Registro de teste corrigido após conferência.');
+ await page.getByRole('button',{name:'Confirmar resultado',exact:true}).click();
+ await expect(page.getByText('Faltas: 1',{exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'Histórico de '+item.customerName,exact:true}).click();
+ await expect(page.getByText('Resultado corrigido',{exact:true})).toBeVisible();
+ await expect(page.getByText('Resultado registrado',{exact:true})).toBeVisible();
+ await expect(page.getByText('Registro de teste corrigido após conferência.',{exact:true})).toBeVisible();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ const dialog=page.getByRole('dialog');expect(await dialog.evaluate(el=>el.scrollWidth<=el.clientWidth)).toBe(true);
+ await dialog.screenshot({path:info.outputPath('historico-resultados.png')});
+});
