@@ -1,4 +1,4 @@
-# API — versão 0.7.0
+# API — versão 0.10.0
 
 A interface e a API usam a mesma origem. Datas de consulta usam ISO `YYYY-MM-DD`; instantes enviados usam ISO com offset, como `2030-06-04T09:00:00-03:00`.
 
@@ -145,3 +145,23 @@ O painel não retorna destinatário, corpo, assunto, link, chave nem payload cri
 ## Serviços por profissional (0.9.0)
 
 O catálogo público e administrativo inclui serviceIds em cada profissional. A configuração GET inclui os vínculos de ativos e inativos. PUT /api/admin/professionals/{id} exige serviceIds: lista sem duplicatas, somente serviços do negócio autenticado, até 500 IDs e sujeita ao limite global do corpo. A consulta de disponibilidade e a reserva retornam 409 para combinação não vinculada. Retirar vínculo de reserva confirmada futura/em andamento ou enviar versão antiga também retorna 409. GET /api/admin/business acrescenta hasBookableProfessional, usado em ready para exigir serviço e expediente no mesmo profissional ativo. POST /api/admin/services não vincula automaticamente a equipe. Consulte [SERVICOS-PROFISSIONAIS.md](SERVICOS-PROFISSIONAIS.md).
+
+## Área do cliente (0.10.0)
+
+POST /api/customer/session recebe {token}; exige CSRF e cria cookie HttpOnly/SameSite=Strict, Secure quando habilitado, com Path=/api/customer/reservations/{id}. Retorna uma visão mínima com reservationKey, referência, empresa, cliente, serviço, profissional, horário, preço, status e version. Nenhum telefone ou segredo é devolvido nessa visão.
+
+| Método | Rota | Corpo |
+| --- | --- | --- |
+| GET | /api/customer/reservations/{id} | — |
+| GET | /api/customer/reservations/{id}/availability?date=YYYY-MM-DD | — |
+| POST | /api/customer/reservations/{id}/cancel | {version} obrigatório |
+| PATCH | /api/customer/reservations/{id}/reschedule | {version, startsAt} obrigatórios |
+| DELETE | /api/customer/reservations/{id}/session | —; encerra somente essa reserva |
+
+Essas rotas exigem a sessão privada correspondente ao id. O UUID e a referência pública nunca autorizam acesso. Alterações exigem CSRF; 401 indica acesso inválido, expirado ou revogado e 409 indica conflito.
+
+O comprovante de uma nova reserva inclui customerAccessToken e customerAccessValidUntil quando há chave estável. São credenciais privadas; não registre o corpo da resposta. Repetições públicas retornam o token inicial apenas enquanto ele permanece vigente. Emissões posteriores nunca são expostas por repetição da reserva original.
+
+O responsável autenticado tem GET/POST/DELETE /api/admin/appointments/{id}/customer-access, restritos ao próprio estabelecimento. POST recebe {version, requestKey}; DELETE recebe {version}. Gerar ou revogar acesso incrementa a versão da reserva e invalida sessões anteriores. O painel passou a enviar version no cancelamento e remarcação; a API administrativa aceita sua ausência para compatibilidade.
+
+Consulte [Minha reserva](MINHA-RESERVA.md) para validade, entrega manual e recuperação.

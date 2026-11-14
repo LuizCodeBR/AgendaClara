@@ -36,6 +36,7 @@ class BackupTest {
         jdbc.update("insert into professional(id,business_id,name,specialty) values (?,?,?,?)",person,business,"Pessoa preservada","Teste");
         jdbc.update("insert into service_offering(id,business_id,name,description,duration_minutes,price_cents) values (?,?,?,?,30,1200)",service,business,"Serviço preservado","Teste");
         jdbc.update("insert into professional_service(business_id,professional_id,service_id) values (?,?,?)",business,person,service);
+        CustomerBackupFixture.seed(jdbc,cipher,business,person,service);
         String aad=mail+":"+business+":"+user+":VERIFY:demo";
         String payload=cipher.encrypt(aad,new MailQueueModels.Payload("from","backup@example.test","Assunto","Texto preservado","https://example.test/#/token"));
         var now=OffsetDateTime.now(ZoneOffset.UTC);
@@ -58,6 +59,7 @@ class BackupTest {
         assertThat(jdbc.queryForObject("select password_hash from app_user where id=?",String.class,fixture.user())).isEqualTo("hash-preservado");
         var cipher=new MailPayloadCipher(jdbc,new ObjectMapper(),new MailSettings("demo","","","",true,false,false),Clock.systemUTC(),"",target.resolve("mail-outbox.key").toString());
         assertThat(jdbc.queryForObject("select count(*) from professional_service where business_id=?",Integer.class,fixture.company())).isEqualTo(1);
+        CustomerBackupFixture.verify(jdbc,cipher,cipher,fixture.company());
         String payload=jdbc.queryForObject("select payload from mail_outbox where id=?",String.class,fixture.mail());
         assertThat(cipher.decrypt(fixture.aad(),payload).text()).isEqualTo("Texto preservado");
         assertThat(new String(Files.readAllBytes(archive),java.nio.charset.StandardCharsets.ISO_8859_1)).doesNotContain("Texto preservado");

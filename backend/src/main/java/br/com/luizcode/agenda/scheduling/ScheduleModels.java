@@ -16,12 +16,20 @@ public final class ScheduleModels {
             @NotBlank @Size(max = 100) String customerName,
             @NotBlank @Pattern(regexp = "^[+0-9() .-]{8,25}$", message = "informe um telefone válido") String customerPhone) {}
     public record BookingReceipt(String reference, String serviceName, String professionalName,
-                                 Instant startsAt, Instant endsAt, int priceCents) {}
+                                 Instant startsAt, Instant endsAt, int priceCents, String customerAccessToken, Instant customerAccessValidUntil) {
+        public BookingReceipt(String reference,String serviceName,String professionalName,Instant startsAt,Instant endsAt,int priceCents){
+            this(reference,serviceName,professionalName,startsAt,endsAt,priceCents,null,null);
+        }
+        @Override public String toString(){return "BookingReceipt[reference="+reference+"]";}
+    }
     public record BookingOutcome(BookingReceipt receipt, boolean created) {}
     public record AppointmentView(UUID id, UUID professionalId, UUID serviceId, String professionalName,
                                   String serviceName, String customerName, String customerPhone,
-                                  Instant startsAt, Instant endsAt, String status, String reference, int priceCents) {}
-    public record RescheduleRequest(@NotNull OffsetDateTime startsAt) {}
+                                  Instant startsAt, Instant endsAt, String status, String reference, int priceCents, int version) {}
+    public record RescheduleRequest(@NotNull OffsetDateTime startsAt, @Min(0) Integer version) {
+        public RescheduleRequest(OffsetDateTime startsAt){this(startsAt,null);}
+    }
+    public record CancelRequest(@Min(0) Integer version) {}
     public record BlockRequest(@NotNull UUID professionalId, @NotNull OffsetDateTime startsAt,
                                @NotNull OffsetDateTime endsAt, @NotBlank @Size(max = 160) String reason) {}
     public record BlockView(UUID id, UUID professionalId, Instant startsAt, Instant endsAt, String reason) {}

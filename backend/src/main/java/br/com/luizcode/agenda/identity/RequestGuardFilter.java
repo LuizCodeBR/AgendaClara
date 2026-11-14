@@ -49,6 +49,9 @@ public final class RequestGuardFilter extends OncePerRequestFilter {
                 && !admit(response, "registration", registrationLimit)) return;
         if (mutation && (path.startsWith("/api/auth/email/") || path.startsWith("/api/auth/password/") || path.equals("/api/auth/demo-mailbox/open"))
                 && !admit(response, "access-action", accessLimit)) return;
+        if ("POST".equals(request.getMethod()) && path.equals("/api/customer/session") && !admit(response,"customer-access",accessLimit)) return;
+        if (mutation && path.startsWith("/api/customer/") && !path.equals("/api/customer/session")
+                && !admit(response,"customer-write",writeLimit)) return;
         String contentType = request.getContentType();
         if (contentType != null && (contentType.toLowerCase(Locale.ROOT).contains("/json")
                 || contentType.toLowerCase(Locale.ROOT).contains("+json"))) {

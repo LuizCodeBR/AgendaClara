@@ -21,10 +21,10 @@ public class ScheduleRepository {
             """;
     public record Appointment(UUID id, UUID businessId, UUID professionalId, UUID serviceId, String professionalName,
                               String serviceName, String customerName, String customerPhone, Instant startsAt,
-                              Instant endsAt, String status, String reference, int priceCents, String fingerprint) {
+                              Instant endsAt, String status, String reference, int priceCents, String fingerprint, int version) {
         public AppointmentView view() {
             return new AppointmentView(id, professionalId, serviceId, professionalName, serviceName, customerName,
-                    customerPhone, startsAt, endsAt, status, reference, priceCents);
+                    customerPhone, startsAt, endsAt, status, reference, priceCents, version);
         }
         public BookingReceipt receipt() {
             return new BookingReceipt(reference, serviceName, professionalName, startsAt, endsAt, priceCents);
@@ -36,7 +36,7 @@ public class ScheduleRepository {
             rs.getString("professional_name"), rs.getString("service_name"), rs.getString("customer_name"),
             rs.getString("customer_phone"), rs.getObject("starts_at", OffsetDateTime.class).toInstant(),
             rs.getObject("ends_at", OffsetDateTime.class).toInstant(), rs.getString("status"),
-            rs.getString("reference"), rs.getInt("price_cents"), rs.getString("request_fingerprint"));
+            rs.getString("reference"), rs.getInt("price_cents"), rs.getString("request_fingerprint"),rs.getInt("version"));
     public ScheduleRepository(JdbcTemplate jdbc) { this.jdbc = jdbc; }
 
     public Appointment appointment(UUID businessId, UUID id) {
@@ -52,16 +52,19 @@ public class ScheduleRepository {
                 MAPPER, businessId, utc(end), utc(start));
     }
     public List<Slot> occupied(UUID businessId, UUID professionalId, Instant start, Instant end) {
+        return occupied(businessId,professionalId,start,end,new UUID(0,0));
+    }
+    public List<Slot> occupied(UUID businessId, UUID professionalId, Instant start, Instant end,UUID excluded) {
         return jdbc.query("""
                 select starts_at, ends_at from appointment
                 where business_id = ? and professional_id = ? and status = 'BOOKED'
-                  and starts_at < ? and ends_at > ?
+                  and starts_at < ? and ends_at > ? and id<>?
                 union all
                 select starts_at, ends_at from time_block
                 where business_id = ? and professional_id = ? and starts_at < ? and ends_at > ?
                 """, (rs, row) -> new Slot(rs.getObject(1, OffsetDateTime.class).toInstant(),
                         rs.getObject(2, OffsetDateTime.class).toInstant()),
-                businessId, professionalId, utc(end), utc(start), businessId, professionalId, utc(end), utc(start));
+                businessId, professionalId, utc(end), utc(start),excluded, businessId, professionalId, utc(end), utc(start));
     }
     public boolean overlaps(UUID businessId, UUID professionalId, Instant start, Instant end, UUID excludedId) {
         Integer appointments = jdbc.queryForObject("""
@@ -90,12 +93,15 @@ public class ScheduleRepository {
         return appointment(businessId, id);
     }
     public void cancel(UUID businessId, UUID id, Instant now) {
-        jdbc.update("update appointment set status = 'CANCELLED', updated_at = ? where business_id = ? and id = ?",
+        jdbc.update("update appointment set status = 'CANCELLED', version=version+1, updated_at = ? where business_id = ? and id = ?",
                 utc(now), businessId, id);
     }
     public void move(UUID businessId, UUID id, Instant start, Instant end, Instant now) {
-        jdbc.update("update appointment set starts_at = ?, ends_at = ?, updated_at = ? where business_id = ? and id = ?",
+        jdbc.update("update appointment set starts_at = ?, ends_at = ?, version=version+1, updated_at = ? where business_id = ? and id = ?",
                 utc(start), utc(end), utc(now), businessId, id);
+    }
+    public void advanceVersion(UUID business,UUID appointment,Instant now){
+        jdbc.update("update appointment set version=version+1,updated_at=? where business_id=? and id=?",utc(now),business,appointment);
     }
     public BlockView insertBlock(UUID businessId, BlockRequest request) {
         UUID id = UUID.randomUUID();

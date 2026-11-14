@@ -1,0 +1,32 @@
+import {render,screen,waitFor} from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import {beforeEach,expect,it,vi} from 'vitest';
+import CustomerAccessDialog from './CustomerAccessDialog';
+import {api,ApiError} from './api';
+import {appointment} from './test/fixtures';
+vi.mock('./api',async original=>({...await original<typeof import('./api')>(),api:vi.fn()}));
+const mocked=vi.mocked(api),state={available:true,active:true,version:0,validUntil:'2030-06-11T12:00:00Z'},token='b'.repeat(43);
+beforeEach(()=>{mocked.mockReset();HTMLDialogElement.prototype.showModal=function(){this.setAttribute('open','');};HTMLDialogElement.prototype.close=function(){this.removeAttribute('open');};});
+it('gera link por ação explícita e apaga sua apresentação após revogar',async()=>{
+ mocked.mockImplementation(async (_url,options)=>options?.method==='POST'?{token,version:1,validUntil:state.validUntil}:options?.method==='DELETE'?{...state,active:false,version:2}:state);
+ const updated=vi.fn();render(<CustomerAccessDialog appointment={appointment} online onClose={vi.fn()} onUpdated={updated} onPending={vi.fn()}/>);
+ await screen.findByText('Existe um link privado ativo para esta reserva.');
+ expect(screen.queryByLabelText('Link privado da reserva')).not.toBeInTheDocument();
+ const user=userEvent.setup();await user.click(screen.getByRole('button',{name:'Gerar novo link privado'}));
+ expect(await screen.findByLabelText('Link privado da reserva')).toHaveValue(window.location.origin+'/#/minha-reserva?token='+token);
+ await user.click(screen.getByRole('button',{name:'Revogar acesso do cliente'}));
+ await waitFor(()=>expect(screen.queryByLabelText('Link privado da reserva')).not.toBeInTheDocument());
+ expect(updated).toHaveBeenCalledTimes(2);
+ const revoke=mocked.mock.calls.find(([,options])=>options?.method==='DELETE');
+ expect(JSON.parse(revoke![1]?.body as string)).toEqual({version:1});
+});
+it('repete a mesma tentativa de geração após falha de conexão',async()=>{
+ let attempts=0;
+ mocked.mockImplementation(async (_url,options)=>{if(options?.method==='POST'){if(++attempts===1)throw new ApiError('Conexão interrompida.',0);return {token,version:1,validUntil:state.validUntil};}return state;});
+ render(<CustomerAccessDialog appointment={appointment} online onClose={vi.fn()} onUpdated={vi.fn()} onPending={vi.fn()}/>);
+ const user=userEvent.setup();await screen.findByText('Existe um link privado ativo para esta reserva.');
+ await user.click(screen.getByRole('button',{name:'Gerar novo link privado'}));await screen.findByText('Conexão interrompida.');
+ await user.click(screen.getByRole('button',{name:'Gerar novo link privado'}));await screen.findByLabelText('Link privado da reserva');
+ const posts=mocked.mock.calls.filter(([,options])=>options?.method==='POST');
+ expect(JSON.parse(posts[0][1]?.body as string).requestKey).toBe(JSON.parse(posts[1][1]?.body as string).requestKey);
+});

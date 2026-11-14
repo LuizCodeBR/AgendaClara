@@ -154,3 +154,11 @@ Ferramentas de backup executam por modo de linha de comando antes da inicializa�
 ## Serviços por profissional (0.9.0)
 
 A migração V7 cria professional_service com chave por estabelecimento/profissional/serviço e FKs compostas. A configuração da equipe grava os vínculos junto do perfil e semana, sob o bloqueio e version já existentes. Disponibilidade, reserva e remarcação validam a associação. A publicação exige serviço e expediente no mesmo profissional ativo. A migração preserva as combinações anteriores; novos cadastros exigem escolha explícita. Consulte [SERVICOS-PROFISSIONAIS.md](SERVICOS-PROFISSIONAIS.md).
+
+## Acesso privado do cliente (0.10.0)
+
+A migração V8 cria appointment_access e appointment_customer_session com chaves compostas por reserva/estabelecimento, controle de geração, hashes únicos e sequência de sessões. Acrescenta version na reserva. O link usa HMAC-SHA256 com chave HKDF derivada por finalidade da chave estável existente; sessões usam segredos aleatórios independentes. Segredos brutos não são gravados no banco.
+
+CustomerPortalService valida concessão e reserva antes e depois do bloqueio de profissional. O mesmo bloqueio coordena cancelamento, remarcação, emissão e revogação com as demais alterações de agenda. A versão esperada evita sobrescrita de telas antigas. Consultas usam snapshot consistente; alterações usam READ_COMMITTED e revalidação depois da espera.
+
+O navegador troca o segredo do fragmento por cookie HttpOnly restrito ao caminho da reserva. A URL seguinte contém somente o UUID não secreto. Duas reservas no mesmo navegador mantêm sessões independentes. A interface e o service worker não persistem respostas privadas. Consulte [o guia](MINHA-RESERVA.md).

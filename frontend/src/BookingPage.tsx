@@ -4,10 +4,13 @@ import { ArrowRight, CalendarDays, Check, CheckCircle2, ChevronDown, Clock3, Map
 import { api, ApiError, errorMessage } from './api';
 import { dateInZone, dayLabel, initials, money, plusDays, time, todayInZone } from './format';
 import type { Business, Catalog, Receipt, Slot } from './types';
+import { PrivateReservationLink } from './customerAccess';
+import './customer.css';
 import { Message } from './components';
 import { DatePicker, TimeSlots, useAvailability } from './availability';
 
-export default function BookingPage({ slug, businesses, onSelectBusiness, online }: { slug: string; businesses: Business[]; onSelectBusiness: (slug: string) => void; online: boolean }) {
+const ignorePending = (_blocked: boolean) => {};
+export default function BookingPage({ slug, businesses, onSelectBusiness, online, onNavigationBlocked=ignorePending }: { onNavigationBlocked?: (blocked:boolean)=>void; slug: string; businesses: Business[]; onSelectBusiness: (slug: string) => void; online: boolean }) {
   const [catalog, setCatalog] = useState<Catalog | null>(null);
   const [serviceId, setServiceId] = useState('');
   const [professionalId, setProfessionalId] = useState('');
@@ -18,6 +21,7 @@ export default function BookingPage({ slug, businesses, onSelectBusiness, online
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [pending, setPending] = useState(false);
+  useEffect(()=>{onNavigationBlocked(pending);const protect=(event:BeforeUnloadEvent)=>{if(pending)event.preventDefault();};window.addEventListener('beforeunload',protect);return()=>{onNavigationBlocked(false);window.removeEventListener('beforeunload',protect);};},[pending,onNavigationBlocked]);
   const [receipt, setReceipt] = useState<Receipt | null>(null);
   const [refresh, setRefresh] = useState(0);
   const [catalogRevision, setCatalogRevision] = useState(0);
@@ -112,7 +116,7 @@ export default function BookingPage({ slug, businesses, onSelectBusiness, online
           </section>
         </div>
         <aside className="booking-summary" aria-label="Resumo do agendamento">
-          {receipt ? <div className="receipt" id="booking-receipt" tabIndex={-1}><span className="receipt-icon"><Check size={27} /></span><span className="eyebrow">TUDO CERTO</span><h2>Seu horário<br />está reservado.</h2><p>{receipt.serviceName} com {receipt.professionalName}</p><div className="receipt-date"><strong>{dayLabel(dateInZone(receipt.startsAt, zone))}</strong><span>{time(receipt.startsAt, zone)} – {time(receipt.endsAt, zone)}</span></div><span className="reference-label">Código da reserva</span><code>{receipt.reference}</code><p className="field-note">Para cancelar ou remarcar, entre em contato com o estabelecimento e informe este código.</p><button type="button" className="button secondary full" onClick={() => { setReceipt(null); setSlot(null); setName(''); setPhone(''); request.current = { signature: '', key: '' }; }}>Fazer outro agendamento</button></div> : <>
+          {receipt ? <div className="receipt" id="booking-receipt" tabIndex={-1}><span className="receipt-icon"><Check size={27} /></span><span className="eyebrow">TUDO CERTO</span><h2>Seu horário<br />está reservado.</h2><p>{receipt.serviceName} com {receipt.professionalName}</p><div className="receipt-date"><strong>{dayLabel(dateInZone(receipt.startsAt, zone))}</strong><span>{time(receipt.startsAt, zone)} – {time(receipt.endsAt, zone)}</span></div><span className="reference-label">Código da reserva</span><code>{receipt.reference}</code>{receipt.customerAccessToken ? <PrivateReservationLink token={receipt.customerAccessToken}/> : <p className="field-note">Para cancelar ou remarcar, entre em contato com o estabelecimento e informe este código.</p>}<button type="button" className="button secondary full" onClick={() => { setReceipt(null); setSlot(null); setName(''); setPhone(''); request.current = { signature: '', key: '' }; }}>Fazer outro agendamento</button></div> : <>
             <div className="summary-top"><CalendarDays size={19} /><span>SEU AGENDAMENTO</span></div><h2>Seu próximo<br />momento de cuidado.</h2>
             <div className="summary-line"><Scissors size={16} /><div><span>Serviço</span><strong>{service?.name ?? 'Escolha um serviço'}</strong><small>{service?.durationMinutes ?? '—'} minutos</small></div></div>
             <div className="summary-line"><span className="summary-avatar">{professional ? initials(professional.name) : '?'}</span><div><span>Profissional</span><strong>{professional?.name ?? 'Escolha um profissional'}</strong></div></div>

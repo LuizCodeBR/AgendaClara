@@ -10,7 +10,7 @@ export const appointment: Appointment = {
   id: 'appointment', professionalId: 'professional', serviceId: 'service', serviceName: 'Corte',
   professionalName: 'Ana Exemplo', customerName: 'Cliente do dia anterior', customerPhone: '11999991234',
   startsAt: '2030-06-04T12:00:00Z', endsAt: '2030-06-04T12:30:00Z',
-  reference: 'ABC123', priceCents: 5000, status: 'BOOKED',
+  reference: 'ABC123', priceCents: 5000, status: 'BOOKED', version: 0,
 };
 export const agenda: DayAgenda = {
   date: '2030-06-04', zoneId: catalog.business.zoneId, appointments: [appointment],

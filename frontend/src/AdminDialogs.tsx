@@ -15,7 +15,7 @@ export function RescheduleDialog({ appointment, catalog, onClose, onSaved, onlin
   async function submit(event: FormEvent) {
     event.preventDefault(); if (!slot || pending) return; setPending(true); setError('');
     try {
-      await api('/api/admin/appointments/' + appointment.id + '/reschedule', { method: 'PATCH', body: JSON.stringify({ startsAt: slot.startsAt }) });
+      await api('/api/admin/appointments/' + appointment.id + '/reschedule', { method: 'PATCH', body: JSON.stringify({ startsAt: slot.startsAt, version:appointment.version }) });
       onSaved();
     } catch (error) { setError(errorMessage(error)); } finally { setPending(false); }
   }

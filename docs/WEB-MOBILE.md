@@ -2,7 +2,7 @@
 
 **Site:** https://agenda-clara-luizcodebr.onrender.com
 
-**Downloads:** https://github.com/LuizCodeBR/AgendaClara/releases/tag/v0.9.0
+**Downloads:** https://github.com/LuizCodeBR/AgendaClara/releases/tag/v0.10.0
 
 ## Três formas de acesso
 
@@ -91,3 +91,7 @@ A versão 0.8.1 reforça as ferramentas do operador sem novos endpoints globais 
 ## Serviços por profissional (0.9.0)
 
 Site, PWA e pacote local compartilham a seleção de Serviços atendidos em Equipe e horários e o filtro de profissionais por serviço. A nova versão requer migração V7; preserve data e a chave ao atualizar localmente e recarregue a página/PWA após a publicação. Consulte [o guia](SERVICOS-PROFISSIONAIS.md).
+
+## Minha reserva (0.10.0)
+
+Site, PWA e pacote local oferecem consulta, cancelamento e remarcação por link privado. O comprovante tem Gerenciar minha reserva; a agenda do responsável permite gerar e revogar acessos. O segredo sai do endereço após abrir e o cookie fica restrito à reserva. A cópia local tem banco independente; compartilhe links do site online para acesso em outro dispositivo. Recarregue a PWA após atualizar. Consulte [Minha reserva](MINHA-RESERVA.md).

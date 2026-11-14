@@ -36,7 +36,7 @@ public class ScheduleController {
         this.publicDemo = publicDemo; this.sourceUrl = sourceUrl; this.downloadUrl = downloadUrl;
     }
     @GetMapping("/api/public/config")
-    Map<String, Object> config() { return Map.of("demo", demo, "publicDemo", publicDemo, "registrationEnabled", registrationEnabled, "mailMode", mailSettings.mode(), "version", "0.9.0", "storageMode", storage.mode(),
+    Map<String, Object> config() { return Map.of("demo", demo, "publicDemo", publicDemo, "registrationEnabled", registrationEnabled, "mailMode", mailSettings.mode(), "version", "0.10.0", "storageMode", storage.mode(),
             "distribution", Map.of("sourceUrl", sourceUrl, "downloadUrl", downloadUrl)); }
     @GetMapping("/api/public/businesses")
     List<Business> businesses() { return catalog.businesses(); }
@@ -61,8 +61,8 @@ public class ScheduleController {
         return schedule.day(catalog.business(user.businessId()), date);
     }
     @PostMapping("/api/admin/appointments/{id}/cancel")
-    AppointmentView cancel(@AuthenticationPrincipal AgendaUser user, @PathVariable UUID id) {
-        return schedule.cancel(catalog.business(user.businessId()), id);
+    AppointmentView cancel(@AuthenticationPrincipal AgendaUser user, @PathVariable UUID id, @Valid @RequestBody(required=false) CancelRequest request) {
+        return schedule.cancel(catalog.business(user.businessId()), id,request==null?null:request.version());
     }
     @PatchMapping("/api/admin/appointments/{id}/reschedule")
     AppointmentView reschedule(@AuthenticationPrincipal AgendaUser user, @PathVariable UUID id,

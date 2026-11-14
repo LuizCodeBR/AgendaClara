@@ -27,10 +27,14 @@ public class ScheduleService {
     private final EffectiveHours hours;
     private final ScheduleRepository schedule;
     private final Clock clock;
+    private final br.com.luizcode.agenda.customer.CustomerAccessRepository customerAccess;
+    private final br.com.luizcode.agenda.customer.CustomerKeys customerKeys;
     private final int horizonDays;
 
-    public ScheduleService(CatalogRepository catalog, ScheduleRepository schedule, Clock clock, EffectiveHours hours,
+    public ScheduleService(CatalogRepository catalog, ScheduleRepository schedule, Clock clock, EffectiveHours hours, br.com.luizcode.agenda.customer.CustomerAccessRepository customerAccess,
+                           br.com.luizcode.agenda.customer.CustomerKeys customerKeys,
                            @Value("${app.booking.horizon-days:60}") int horizonDays) {
+        this.customerAccess=customerAccess;this.customerKeys=customerKeys;
         this.catalog = catalog;
         this.hours = hours;
         this.schedule = schedule;
@@ -48,24 +52,34 @@ public class ScheduleService {
 
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public Availability availability(Business business, UUID professionalId, UUID serviceId, LocalDate date) {
-        catalog.professional(business.id(), professionalId);
         var service = catalog.service(business.id(), serviceId);
+        return availability(business,professionalId,serviceId,date,service.durationMinutes(),NO_APPOINTMENT);
+    }
+
+    @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
+    public Availability customerAvailability(Business business, ScheduleRepository.Appointment appointment,LocalDate date) {
+        int minutes=Math.toIntExact(Duration.between(appointment.startsAt(),appointment.endsAt()).toMinutes());
+        return availability(business,appointment.professionalId(),appointment.serviceId(),date,minutes,appointment.id());
+    }
+
+    private Availability availability(Business business,UUID professionalId,UUID serviceId,LocalDate date,int durationMinutes,UUID excluded) {
+        catalog.professional(business.id(), professionalId);
         catalog.requireServiceAssignment(business.id(), professionalId, serviceId);
         ZoneId zone = ZoneId.of(business.zoneId());
         validateDate(date, zone);
         Instant dayStart = date.atStartOfDay(zone).toInstant();
         Instant dayEnd = date.plusDays(1).atStartOfDay(zone).toInstant();
-        List<Slot> occupied = schedule.occupied(business.id(), professionalId, dayStart, dayEnd);
+        List<Slot> occupied = schedule.occupied(business.id(), professionalId, dayStart, dayEnd,excluded);
         List<Slot> slots = new ArrayList<>();
         var windows = hours.onDate(business.id(), professionalId, date);
         for (var window : windows) {
             LocalDateTime close = date.atTime(window.closesAt());
             for (LocalDateTime cursor = date.atTime(window.opensAt());
-                 !cursor.plusMinutes(service.durationMinutes()).isAfter(close); cursor = cursor.plusMinutes(15)) {
+                 !cursor.plusMinutes(durationMinutes).isAfter(close); cursor = cursor.plusMinutes(15)) {
                 // Do not silently reinterpret ambiguous/nonexistent times during daylight-saving transitions.
                 if (zone.getRules().getValidOffsets(cursor).size() != 1) continue;
                 Instant start = cursor.atZone(zone).toInstant();
-                Instant end = start.plusSeconds(service.durationMinutes() * 60L);
+                Instant end = start.plusSeconds(durationMinutes * 60L);
                 if (validWindow(start, end, zone, windows) && start.isAfter(clock.instant())
                         && occupied.stream().noneMatch(item -> intersects(start, end, item.startsAt(), item.endsAt()))) {
                     slots.add(new Slot(start, end));
@@ -88,7 +102,7 @@ public class ScheduleService {
                 throw BusinessException.conflict("Esta tentativa já foi usada com outros dados.");
             if (existing.get().status().equals("CANCELLED"))
                 throw BusinessException.conflict("Essa reserva foi cancelada. Faça uma nova solicitação.");
-            return new BookingOutcome(existing.get().receipt(), false);
+            return new BookingOutcome(customerReceipt(existing.get()), false);
         }
         catalog.professional(business.id(), request.professionalId());
         var service = catalog.service(business.id(), request.serviceId());
@@ -98,7 +112,20 @@ public class ScheduleService {
         requireFree(business, request.professionalId(), start, end, NO_APPOINTMENT);
         var saved = schedule.insert(business.id(), request, service.name(), service.priceCents(),
                 start, end, phone, fingerprint, clock.instant());
-        return new BookingOutcome(saved.receipt(), true);
+        if(customerKeys.available())
+            customerAccess.save(business.id(),saved.id(),1,br.com.luizcode.agenda.customer.CustomerKeys.digest(customerKeys.token(saved.id(),1)),clock.instant(),null);
+        return new BookingOutcome(customerReceipt(saved), true);
+    }
+
+    private BookingReceipt customerReceipt(ScheduleRepository.Appointment appointment) {
+        var receipt=appointment.receipt();
+        var access=customerAccess.access(appointment.businessId(),appointment.id()).orElse(null);
+        if(!customerKeys.available()||access==null||access.generation()!=1||access.revokedAt()!=null
+                ||!br.com.luizcode.agenda.customer.CustomerKeys.validUntil(appointment.endsAt()).isAfter(clock.instant()))return receipt;
+        String token=customerKeys.token(appointment.id(),1);
+        if(!br.com.luizcode.agenda.customer.CustomerKeys.matches(token,access.digest()))return receipt;
+        return new BookingReceipt(receipt.reference(),receipt.serviceName(),receipt.professionalName(),receipt.startsAt(),receipt.endsAt(),receipt.priceCents(),
+                token,br.com.luizcode.agenda.customer.CustomerKeys.validUntil(appointment.endsAt()));
     }
 
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
@@ -115,11 +142,15 @@ public class ScheduleService {
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
-    public AppointmentView cancel(Business business, UUID id) {
+    public AppointmentView cancel(Business business, UUID id) { return cancel(business,id,null); }
+
+    @Transactional(isolation=Isolation.READ_COMMITTED)
+    public AppointmentView cancel(Business business, UUID id,Integer version) {
         var first = schedule.appointment(business.id(), id);
         catalog.lockProfessional(business.id(), first.professionalId());
         var current = schedule.appointment(business.id(), id);
         if (current.status().equals("CANCELLED")) return current.view();
+        requireVersion(current,version);
         if (!current.startsAt().isAfter(clock.instant()))
             throw BusinessException.invalid("Só é possível cancelar atendimentos futuros.");
         schedule.cancel(business.id(), id, clock.instant());
@@ -136,6 +167,9 @@ public class ScheduleService {
             throw BusinessException.conflict("Um agendamento cancelado não pode ser remarcado.");
         if (!current.startsAt().isAfter(clock.instant()))
             throw BusinessException.invalid("Só é possível remarcar atendimentos futuros.");
+        if(request.version()!=null && request.version()==current.version()-1 && request.startsAt().toInstant().equals(current.startsAt()))
+            return current.view();
+        requireVersion(current,request.version());
         Instant start = request.startsAt().toInstant();
         Instant end = start.plus(Duration.between(current.startsAt(), current.endsAt()));
         requireFree(business, current.professionalId(), start, end, id);
@@ -164,6 +198,11 @@ public class ScheduleService {
         var current = schedule.block(business.id(), id);
         catalog.lockProfessional(business.id(), current.professionalId());
         schedule.deleteBlock(business.id(), id);
+    }
+
+    private void requireVersion(ScheduleRepository.Appointment appointment,Integer version){
+        if(version!=null&&version!=appointment.version())
+            throw BusinessException.conflict("A reserva foi alterada em outra janela. Atualize os dados antes de confirmar.");
     }
 
     private void requireFree(Business business, UUID professionalId, Instant start, Instant end, UUID excludedId) {

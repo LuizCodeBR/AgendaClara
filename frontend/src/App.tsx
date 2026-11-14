@@ -7,6 +7,7 @@ import { readRoute } from './routing';
 import BookingPage from './BookingPage';
 import AdminPage from './AdminPage';
 import HomePage from './HomePage';
+import CustomerReservationPage from './CustomerReservationPage';
 import RegistrationPage from './RegistrationPage';
 import AccountAccessPage from './AccountAccessPage';
 import type { AccessMode } from './AccountAccessPage';
@@ -19,6 +20,7 @@ export default function App() {
   const [mode, setMode] = useState(currentMode);
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [slug, setSlug] = useState(initialSlug);
+  const [customerKey,setCustomerKey]=useState(()=>readRoute(window.location.hash).reservationKey??'');
   const [actionToken, setActionToken] = useState(() => readRoute(window.location.hash).token ?? '');
   const [actionEmail, setActionEmail] = useState('');
   const [mailMode, setMailMode] = useState('disabled');
@@ -71,6 +73,7 @@ export default function App() {
         return;
       }
       const next = readRoute(window.location.hash); setActionToken(next.token ?? '');
+      if(next.mode==='customer')setCustomerKey(next.reservationKey??'');
       if (next.token) window.history.replaceState(null, '', window.location.hash.split('?')[0]);
       acceptedHash.current = window.location.hash;
       setMode(next.mode); const target = initialSlug(); if (target) setSlug(target); setMenu(false);
@@ -89,11 +92,12 @@ export default function App() {
 
   useEffect(() => { window.scrollTo(0, 0); }, [mode, slug, user?.business.id]);
 
-  const navigate = (next: 'home' | 'booking' | 'admin' | 'register') => {
+  const navigate = (next: 'home' | 'booking' | 'admin' | 'register' | 'customer') => {
     if (navigationBlocked) return;
+    setActionToken('');
     const target = businesses.some(item => item.slug === slug) ? slug : businesses[0]?.slug ?? '';
     if (next === 'booking') setSlug(target);
-    window.location.hash = next === 'home' ? '/inicio' : next === 'admin' ? '/painel' : next === 'register' ? '/cadastro' : '/agendar/' + encodeURIComponent(target);
+    window.location.hash = next === 'home' ? '/inicio' : next === 'admin' ? '/painel' : next === 'register' ? '/cadastro' : next === 'customer' ? '/minha-reserva'+(customerKey?'?reserva='+encodeURIComponent(customerKey):'') : '/agendar/' + encodeURIComponent(target);
     acceptedHash.current = window.location.hash;
     setMode(next); setMenu(false);
   };
@@ -115,6 +119,10 @@ export default function App() {
     window.location.hash = next === 'forgot' ? '/recuperar-senha' : '/verificar-email';
     acceptedHash.current = window.location.hash; setMode(next); setMenu(false);
   };
+  const customerOpened=useCallback((key:string)=>{
+    const hash='#/minha-reserva'+(key?'?reserva='+encodeURIComponent(key):'');
+    window.history.replaceState(null,'',hash);acceptedHash.current=hash;setCustomerKey(key);setActionToken('');
+  },[]);
   const current = businesses.find(item => item.slug === slug);
 
   return <div className="app-shell">
@@ -124,6 +132,7 @@ export default function App() {
       </a>
       <nav className={'top-nav ' + (menu ? 'is-open' : '')} aria-label="Navegação principal">
         <button className={mode === 'booking' ? 'nav-link active' : 'nav-link'} disabled={navigationBlocked} onClick={() => navigate('booking')}>Agendar um horário</button>
+        <button className={mode === 'customer' ? 'nav-link active' : 'nav-link'} disabled={navigationBlocked} onClick={() => navigate('customer')}>Minha reserva</button>
         <button className={mode === 'admin' ? 'nav-link active' : 'nav-link'} disabled={navigationBlocked} onClick={() => navigate('admin')}>Meu negócio <ArrowUpRight size={14} /></button>
       </nav>
       <div className="header-actions">
@@ -136,8 +145,8 @@ export default function App() {
     {installHelp && <div className="install-help" role="status"><Download size={20} /><div><strong>Seu agendamento, com acesso direto.</strong><p>No Chrome ou Edge, abra o menu do navegador e procure “Instalar Agenda Clara” ou “Instalar este site como aplicativo”. No iPhone, use Compartilhar → Adicionar à Tela de Início. O servidor precisa estar em execução.</p></div><button className="icon-button" aria-label="Fechar instruções de instalação" onClick={() => setInstallHelp(false)}><X size={18} /></button></div>}
     {navigationBlocked && <div className="offline-bar" role="status">Conclua ou descarte as alterações antes de sair desta página.</div>}
     <main id="main-content">
-      {loading ? <div className="page-state" role="status"><CalendarDays size={30} /><h1>Preparando sua agenda…</h1><p>Só um instante.</p></div> : error ? <div className="page-state"><Message>{error}</Message><button className="button primary" onClick={() => setRetry(value => value + 1)}>Tentar novamente</button></div> : mode === 'not-found' ? <div className="page-state"><h1>Página não encontrada</h1><p>Confira o link ou volte à página inicial.</p><button className="button primary" onClick={() => navigate('home')}>Voltar ao início</button></div> : mode === 'home' ? <HomePage onBook={() => navigate('booking')} onInstall={() => { void installApp(); window.scrollTo(0, 0); }} sourceUrl={distribution.sourceUrl} downloadUrl={distribution.downloadUrl} onRegister={registrationEnabled ? () => navigate('register') : undefined} /> : mode === 'register' ? <RegistrationPage onRegistered={setActionEmail} mailMode={mailMode} onVerify={email => accountAction('verify-request', email)} enabled={registrationEnabled} publicDemo={publicDemo} temporaryStorage={storageMode === 'ephemeral'} online={online} user={user} onLogin={login} onNavigationBlocked={setNavigationBlocked} /> : ['verify-request', 'verify', 'forgot', 'reset'].includes(mode) ? <AccountAccessPage key={mode + actionToken} mode={mode as AccessMode} token={actionToken} initialEmail={actionEmail} mailMode={mailMode} online={online} authenticated={!!user} onLogin={login} onRequestVerification={() => accountAction(mode === 'reset' ? 'forgot' : 'verify-request')} onReset={() => setUser(null)} onNavigationBlocked={setNavigationBlocked} /> : mode === 'booking' ? (
-        current ? <BookingPage key={slug} slug={slug} businesses={businesses} onSelectBusiness={selectBusiness} online={online} /> : <div className="page-state"><h1>{businesses.length ? 'Estabelecimento não encontrado' : 'Nenhum estabelecimento disponível'}</h1><p>{businesses.length ? 'Confira o link recebido. Você também pode voltar ao início e escolher um estabelecimento.' : 'Configure os dados iniciais para começar a receber reservas.'}</p><button className="button primary" onClick={() => navigate('home')}>Voltar ao início</button></div>
+      {loading ? <div className="page-state" role="status"><CalendarDays size={30} /><h1>Preparando sua agenda…</h1><p>Só um instante.</p></div> : error ? <div className="page-state"><Message>{error}</Message><button className="button primary" onClick={() => setRetry(value => value + 1)}>Tentar novamente</button></div> : mode === 'not-found' ? <div className="page-state"><h1>Página não encontrada</h1><p>Confira o link ou volte à página inicial.</p><button className="button primary" onClick={() => navigate('home')}>Voltar ao início</button></div> : mode === 'customer' ? <CustomerReservationPage token={actionToken} reservationKey={customerKey} onOpened={customerOpened} online={online} onNavigationBlocked={setNavigationBlocked} /> : mode === 'home' ? <HomePage onBook={() => navigate('booking')} onInstall={() => { void installApp(); window.scrollTo(0, 0); }} sourceUrl={distribution.sourceUrl} downloadUrl={distribution.downloadUrl} onRegister={registrationEnabled ? () => navigate('register') : undefined} /> : mode === 'register' ? <RegistrationPage onRegistered={setActionEmail} mailMode={mailMode} onVerify={email => accountAction('verify-request', email)} enabled={registrationEnabled} publicDemo={publicDemo} temporaryStorage={storageMode === 'ephemeral'} online={online} user={user} onLogin={login} onNavigationBlocked={setNavigationBlocked} /> : ['verify-request', 'verify', 'forgot', 'reset'].includes(mode) ? <AccountAccessPage key={mode + actionToken} mode={mode as AccessMode} token={actionToken} initialEmail={actionEmail} mailMode={mailMode} online={online} authenticated={!!user} onLogin={login} onRequestVerification={() => accountAction(mode === 'reset' ? 'forgot' : 'verify-request')} onReset={() => setUser(null)} onNavigationBlocked={setNavigationBlocked} /> : mode === 'booking' ? (
+        current ? <BookingPage onNavigationBlocked={setNavigationBlocked} key={slug} slug={slug} businesses={businesses} onSelectBusiness={selectBusiness} online={online} /> : <div className="page-state"><h1>{businesses.length ? 'Estabelecimento não encontrado' : 'Nenhum estabelecimento disponível'}</h1><p>{businesses.length ? 'Confira o link recebido. Você também pode voltar ao início e escolher um estabelecimento.' : 'Configure os dados iniciais para começar a receber reservas.'}</p><button className="button primary" onClick={() => navigate('home')}>Voltar ao início</button></div>
       ) : <AdminPage onForgot={() => accountAction('forgot')} onVerify={email => accountAction('verify-request', email)} initialEmail={loginEmail} onRegister={registrationEnabled ? () => navigate('register') : undefined} onBusinessVisibility={visibility} user={user} onUser={setUser} onNavigationBlocked={setNavigationBlocked} demo={demo} online={online} onBook={business => { setSlug(business.slug); window.location.hash = '/agendar/' + encodeURIComponent(business.slug); acceptedHash.current = window.location.hash; setMode('booking'); }} />}
     </main>
     <footer className="footer"><span>agenda clara<span className="brand-dot">.</span> <span className="footer-muted">Tempo para o que importa.</span></span><span><ShieldCheck size={14} /> {current?.zoneId === 'America/Sao_Paulo' ? 'Horários de Brasília' : 'Horários do estabelecimento'} <span className="footer-divider">/</span> <Check size={14} /> Confirmação na hora</span></footer>

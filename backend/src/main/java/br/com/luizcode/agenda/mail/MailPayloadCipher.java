@@ -64,6 +64,22 @@ public class MailPayloadCipher {
         }
     }
     public String keyId() { return keyId; }
+
+    /** RFC 5869 HKDF-SHA256, one expansion block; separates application purposes from AES. */
+    public SecretKey deriveKey(String purpose) {
+        if (key == null) return null;
+        byte[] original=key.getEncoded(), prk=null, expanded=null;
+        try {
+            Mac mac=Mac.getInstance("HmacSHA256");
+            mac.init(new SecretKeySpec(new byte[32],"HmacSHA256"));
+            prk=mac.doFinal(original);
+            mac.init(new SecretKeySpec(prk,"HmacSHA256"));
+            mac.update(("AgendaClara/"+purpose).getBytes(StandardCharsets.UTF_8));
+            expanded=mac.doFinal(new byte[]{1});
+            return new SecretKeySpec(expanded,"HmacSHA256");
+        } catch(GeneralSecurityException ex) { throw new IllegalStateException("Não foi possível preparar a proteção de acesso."); }
+        finally { Arrays.fill(original,(byte)0);if(prk!=null)Arrays.fill(prk,(byte)0);if(expanded!=null)Arrays.fill(expanded,(byte)0); }
+    }
     public String encrypt(String aad,MailQueueModels.Payload payload) {
         try {
             if(key==null) throw new IllegalStateException();

@@ -81,7 +81,7 @@ jobs:
           chmod +x mvnw
           mkdir -p .cache/tmp
           ./mvnw -B -ntp -DskipTests package
-          java -jar target/agenda-clara-0.9.0.jar --spring.profiles.active=demo > .cache/e2e-server.log 2>&1 &
+          java -jar target/agenda-clara-0.10.0.jar --spring.profiles.active=demo > .cache/e2e-server.log 2>&1 &
           APP_PID=$!
           trap 'kill "$APP_PID" 2>/dev/null || true; cat "$GITHUB_WORKSPACE/.cache/e2e-server.log"' EXIT
           for attempt in $(seq 1 60); do
@@ -95,9 +95,11 @@ jobs:
           node scripts/account-access-smoke.mjs http://127.0.0.1:8080
           node scripts/mail-queue-smoke.mjs http://127.0.0.1:8080
           node scripts/professional-services-smoke.mjs http://127.0.0.1:8080
+          node scripts/customer-portal-smoke.mjs http://127.0.0.1:8080
           cd frontend
           npm run test:e2e
           cd ..
+          node scripts/customer-portal-smoke.mjs before http://127.0.0.1:8080 .cache/customer-storage-fixture.json
           node scripts/storage-smoke.mjs before http://127.0.0.1:8080 .cache/storage-fixture.json
           kill "$APP_PID"
           wait "$APP_PID" || true
@@ -109,16 +111,17 @@ jobs:
           test "$OPERATIONS_STATUS" -eq 2
           node scripts/operations-smoke.mjs .cache/browser-operations
           BACKUP_PATH=".cache/browser-operations/backups/$(node -p "JSON.parse(require('fs').readFileSync('.cache/browser-operations/latest.json','utf8')).backup.lastVerified.filename")"
-          java -Xmx512m -Djava.io.tmpdir=.cache/tmp -jar target/agenda-clara-0.9.0.jar --backup=verify --input="$BACKUP_PATH"
-          java -Xmx512m -Djava.io.tmpdir=.cache/tmp -jar target/agenda-clara-0.9.0.jar --backup=restore --input="$BACKUP_PATH" --target-dir=.cache/e2e-restored
+          java -Xmx512m -Djava.io.tmpdir=.cache/tmp -jar target/agenda-clara-0.10.0.jar --backup=verify --input="$BACKUP_PATH"
+          java -Xmx512m -Djava.io.tmpdir=.cache/tmp -jar target/agenda-clara-0.10.0.jar --backup=restore --input="$BACKUP_PATH" --target-dir=.cache/e2e-restored
           export AGENDA_DATA_DIR="$GITHUB_WORKSPACE/.cache/e2e-restored"
-          java -jar target/agenda-clara-0.9.0.jar --spring.profiles.active=demo > .cache/restored-server.log 2>&1 &
+          java -jar target/agenda-clara-0.10.0.jar --spring.profiles.active=demo > .cache/restored-server.log 2>&1 &
           APP_PID=$!
           for attempt in $(seq 1 60); do
             if curl --fail --silent http://127.0.0.1:8080/api/public/config > /dev/null; then break; fi
             sleep 1
           done
           node scripts/storage-smoke.mjs after http://127.0.0.1:8080 .cache/storage-fixture.json
+          node scripts/customer-portal-smoke.mjs after http://127.0.0.1:8080 .cache/customer-storage-fixture.json
   docker:
     name: Docker e PostgreSQL · demonstração
     runs-on: ubuntu-latest

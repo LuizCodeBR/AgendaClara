@@ -45,6 +45,7 @@ public class SecurityConfiguration {
         http.addFilterAfter(new CredentialVersionFilter(jdbc),org.springframework.security.web.authentication.AnonymousAuthenticationFilter.class);
         http.csrf(Customizer.withDefaults())
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/api/customer/**").permitAll()
                 .requestMatchers("/api/public/**", "/api/auth/csrf", "/api/auth/login", "/api/auth/register", "/api/auth/email/request", "/api/auth/email/confirm", "/api/auth/password/request", "/api/auth/password/reset", "/api/auth/demo-mailbox", "/api/auth/demo-mailbox/open").permitAll()
                 .requestMatchers("/api/admin/**", "/api/auth/me").hasRole("OWNER")
                 .requestMatchers("/api/**").denyAll()

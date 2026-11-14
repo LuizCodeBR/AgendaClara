@@ -110,3 +110,7 @@ O responsável pela instalação pode criar e verificar uma cópia, preservar o 
 ## Compatibilidade na 0.9.0
 
 A inspeção aceita os esquemas 6 e 7. A migração V7 acrescenta os serviços por profissional; a cópia e restauração incluem essa tabela. O formato ACBK0001 permanece. Use ferramenta da versão nova para restaurar banco migrado e preserve banco e chave em conjunto.
+
+## Compatibilidade na 0.10.0
+
+A inspeção aceita os esquemas 6, 7 e 8. A migração V8 acrescenta acessos e sessões de clientes, incluídos no backup. A chave original preserva a derivação dos links privados; restaure banco e chave juntos. As sessões continuam sujeitas à expiração de uma hora, mesmo depois de uma restauração. Formato ACBK0001 mantido.

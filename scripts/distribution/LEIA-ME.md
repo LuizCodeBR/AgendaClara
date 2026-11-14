@@ -1,4 +1,4 @@
-# Agenda Clara — demonstração 0.9.0
+# Agenda Clara — demonstração 0.10.0
 
 1. Instale Java 21 ou mais recente até a versão 27, caso ainda não possua.
 2. Extraia todos os arquivos deste ZIP em uma pasta gravável.
@@ -41,4 +41,10 @@ Para verificar: backup.cmd --backup=verify --input="D:\Backups\copia.acbackup"
 Para restaurar: backup.cmd --backup=restore --input="D:\Backups\copia.acbackup" --target-dir="D:\AgendaRestaurada\data"
 O destino deve ser uma pasta nova. Preserve a senha fora do arquivo e mantenha outra cópia protegida fora do disco do banco. As instruções completas estão em docs/ARMAZENAMENTO-BACKUPS.md no repositório.
 
-Na versão 0.9.0, escolha os Serviços atendidos de cada profissional em Equipe e horários. Novos profissionais começam sem vínculos; novos serviços precisam ser vinculados à equipe. A migração preserva as combinações anteriores e as reservas existentes. Retirar um serviço com atendimento confirmado futuro ou em andamento exige resolver esse atendimento primeiro. Preço e duração continuam definidos no catálogo.
+Na versão 0.10.0, escolha os Serviços atendidos de cada profissional em Equipe e horários. Novos profissionais começam sem vínculos; novos serviços precisam ser vinculados à equipe. A migração preserva as combinações anteriores e as reservas existentes. Retirar um serviço com atendimento confirmado futuro ou em andamento exige resolver esse atendimento primeiro. Preço e duração continuam definidos no catálogo.
+
+## Minha reserva
+
+O comprovante oferece um link privado para consultar, cancelar ou remarcar o próprio atendimento. Guarde esse link; quem o possui pode alterar a reserva. O responsável pode gerar ou revogar acessos na agenda. Preço e duração são preservados. Não há envio automático por mensagem.
+
+A cópia local tem banco próprio. Um link localhost funciona somente no computador onde o servidor está acessível; para uso no celular, prefira o site online. Ao atualizar, preserve a pasta data e mail-outbox.key; faça backup com o servidor encerrado e use a ferramenta nova para banco migrado.
