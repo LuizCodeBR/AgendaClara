@@ -12,7 +12,7 @@ const catalog: Catalog = {
   business: { id: 'business', slug: 'teste', name: 'Negócio Teste', category: 'Barbearia', zoneId: 'America/Sao_Paulo', address: 'Rua Teste' },
   services: [{ id: 'service', name: 'Corte', description: 'Atendimento', durationMinutes: 30, priceCents: 5000 }],
   professionals: [{ id: 'professional', name: 'Ana Exemplo', specialty: 'Corte', serviceIds: ['service'] }],
-  suggestedDate: '2030-06-04', horizonDays: 60,
+  suggestedDate: '2030-06-04', horizonDays: 60, bookingPolicy:{bookingNoticeMinutes:0,cancellationNoticeMinutes:0,rescheduleNoticeMinutes:0,version:0},
 };
 const slot = { startsAt: '2030-06-04T12:00:00Z', endsAt: '2030-06-04T12:30:00Z' };
 const receipt: Receipt = { ...slot, serviceName: 'Corte', professionalName: 'Ana Exemplo', reference: 'ABC123456789', priceCents: 5000 };
@@ -122,4 +122,22 @@ it('recarrega os vínculos após conflito sem perder os dados digitados do clien
   expect(screen.getByLabelText('Seu nome')).toHaveValue('Cliente Exemplo');
   expect(screen.getByLabelText('Telefone de contato')).toHaveValue('11999991234');
   expect(screen.getByRole('button', { name: 'Confirmar agendamento' })).toBeDisabled();
+});
+
+it('exige rever a nova versão das regras após conflito, preservando o contato',async()=>{
+  let revision=0,posts=0;
+  mocked.mockImplementation(async(path,options)=>{
+    if(path.endsWith('/catalog'))return {...catalog,bookingPolicy:{bookingNoticeMinutes:0,cancellationNoticeMinutes:revision?1440:0,rescheduleNoticeMinutes:0,version:revision}};
+    if(path.includes('/availability?'))return {slots:[slot]};
+    if(options?.method==='POST'){if(++posts===1){revision=1;throw new ApiError('As regras mudaram. Confira os prazos.',409);}return receipt;}
+    throw new Error(path);
+  });
+  mount();const user=await fill();await user.click(screen.getByRole('button',{name:'Confirmar agendamento'}));
+  await screen.findByText('24 horas antes');expect(screen.getByLabelText('Seu nome')).toHaveValue('Cliente Exemplo');
+  expect(screen.getByLabelText('Telefone de contato')).toHaveValue('11999991234');
+  expect(screen.getByRole('button',{name:'Confirmar agendamento'})).toBeDisabled();
+  await user.click(await screen.findByRole('button',{name:'09:00'}));
+  await user.click(screen.getByRole('button',{name:'Confirmar agendamento'}));
+  await screen.findByRole('heading',{name:/Seu horário.*está reservado/});
+  expect(mocked.mock.calls.filter(([,o])=>o?.method==='POST').map(([,o])=>JSON.parse(o!.body as string).policyVersion)).toEqual([0,1]);
 });

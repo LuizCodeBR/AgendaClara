@@ -17,7 +17,7 @@ class CustomerAccessMigrationTest {
         String password=pg?System.getenv().getOrDefault("TEST_DB_PASSWORD",""):"";
         String schema="customer_upgrade_"+UUID.randomUUID().toString().replace("-","");
         var old=Flyway.configure().dataSource(url,user,password).target("7");
-        var next=Flyway.configure().dataSource(url,user,password);
+        var next=Flyway.configure().dataSource(url,user,password).target("8");
         if(pg){old.schemas(schema).defaultSchema(schema);next.schemas(schema).defaultSchema(schema);}
         old.load().migrate();
         String scoped=pg?url+(url.contains("?")?"&":"?")+"currentSchema="+schema:url;

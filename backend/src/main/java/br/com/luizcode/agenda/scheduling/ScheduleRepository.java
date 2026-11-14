@@ -21,13 +21,13 @@ public class ScheduleRepository {
             """;
     public record Appointment(UUID id, UUID businessId, UUID professionalId, UUID serviceId, String professionalName,
                               String serviceName, String customerName, String customerPhone, Instant startsAt,
-                              Instant endsAt, String status, String reference, int priceCents, String fingerprint, int version) {
+                              Instant endsAt, String status, String reference, int priceCents, String fingerprint, int version, br.com.luizcode.agenda.policy.BookingPolicy bookingPolicy) {
         public AppointmentView view() {
             return new AppointmentView(id, professionalId, serviceId, professionalName, serviceName, customerName,
-                    customerPhone, startsAt, endsAt, status, reference, priceCents, version);
+                    customerPhone, startsAt, endsAt, status, reference, priceCents, version, bookingPolicy);
         }
         public BookingReceipt receipt() {
-            return new BookingReceipt(reference, serviceName, professionalName, startsAt, endsAt, priceCents);
+            return new BookingReceipt(reference, serviceName, professionalName, startsAt, endsAt, priceCents,null,null,bookingPolicy);
         }
     }
     private static final RowMapper<Appointment> MAPPER = (rs, row) -> new Appointment(
@@ -36,7 +36,7 @@ public class ScheduleRepository {
             rs.getString("professional_name"), rs.getString("service_name"), rs.getString("customer_name"),
             rs.getString("customer_phone"), rs.getObject("starts_at", OffsetDateTime.class).toInstant(),
             rs.getObject("ends_at", OffsetDateTime.class).toInstant(), rs.getString("status"),
-            rs.getString("reference"), rs.getInt("price_cents"), rs.getString("request_fingerprint"),rs.getInt("version"));
+            rs.getString("reference"), rs.getInt("price_cents"), rs.getString("request_fingerprint"),rs.getInt("version"),new br.com.luizcode.agenda.policy.BookingPolicy(rs.getInt("booking_notice_minutes"),rs.getInt("cancel_notice_minutes"),rs.getInt("reschedule_notice_minutes"),rs.getInt("policy_version")));
     public ScheduleRepository(JdbcTemplate jdbc) { this.jdbc = jdbc; }
 
     public Appointment appointment(UUID businessId, UUID id) {
@@ -79,17 +79,17 @@ public class ScheduleRepository {
         return appointments != null && appointments > 0 || blocks != null && blocks > 0;
     }
     public Appointment insert(UUID businessId, BookingRequest request, String serviceName, int priceCents,
-                              Instant start, Instant end, String phone, String fingerprint, Instant now) {
+                              Instant start, Instant end, String phone, String fingerprint, Instant now,br.com.luizcode.agenda.policy.BookingPolicy policy) {
         UUID id = UUID.randomUUID();
         String reference = id.toString().replace("-", "").substring(0, 12).toUpperCase(java.util.Locale.ROOT);
         jdbc.update("""
                 insert into appointment
                 (id, business_id, professional_id, service_id, service_name, price_cents, customer_name, customer_phone,
-                 starts_at, ends_at, status, reference, request_key, request_fingerprint, created_at, updated_at)
-                values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'BOOKED', ?, ?, ?, ?, ?)
+                 starts_at, ends_at, status, reference, request_key, request_fingerprint, created_at, updated_at,booking_notice_minutes,cancel_notice_minutes,reschedule_notice_minutes,policy_version)
+                values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'BOOKED', ?, ?, ?, ?, ?,?,?,?,?)
                 """, id, businessId, request.professionalId(), request.serviceId(), serviceName, priceCents,
                 request.customerName().strip(), phone, utc(start), utc(end), reference, request.requestKey(),
-                fingerprint, utc(now), utc(now));
+                fingerprint, utc(now), utc(now),policy.bookingNoticeMinutes(),policy.cancellationNoticeMinutes(),policy.rescheduleNoticeMinutes(),policy.version());
         return appointment(businessId, id);
     }
     public void cancel(UUID businessId, UUID id, Instant now) {

@@ -6,7 +6,8 @@ import { Message, Modal } from './components';
 import { DatePicker, TimeSlots } from './availability';
 import { dateInZone, dayLabel, money, plusDays, time, todayInZone } from './format';
 import { PrivateReservationLink, reservationToken } from './customerAccess';
-import type { Availability, Slot } from './types';
+import type { Availability, Slot, BookingPolicy } from './types';
+import BookingPolicySummary from './BookingPolicySummary';
 import './customer.css';
 
 export interface CustomerReservation {
@@ -15,6 +16,7 @@ export interface CustomerReservation {
   reference: string; serviceName: string; professionalName: string; customerName: string;
   startsAt: string; endsAt: string; priceCents: number; status: 'BOOKED' | 'CANCELLED'; version: number; canChange: boolean;
   accessValidUntil: string; sessionExpiresAt: string; suggestedDate: string; horizonDays: number;
+  bookingPolicy?:BookingPolicy; canCancel?:boolean; canReschedule?:boolean; cancelUntil?:string; rescheduleUntil?:string;
 }
 export default function CustomerReservationPage({ token, reservationKey, onOpened, online, onNavigationBlocked }: { token: string; reservationKey: string; onOpened: (key:string)=>void; online: boolean; onNavigationBlocked: (blocked: boolean)=>void }) {
   const [reservation,setReservation]=useState<CustomerReservation|null>(null);
@@ -85,11 +87,13 @@ export default function CustomerReservationPage({ token, reservationKey, onOpene
         <h2>{reservation.business.name}</h2><p>{reservation.business.address}</p>
         <dl><dt>Cliente</dt><dd>{reservation.customerName}</dd><dt>Serviço</dt><dd>{reservation.serviceName}</dd><dt>Profissional</dt><dd>{reservation.professionalName}</dd><dt>Data</dt><dd>{dayLabel(dateInZone(reservation.startsAt,zone))}</dd><dt>Horário</dt><dd>{time(reservation.startsAt,zone)} – {time(reservation.endsAt,zone)}</dd><dt>Valor</dt><dd>{money(reservation.priceCents)}</dd><dt>Código público</dt><dd>{reservation.reference}</dd></dl>
         <p className="field-note">Horários no fuso {zone}. Preço, duração, serviço e profissional são preservados na remarcação.</p>
-        <div className="customer-actions">{reservation.canChange&&<><button className="button primary" disabled={pending||!online} onClick={()=>{setMove(value=>!value);setError('');setSlot(null);}}>Remarcar minha reserva</button><button className="button danger" disabled={pending||!online} onClick={()=>{setCancel(true);setError('');}}>Cancelar minha reserva</button></>}<button className="button secondary" disabled={pending} onClick={()=>void close()}>Encerrar acesso neste navegador</button></div>
+        <div className="customer-actions">{(reservation.canReschedule??reservation.canChange)&&<button className="button primary" disabled={pending||!online} onClick={()=>{setMove(value=>!value);setError('');setSlot(null);}}>Remarcar minha reserva</button>}{(reservation.canCancel??reservation.canChange)&&<button className="button danger" disabled={pending||!online} onClick={()=>{setCancel(true);setError('');}}>Cancelar minha reserva</button>}<button className="button secondary" disabled={pending} onClick={()=>void close()}>Encerrar acesso neste navegador</button></div>
+        <BookingPolicySummary policy={reservation.bookingPolicy} startsAt={reservation.startsAt} zone={zone} confirmed/>
+        {reservation.canChange&&!(reservation.canCancel??true)&&!(reservation.canReschedule??true)&&<p className="field-note">Os prazos online terminaram. Fale com o estabelecimento para solicitar uma alteração.</p>}
         {!reservation.canChange&&<p className="field-note">Este atendimento está cancelado ou já começou. Para outras solicitações, fale com o estabelecimento.</p>}
         <p className="field-note">O link privado vale até {dayLabel(dateInZone(reservation.accessValidUntil,zone))}. O estabelecimento pode revogar o acesso antes.</p>
       </div>
-      {move&&reservation.canChange&&<form className="agenda-panel customer-move" onSubmit={event=>{event.preventDefault();void change('move');}}><h2>Escolha o novo horário</h2><fieldset disabled={pending}><DatePicker date={date} onChange={setDate} today={todayInZone(zone)} max={plusDays(todayInZone(zone),reservation.horizonDays)}/><TimeSlots {...availability} selected={slot?.startsAt??''} onSelect={setSlot} zone={zone}/><div className="customer-actions"><button type="button" className="button secondary" onClick={()=>setMove(false)}>Manter horário atual</button><button className="button primary" disabled={!slot||pending||!online}>{pending?'Salvando…':'Confirmar novo horário'}</button></div></fieldset></form>}
+      {move&&(reservation.canReschedule??reservation.canChange)&&<form className="agenda-panel customer-move" onSubmit={event=>{event.preventDefault();void change('move');}}><h2>Escolha o novo horário</h2><fieldset disabled={pending}><DatePicker date={date} onChange={setDate} today={todayInZone(zone)} max={plusDays(todayInZone(zone),reservation.horizonDays)}/><TimeSlots {...availability} selected={slot?.startsAt??''} onSelect={setSlot} zone={zone}/><BookingPolicySummary policy={reservation.bookingPolicy} startsAt={slot?.startsAt} zone={zone} confirmed/><div className="customer-actions"><button type="button" className="button secondary" onClick={()=>setMove(false)}>Manter horário atual</button><button className="button primary" disabled={!slot||pending||!online}>{pending?'Salvando…':'Confirmar novo horário'}</button></div></fieldset></form>}
       {privateLink?.key===reservation.reservationKey&&<div className="agenda-panel"><PrivateReservationLink token={privateLink.token}/></div>}
     </>}
     {cancel&&reservation&&<Modal title="Cancelar sua reserva?" busy={pending} onClose={()=>setCancel(false)}><p>Seu atendimento de {reservation.serviceName} será cancelado e o horário ficará disponível para outras pessoas.</p><div className="modal-actions"><button className="button secondary" disabled={pending} onClick={()=>setCancel(false)}>Manter minha reserva</button><button className="button danger" disabled={pending||!online} onClick={()=>void change('cancel')}>{pending?'Cancelando…':'Sim, cancelar minha reserva'}</button></div>{error&&<Message>{error}</Message>}</Modal>}

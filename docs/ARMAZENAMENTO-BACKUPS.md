@@ -114,3 +114,6 @@ A inspeção aceita os esquemas 6 e 7. A migração V7 acrescenta os serviços p
 ## Compatibilidade na 0.10.0
 
 A inspeção aceita os esquemas 6, 7 e 8. A migração V8 acrescenta acessos e sessões de clientes, incluídos no backup. A chave original preserva a derivação dos links privados; restaure banco e chave juntos. As sessões continuam sujeitas à expiração de uma hora, mesmo depois de uma restauração. Formato ACBK0001 mantido.
+
+## Compatibilidade na 0.11.0
+A ferramenta aceita esquemas 6, 7, 8 e 9. Backups incluem as regras atuais da empresa e as condições preservadas de cada reserva, além da chave e dos acessos privados. ACBK0001 permanece. Use a ferramenta nova para o banco migrado e mantenha banco e chave juntos.

@@ -50,7 +50,7 @@ class ProfessionalServicesMigrationTest {
             jdbc.update("delete from professional_service where business_id=? and professional_id=? and service_id=?",a,p,s2);
             next.load().migrate();
             assertThat(jdbc.queryForObject("select count(*) from professional_service",Integer.class)).isEqualTo(4);
-            jdbc.update("update \"flyway_schema_history\" set \"version\"='9' where \"version\"='7'");
+            jdbc.update("update \"flyway_schema_history\" set \"version\"='10' where \"version\"='7'");
             assertThatThrownBy(()->{try(var connection=jdbc.getDataSource().getConnection()){br.com.luizcode.agenda.backup.DatabaseSnapshot.inspect(connection,null);}}).hasMessageContaining("esquema incompatível");
         } finally {
             if(postgres)next.cleanDisabled(false).load().clean();

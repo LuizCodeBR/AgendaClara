@@ -12,7 +12,7 @@ public final class CatalogModels {
     public record Professional(UUID id, String name, String specialty, List<UUID> serviceIds) {}
     public record Service(UUID id, String name, String description, int durationMinutes, int priceCents) {}
     public record Catalog(Business business, List<Service> services, List<Professional> professionals,
-                          LocalDate suggestedDate, int horizonDays) {}
+                          LocalDate suggestedDate, int horizonDays, br.com.luizcode.agenda.policy.BookingPolicy bookingPolicy) {}
     public record CreateService(
             @NotBlank @Size(max = 100) String name,
             @NotBlank @Size(max = 240) String description,

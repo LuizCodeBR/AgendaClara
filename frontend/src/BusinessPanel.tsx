@@ -6,7 +6,7 @@ import './registration.css';
 
 export default function BusinessPanel({ state, online, onUpdated, onConfigure }: {
   state: BusinessSetup; online: boolean; onUpdated: (state: BusinessSetup) => void;
-  onConfigure: (tab: 'services' | 'team' | 'dates') => void;
+  onConfigure: (tab: 'services' | 'team' | 'dates' | 'policy') => void;
 }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
@@ -29,6 +29,7 @@ export default function BusinessPanel({ state, online, onUpdated, onConfigure }:
     {!state.published && !state.ready && <Message>Conclua os itens acima para liberar a publicação.</Message>}
     {error && <Message>{error}</Message>}
     <button className="button primary" disabled={pending || !online || (!state.published && !state.ready)} onClick={() => void publish()}>{pending ? 'Atualizando publicação…' : state.published ? 'Ocultar página de reservas' : 'Publicar página de reservas'}</button>
+    <button className="button secondary" disabled={pending} onClick={()=>onConfigure('policy')}>Configurar regras de agendamento</button>
     <p className="field-note">Ocultar a página impede novas reservas públicas. Os atendimentos já confirmados continuam no painel.</p>
   </section>;
 }

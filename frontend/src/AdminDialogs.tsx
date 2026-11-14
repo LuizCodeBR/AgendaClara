@@ -1,17 +1,24 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { CalendarDays, Clock3 } from 'lucide-react';
 import { api, errorMessage } from './api';
 import { Message, Modal } from './components';
-import { DatePicker, TimeSlots, useAvailability } from './availability';
+import { DatePicker, TimeSlots } from './availability';
 import { dateInZone, dayLabel, localDateTime, plusDays, time, todayInZone } from './format';
-import type { Appointment, Catalog, Slot } from './types';
+import type { Appointment, Catalog, Slot, Availability } from './types';
 
 export function RescheduleDialog({ appointment, catalog, onClose, onSaved, online }: { appointment: Appointment; catalog: Catalog; onClose: () => void; onSaved: () => void; online: boolean }) {
   const zone = catalog.business.zoneId;
-  const [date, setDate] = useState(catalog.suggestedDate);
+  const [date, setDate] = useState(dateInZone(appointment.startsAt,zone));
   const [slot, setSlot] = useState<Slot | null>(null); const [error, setError] = useState(''); const [pending, setPending] = useState(false);
-  const availability = useAvailability(catalog.business.slug, appointment.professionalId, appointment.serviceId, date);
+  const [availability,setAvailability]=useState<{slots:Slot[];loading:boolean;error:string}>({slots:[],loading:true,error:''});
+  useEffect(()=>{
+    const controller=new AbortController();setSlot(null);setAvailability({slots:[],loading:true,error:''});
+    api<Availability>('/api/admin/appointments/'+appointment.id+'/availability?'+new URLSearchParams({date}),{signal:controller.signal})
+      .then(result=>{if(!controller.signal.aborted)setAvailability({slots:result.slots,loading:false,error:''});})
+      .catch(error=>{if(!controller.signal.aborted)setAvailability({slots:[],loading:false,error:errorMessage(error)});});
+    return()=>controller.abort();
+  },[appointment.id,date]);
   async function submit(event: FormEvent) {
     event.preventDefault(); if (!slot || pending) return; setPending(true); setError('');
     try {
@@ -19,7 +26,7 @@ export function RescheduleDialog({ appointment, catalog, onClose, onSaved, onlin
       onSaved();
     } catch (error) { setError(errorMessage(error)); } finally { setPending(false); }
   }
-  return <Modal title="Encontrar um novo horário" busy={pending} onClose={onClose}><p className="modal-description">{appointment.customerName} · {appointment.serviceName}<br /><CalendarDays size={13} /> Atual: {dayLabel(dateInZone(appointment.startsAt, zone))}, {time(appointment.startsAt, zone)}</p><form onSubmit={event => void submit(event)}><fieldset disabled={pending} className="dialog-fields"><DatePicker date={date} onChange={value => { setDate(value); setSlot(null); }} today={todayInZone(zone)} max={plusDays(todayInZone(zone), catalog.horizonDays)} /><TimeSlots {...availability} selected={slot?.startsAt ?? ''} onSelect={setSlot} zone={zone} />{error && <Message>{error}</Message>}<button className="button primary full" disabled={!slot || pending || !online}>{pending ? 'Salvando…' : 'Confirmar remarcação'}</button></fieldset></form></Modal>;
+  return <Modal title="Encontrar um novo horário" busy={pending} onClose={onClose}><p className="field-note">O responsável pode ajustar atendimentos futuros mesmo após os prazos online do cliente. Preço e duração originais são preservados.</p><p className="modal-description">{appointment.customerName} · {appointment.serviceName}<br /><CalendarDays size={13} /> Atual: {dayLabel(dateInZone(appointment.startsAt, zone))}, {time(appointment.startsAt, zone)}</p><form onSubmit={event => void submit(event)}><fieldset disabled={pending} className="dialog-fields"><DatePicker date={date} onChange={value => { setDate(value); setSlot(null); }} today={todayInZone(zone)} max={plusDays(todayInZone(zone), catalog.horizonDays)} /><TimeSlots {...availability} selected={slot?.startsAt ?? ''} onSelect={setSlot} zone={zone} />{error && <Message>{error}</Message>}<button className="button primary full" disabled={!slot || pending || !online}>{pending ? 'Salvando…' : 'Confirmar remarcação'}</button></fieldset></form></Modal>;
 }
 
 export function BlockDialog({ catalog, date, onClose, onSaved, online }: { catalog: Catalog; date: string; onClose: () => void; onSaved: () => void; online: boolean }) {

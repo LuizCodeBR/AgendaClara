@@ -1,4 +1,4 @@
-# API — versão 0.10.0
+# API — versão 0.11.0
 
 A interface e a API usam a mesma origem. Datas de consulta usam ISO `YYYY-MM-DD`; instantes enviados usam ISO com offset, como `2030-06-04T09:00:00-03:00`.
 
@@ -165,3 +165,26 @@ O comprovante de uma nova reserva inclui customerAccessToken e customerAccessVal
 O responsável autenticado tem GET/POST/DELETE /api/admin/appointments/{id}/customer-access, restritos ao próprio estabelecimento. POST recebe {version, requestKey}; DELETE recebe {version}. Gerar ou revogar acesso incrementa a versão da reserva e invalida sessões anteriores. O painel passou a enviar version no cancelamento e remarcação; a API administrativa aceita sua ausência para compatibilidade.
 
 Consulte [Minha reserva](MINHA-RESERVA.md) para validade, entrega manual e recuperação.
+
+## Regras de agendamento (0.11.0)
+
+GET /api/admin/appointments/{id}/availability?date=YYYY-MM-DD consulta horários do atendimento próprio para o responsável, com duração original e exclusão da reserva atual, sem os prazos online do cliente. Exige login e isolamento por empresa.
+
+GET/PUT /api/admin/business/booking-policy exigem responsável autenticado; PUT exige CSRF. O estabelecimento vem da sessão.
+
+```json
+{
+  "bookingNoticeMinutes": 120,
+  "cancellationNoticeMinutes": 1440,
+  "rescheduleNoticeMinutes": 720,
+  "version": 0
+}
+```
+
+Todos os campos são obrigatórios. Intervalos: inteiros de 0 a 10080; version não negativa. Mudança efetiva incrementa a versão; valores idênticos mantêm a revisão. Versão antiga retorna 409.
+
+Catalog inclui bookingPolicy. BookingRequest acrescenta policyVersion: use bookingPolicy.version do catálogo. Após a primeira revisão, omissão ou revisão antiga retornam 409. A interface atualiza o catálogo, preserva contato e exige nova escolha. Repetir uma reserva já concluída mantém sua resposta original.
+
+BookingReceipt e AppointmentView incluem bookingPolicy da confirmação. A visão privada acrescenta bookingPolicy, canCancel, canReschedule, cancelUntil e rescheduleUntil. canChange continua indicando atendimento futuro confirmado; as duas novas permissões indicam cada ação disponível. Datas dos prazos são instantes UTC, exibidos no fuso da empresa.
+
+Ações do cliente exigem prazo válido e antecedência do novo horário. O responsável mantém o atendimento de exceções futuras. Regras novas não são aplicadas retroativamente. Consulte [Regras de agendamento](REGRAS-AGENDAMENTO.md).

@@ -162,3 +162,11 @@ A migração V8 cria appointment_access e appointment_customer_session com chave
 CustomerPortalService valida concessão e reserva antes e depois do bloqueio de profissional. O mesmo bloqueio coordena cancelamento, remarcação, emissão e revogação com as demais alterações de agenda. A versão esperada evita sobrescrita de telas antigas. Consultas usam snapshot consistente; alterações usam READ_COMMITTED e revalidação depois da espera.
 
 O navegador troca o segredo do fragmento por cookie HttpOnly restrito ao caminho da reserva. A URL seguinte contém somente o UUID não secreto. Duas reservas no mesmo navegador mantêm sessões independentes. A interface e o service worker não persistem respostas privadas. Consulte [o guia](MINHA-RESERVA.md).
+
+## Regras por empresa (0.11.0)
+
+V9 acrescenta os intervalos de reserva, cancelamento e remarcação e sua revisão em business. appointment guarda uma cópia imutável desses valores. Defaults zero preservam o histórico.
+
+BookingPolicyService coordena edição e captura com um UPDATE de coluna não chave na empresa, antes de bloquear o profissional na confirmação. A revisão é relida após a espera. O servidor verifica publicação, antecedência e disponibilidade na mesma transação. O caminho público reconfirma a publicação; a preparação interna de cadastros privados permanece separada.
+
+CustomerPortalService aplica as condições da reserva e calcula permissões e prazos individuais. A remarcação preserva valores e recalcula datas pelo novo início. O responsável pode atender exceções futuras. Relógio do servidor e instantes garantem limites precisos; a interface mostra o fuso da empresa. Consulte [o guia](REGRAS-AGENDAMENTO.md).

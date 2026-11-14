@@ -78,3 +78,18 @@ it('encerra somente a sessão da reserva exibida e remove o link da tela',async(
   expect(opened).toHaveBeenCalledWith('');
   expect(screen.queryByLabelText('Link privado da reserva')).not.toBeInTheDocument();
 });
+
+it('apresenta cada prazo e oculta somente a ação encerrada',async()=>{
+  mocked.mockResolvedValue({...sample,bookingPolicy:{bookingNoticeMinutes:120,cancellationNoticeMinutes:1440,rescheduleNoticeMinutes:720,version:1},canCancel:false,canReschedule:true});
+  mount();await screen.findByRole('heading',{name:'Empresa teste'});
+  expect(screen.queryByRole('button',{name:'Cancelar minha reserva'})).not.toBeInTheDocument();
+  expect(screen.getByRole('button',{name:'Remarcar minha reserva'})).toBeVisible();
+  expect(screen.getByText('24 horas antes')).toBeVisible();expect(screen.getByText('12 horas antes')).toBeVisible();
+});
+it('continua permitindo consulta quando os dois prazos terminaram',async()=>{
+  mocked.mockResolvedValue({...sample,canCancel:false,canReschedule:false});
+  mount();await screen.findByRole('heading',{name:'Empresa teste'});
+  expect(screen.getByText('Os prazos online terminaram. Fale com o estabelecimento para solicitar uma alteração.')).toBeVisible();
+  expect(screen.queryByRole('button',{name:'Remarcar minha reserva'})).not.toBeInTheDocument();
+  expect(screen.getByText('Cliente fictício')).toBeVisible();
+});

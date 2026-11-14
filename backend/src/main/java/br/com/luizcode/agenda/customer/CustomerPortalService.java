@@ -24,7 +24,8 @@ public class CustomerPortalService {
     public record BusinessDetails(String name,String slug,String address,String zoneId){}
     public record View(UUID reservationKey,BusinessDetails business,String reference,String serviceName,String professionalName,String customerName,
             Instant startsAt,Instant endsAt,int priceCents,String status,int version,boolean canChange,
-            Instant accessValidUntil,Instant sessionExpiresAt,LocalDate suggestedDate,int horizonDays){}
+            Instant accessValidUntil,Instant sessionExpiresAt,LocalDate suggestedDate,int horizonDays,
+            br.com.luizcode.agenda.policy.BookingPolicy bookingPolicy,boolean canCancel,boolean canReschedule,Instant cancelUntil,Instant rescheduleUntil){}
     public record AccessState(boolean available,boolean active,int version,Instant validUntil){}
     public record Issued(String token,int version,Instant validUntil){
         @Override public String toString(){return "Issued[protected]";}
@@ -83,7 +84,10 @@ public class CustomerPortalService {
         return new View(appointment.id(),new BusinessDetails(business.name(),business.slug(),business.address(),business.zoneId()),appointment.reference(),
                 appointment.serviceName(),appointment.professionalName(),appointment.customerName(),appointment.startsAt(),appointment.endsAt(),
                 appointment.priceCents(),appointment.status(),appointment.version(),changeable(appointment),until,
-                grant.expiresAt().isBefore(until)?grant.expiresAt():until,suggested,horizon);
+                grant.expiresAt().isBefore(until)?grant.expiresAt():until,suggested,horizon,appointment.bookingPolicy(),
+                changeable(appointment)&&appointment.bookingPolicy().allowsCancellation(appointment.startsAt(),clock.instant()),
+                changeable(appointment)&&appointment.bookingPolicy().allowsReschedule(appointment.startsAt(),clock.instant()),
+                appointment.bookingPolicy().cancelUntil(appointment.startsAt()),appointment.bookingPolicy().rescheduleUntil(appointment.startsAt()));
     }
     private boolean changeable(ScheduleRepository.Appointment appointment){return appointment.status().equals("BOOKED")&&appointment.startsAt().isAfter(clock.instant());}
     private void requireChangeable(ScheduleRepository.Appointment appointment){
@@ -92,20 +96,29 @@ public class CustomerPortalService {
     @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
     public Availability availability(String secret,UUID reservation,LocalDate date){
         var grant=grant(secret,reservation);var appointment=appointments.appointment(grant.businessId(),grant.appointmentId());
-        requireChangeable(appointment);
+        requireChangeable(appointment);requireRescheduleWindow(appointment);
         return schedule.customerAvailability(catalog.business(grant.businessId()),appointment,date);
     }
     @Transactional(isolation=Isolation.READ_COMMITTED)
     public View cancel(String secret,UUID reservation,Change change){
         var grant=lockedGrant(secret,reservation);var appointment=appointments.appointment(grant.businessId(),grant.appointmentId());
-        if(!appointment.status().equals("CANCELLED")){requireChangeable(appointment);schedule.cancel(catalog.business(grant.businessId()),grant.appointmentId(),change.version());}
+        if(!appointment.status().equals("CANCELLED")){requireChangeable(appointment);
+            if(!appointment.bookingPolicy().allowsCancellation(appointment.startsAt(),clock.instant()))throw BusinessException.conflict("O prazo de cancelamento online terminou. Fale com o estabelecimento.");
+            schedule.cancel(catalog.business(grant.businessId()),grant.appointmentId(),change.version());}
         return view(grant);
     }
     @Transactional(isolation=Isolation.READ_COMMITTED)
     public View move(String secret,UUID reservation,Move move){
-        var grant=lockedGrant(secret,reservation);var appointment=appointments.appointment(grant.businessId(),grant.appointmentId());requireChangeable(appointment);
+        var grant=lockedGrant(secret,reservation);var appointment=appointments.appointment(grant.businessId(),grant.appointmentId());
+        if(appointment.status().equals("BOOKED")&&move.version()==appointment.version()-1&&move.startsAt().toInstant().equals(appointment.startsAt()))return view(grant);
+        requireChangeable(appointment);requireRescheduleWindow(appointment);
+        appointment.bookingPolicy().requireBooking(move.startsAt().toInstant(),clock.instant());
         schedule.reschedule(catalog.business(grant.businessId()),grant.appointmentId(),new RescheduleRequest(move.startsAt(),move.version()));
         return view(grant);
+    }
+    private void requireRescheduleWindow(ScheduleRepository.Appointment appointment){
+        if(!appointment.bookingPolicy().allowsReschedule(appointment.startsAt(),clock.instant()))
+            throw BusinessException.conflict("O prazo de remarcação online terminou. Fale com o estabelecimento.");
     }
     @Transactional(isolation=Isolation.READ_COMMITTED)
     public void close(String secret,UUID reservation){if(CustomerKeys.valid(secret)){

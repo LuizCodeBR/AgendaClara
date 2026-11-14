@@ -30,10 +30,12 @@ public class ScheduleService {
     private final br.com.luizcode.agenda.customer.CustomerAccessRepository customerAccess;
     private final br.com.luizcode.agenda.customer.CustomerKeys customerKeys;
     private final int horizonDays;
+    private final br.com.luizcode.agenda.policy.BookingPolicyService policies;
 
     public ScheduleService(CatalogRepository catalog, ScheduleRepository schedule, Clock clock, EffectiveHours hours, br.com.luizcode.agenda.customer.CustomerAccessRepository customerAccess,
                            br.com.luizcode.agenda.customer.CustomerKeys customerKeys,
-                           @Value("${app.booking.horizon-days:60}") int horizonDays) {
+                           br.com.luizcode.agenda.policy.BookingPolicyService policies,@Value("${app.booking.horizon-days:60}") int horizonDays) {
+        this.policies=policies;
         this.customerAccess=customerAccess;this.customerKeys=customerKeys;
         this.catalog = catalog;
         this.hours = hours;
@@ -44,25 +46,38 @@ public class ScheduleService {
 
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public Catalog catalog(Business business) {
-        LocalDate suggested = LocalDate.now(clock.withZone(ZoneId.of(business.zoneId()))).plusDays(1);
+        var policy=policies.get(business.id());
+        ZoneId zone=ZoneId.of(business.zoneId());
+        LocalDate suggested = LocalDate.now(clock.withZone(zone)).plusDays(1);
+        LocalDate earliest=clock.instant().plus(Duration.ofMinutes(policy.bookingNoticeMinutes())).atZone(zone).toLocalDate();
+        if(earliest.isAfter(suggested))suggested=earliest;
         if (suggested.getDayOfWeek() == DayOfWeek.SUNDAY) suggested = suggested.plusDays(1);
         return new Catalog(business, catalog.services(business.id()), catalog.professionals(business.id()),
-                suggested, horizonDays);
+                suggested, horizonDays,policy);
     }
 
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public Availability availability(Business business, UUID professionalId, UUID serviceId, LocalDate date) {
         var service = catalog.service(business.id(), serviceId);
-        return availability(business,professionalId,serviceId,date,service.durationMinutes(),NO_APPOINTMENT);
+        return availability(business,professionalId,serviceId,date,service.durationMinutes(),NO_APPOINTMENT,policies.get(business.id()).bookingNoticeMinutes());
     }
 
     @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
     public Availability customerAvailability(Business business, ScheduleRepository.Appointment appointment,LocalDate date) {
         int minutes=Math.toIntExact(Duration.between(appointment.startsAt(),appointment.endsAt()).toMinutes());
-        return availability(business,appointment.professionalId(),appointment.serviceId(),date,minutes,appointment.id());
+        return availability(business,appointment.professionalId(),appointment.serviceId(),date,minutes,appointment.id(),appointment.bookingPolicy().bookingNoticeMinutes());
     }
 
-    private Availability availability(Business business,UUID professionalId,UUID serviceId,LocalDate date,int durationMinutes,UUID excluded) {
+    @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
+    public Availability adminAvailability(Business business,UUID id,LocalDate date){
+        var appointment=schedule.appointment(business.id(),id);
+        if(!appointment.status().equals("BOOKED")||!appointment.startsAt().isAfter(clock.instant()))
+            throw BusinessException.conflict("Só é possível remarcar atendimentos futuros confirmados.");
+        int minutes=Math.toIntExact(Duration.between(appointment.startsAt(),appointment.endsAt()).toMinutes());
+        return availability(business,appointment.professionalId(),appointment.serviceId(),date,minutes,id,0);
+    }
+
+    private Availability availability(Business business,UUID professionalId,UUID serviceId,LocalDate date,int durationMinutes,UUID excluded,int noticeMinutes) {
         catalog.professional(business.id(), professionalId);
         catalog.requireServiceAssignment(business.id(), professionalId, serviceId);
         ZoneId zone = ZoneId.of(business.zoneId());
@@ -81,6 +96,7 @@ public class ScheduleService {
                 Instant start = cursor.atZone(zone).toInstant();
                 Instant end = start.plusSeconds(durationMinutes * 60L);
                 if (validWindow(start, end, zone, windows) && start.isAfter(clock.instant())
+                        && !start.isBefore(clock.instant().plus(Duration.ofMinutes(noticeMinutes)))
                         && occupied.stream().noneMatch(item -> intersects(start, end, item.startsAt(), item.endsAt()))) {
                     slots.add(new Slot(start, end));
                 }
@@ -90,7 +106,15 @@ public class ScheduleService {
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
-    public BookingOutcome book(Business business, BookingRequest request) {
+    public BookingOutcome book(Business business, BookingRequest request) { return bookInternal(business,request,false); }
+
+    @Transactional(isolation=Isolation.READ_COMMITTED)
+    public BookingOutcome bookPublic(Business business,BookingRequest request){return bookInternal(business,request,true);}
+
+    private BookingOutcome bookInternal(Business business,BookingRequest request,boolean requirePublic) {
+        // Policy is locked before the professional so a booking cannot accept stale rules.
+        var policy=policies.lock(business.id());
+        if(requirePublic)catalog.business(business.slug());
         // All schedule writes lock the same database row before checking conflicts.
         // This serializes one professional's writes even across application instances.
         catalog.lockProfessional(business.id(), request.professionalId());
@@ -104,14 +128,17 @@ public class ScheduleService {
                 throw BusinessException.conflict("Essa reserva foi cancelada. Faça uma nova solicitação.");
             return new BookingOutcome(customerReceipt(existing.get()), false);
         }
+        if((request.policyVersion()==null&&policy.version()!=0)||(request.policyVersion()!=null&&request.policyVersion()!=policy.version()))
+            throw BusinessException.conflict("As regras do estabelecimento mudaram. Atualize os dados e confira os prazos antes de confirmar.");
         catalog.professional(business.id(), request.professionalId());
         var service = catalog.service(business.id(), request.serviceId());
         catalog.requireServiceAssignment(business.id(), request.professionalId(), request.serviceId());
         Instant start = request.startsAt().toInstant();
         Instant end = start.plusSeconds(service.durationMinutes() * 60L);
+        policy.requireBooking(start,clock.instant());
         requireFree(business, request.professionalId(), start, end, NO_APPOINTMENT);
         var saved = schedule.insert(business.id(), request, service.name(), service.priceCents(),
-                start, end, phone, fingerprint, clock.instant());
+                start, end, phone, fingerprint, clock.instant(),policy);
         if(customerKeys.available())
             customerAccess.save(business.id(),saved.id(),1,br.com.luizcode.agenda.customer.CustomerKeys.digest(customerKeys.token(saved.id(),1)),clock.instant(),null);
         return new BookingOutcome(customerReceipt(saved), true);
@@ -125,7 +152,7 @@ public class ScheduleService {
         String token=customerKeys.token(appointment.id(),1);
         if(!br.com.luizcode.agenda.customer.CustomerKeys.matches(token,access.digest()))return receipt;
         return new BookingReceipt(receipt.reference(),receipt.serviceName(),receipt.professionalName(),receipt.startsAt(),receipt.endsAt(),receipt.priceCents(),
-                token,br.com.luizcode.agenda.customer.CustomerKeys.validUntil(appointment.endsAt()));
+                token,br.com.luizcode.agenda.customer.CustomerKeys.validUntil(appointment.endsAt()),appointment.bookingPolicy());
     }
 
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)

@@ -14,9 +14,16 @@ public final class ScheduleModels {
     public record BookingRequest(@NotNull UUID requestKey, @NotNull UUID professionalId,
             @NotNull UUID serviceId, @NotNull OffsetDateTime startsAt,
             @NotBlank @Size(max = 100) String customerName,
-            @NotBlank @Pattern(regexp = "^[+0-9() .-]{8,25}$", message = "informe um telefone válido") String customerPhone) {}
+            @NotBlank @Pattern(regexp = "^[+0-9() .-]{8,25}$", message = "informe um telefone válido") String customerPhone, @Min(0) Integer policyVersion) {
+        public BookingRequest(UUID requestKey,UUID professionalId,UUID serviceId,OffsetDateTime startsAt,String customerName,String customerPhone){
+            this(requestKey,professionalId,serviceId,startsAt,customerName,customerPhone,null);
+        }
+    }
     public record BookingReceipt(String reference, String serviceName, String professionalName,
-                                 Instant startsAt, Instant endsAt, int priceCents, String customerAccessToken, Instant customerAccessValidUntil) {
+                                 Instant startsAt, Instant endsAt, int priceCents, String customerAccessToken, Instant customerAccessValidUntil, br.com.luizcode.agenda.policy.BookingPolicy bookingPolicy) {
+        public BookingReceipt(String reference,String serviceName,String professionalName,Instant startsAt,Instant endsAt,int priceCents,String token,Instant validUntil){
+            this(reference,serviceName,professionalName,startsAt,endsAt,priceCents,token,validUntil,br.com.luizcode.agenda.policy.BookingPolicy.NONE);
+        }
         public BookingReceipt(String reference,String serviceName,String professionalName,Instant startsAt,Instant endsAt,int priceCents){
             this(reference,serviceName,professionalName,startsAt,endsAt,priceCents,null,null);
         }
@@ -25,7 +32,7 @@ public final class ScheduleModels {
     public record BookingOutcome(BookingReceipt receipt, boolean created) {}
     public record AppointmentView(UUID id, UUID professionalId, UUID serviceId, String professionalName,
                                   String serviceName, String customerName, String customerPhone,
-                                  Instant startsAt, Instant endsAt, String status, String reference, int priceCents, int version) {}
+                                  Instant startsAt, Instant endsAt, String status, String reference, int priceCents, int version, br.com.luizcode.agenda.policy.BookingPolicy bookingPolicy) {}
     public record RescheduleRequest(@NotNull OffsetDateTime startsAt, @Min(0) Integer version) {
         public RescheduleRequest(OffsetDateTime startsAt){this(startsAt,null);}
     }

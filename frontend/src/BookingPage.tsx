@@ -5,6 +5,7 @@ import { api, ApiError, errorMessage } from './api';
 import { dateInZone, dayLabel, initials, money, plusDays, time, todayInZone } from './format';
 import type { Business, Catalog, Receipt, Slot } from './types';
 import { PrivateReservationLink } from './customerAccess';
+import BookingPolicySummary from './BookingPolicySummary';
 import './customer.css';
 import { Message } from './components';
 import { DatePicker, TimeSlots, useAvailability } from './availability';
@@ -59,7 +60,7 @@ export default function BookingPage({ slug, businesses, onSelectBusiness, online
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (!slot || !service || !professional || !online || pending) return;
-    const data = { professionalId, serviceId, startsAt: slot.startsAt, customerName: name.trim(), customerPhone: phone.trim() };
+    const data = { professionalId, serviceId, startsAt: slot.startsAt, customerName: name.trim(), customerPhone: phone.trim(), policyVersion: catalog?.bookingPolicy?.version??0 };
     const signature = JSON.stringify(data);
     if (request.current.signature !== signature) request.current = { signature, key: crypto.randomUUID() };
     setPending(true); setError('');
@@ -116,12 +117,13 @@ export default function BookingPage({ slug, businesses, onSelectBusiness, online
           </section>
         </div>
         <aside className="booking-summary" aria-label="Resumo do agendamento">
-          {receipt ? <div className="receipt" id="booking-receipt" tabIndex={-1}><span className="receipt-icon"><Check size={27} /></span><span className="eyebrow">TUDO CERTO</span><h2>Seu horário<br />está reservado.</h2><p>{receipt.serviceName} com {receipt.professionalName}</p><div className="receipt-date"><strong>{dayLabel(dateInZone(receipt.startsAt, zone))}</strong><span>{time(receipt.startsAt, zone)} – {time(receipt.endsAt, zone)}</span></div><span className="reference-label">Código da reserva</span><code>{receipt.reference}</code>{receipt.customerAccessToken ? <PrivateReservationLink token={receipt.customerAccessToken}/> : <p className="field-note">Para cancelar ou remarcar, entre em contato com o estabelecimento e informe este código.</p>}<button type="button" className="button secondary full" onClick={() => { setReceipt(null); setSlot(null); setName(''); setPhone(''); request.current = { signature: '', key: '' }; }}>Fazer outro agendamento</button></div> : <>
+          {receipt ? <div className="receipt" id="booking-receipt" tabIndex={-1}><span className="receipt-icon"><Check size={27} /></span><span className="eyebrow">TUDO CERTO</span><h2>Seu horário<br />está reservado.</h2><p>{receipt.serviceName} com {receipt.professionalName}</p><div className="receipt-date"><strong>{dayLabel(dateInZone(receipt.startsAt, zone))}</strong><span>{time(receipt.startsAt, zone)} – {time(receipt.endsAt, zone)}</span></div><span className="reference-label">Código da reserva</span><code>{receipt.reference}</code><BookingPolicySummary policy={receipt.bookingPolicy} startsAt={receipt.startsAt} zone={zone} confirmed/>{receipt.customerAccessToken ? <PrivateReservationLink token={receipt.customerAccessToken}/> : <p className="field-note">Para cancelar ou remarcar, entre em contato com o estabelecimento e informe este código.</p>}<button type="button" className="button secondary full" onClick={() => { setReceipt(null); setSlot(null); setName(''); setPhone(''); request.current = { signature: '', key: '' }; }}>Fazer outro agendamento</button></div> : <>
             <div className="summary-top"><CalendarDays size={19} /><span>SEU AGENDAMENTO</span></div><h2>Seu próximo<br />momento de cuidado.</h2>
             <div className="summary-line"><Scissors size={16} /><div><span>Serviço</span><strong>{service?.name ?? 'Escolha um serviço'}</strong><small>{service?.durationMinutes ?? '—'} minutos</small></div></div>
             <div className="summary-line"><span className="summary-avatar">{professional ? initials(professional.name) : '?'}</span><div><span>Profissional</span><strong>{professional?.name ?? 'Escolha um profissional'}</strong></div></div>
             <div className="summary-line"><CalendarDays size={16} /><div><span>Data e horário</span><strong>{date ? dayLabel(date) : 'Escolha uma data'}</strong><small className={slot ? 'chosen-time' : ''}>{slot ? time(slot.startsAt, zone) + ' – ' + time(slot.endsAt, zone) : 'Selecione um horário disponível'}</small></div></div>
             <div className="summary-total"><span>Total do serviço</span><strong>{money(service?.priceCents ?? 0)}</strong></div><p className="payment-note">Pagamento diretamente no estabelecimento.</p>
+            <BookingPolicySummary policy={catalog.bookingPolicy} startsAt={slot?.startsAt} zone={zone}/>
             {error && <Message>{error}</Message>}
             <button type="submit" form="booking-form" className="button primary full confirm-button" disabled={!slot || !professional || !name.trim() || phone.replace(/\D/g, '').length < 8 || !online || pending} aria-busy={pending}>{pending ? 'Confirmando…' : 'Confirmar agendamento'}{!pending && <ArrowRight size={17} />}</button>
             <p className="summary-assurance"><ShieldCheck size={13} /> Seu horário é conferido antes da confirmação.</p>

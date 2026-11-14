@@ -62,6 +62,8 @@ jobs:
           node scripts/mail-queue-smoke.mjs http://127.0.0.1:8080
           node scripts/professional-services-smoke.mjs http://127.0.0.1:8080
           node scripts/customer-portal-smoke.mjs http://127.0.0.1:8080
+          node scripts/booking-policy-smoke.mjs http://127.0.0.1:8080
+          node scripts/booking-policy-smoke.mjs before http://127.0.0.1:8080 .cache/release-policy-fixture.json
           node scripts/customer-portal-smoke.mjs before http://127.0.0.1:8080 .cache/release-customer-fixture.json
           node scripts/storage-smoke.mjs before http://127.0.0.1:8080 .cache/release-storage-fixture.json
           kill "$APP_PID"
@@ -84,6 +86,7 @@ jobs:
           done
           node scripts/storage-smoke.mjs after http://127.0.0.1:8080 .cache/release-storage-fixture.json
           node scripts/customer-portal-smoke.mjs after http://127.0.0.1:8080 .cache/release-customer-fixture.json
+          node scripts/booking-policy-smoke.mjs after http://127.0.0.1:8080 .cache/release-policy-fixture.json
       - name: Montar os pacotes portáteis
         run: |
           mkdir -p .cache/release/AgendaClara-demo

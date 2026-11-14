@@ -36,7 +36,7 @@ public class ScheduleController {
         this.publicDemo = publicDemo; this.sourceUrl = sourceUrl; this.downloadUrl = downloadUrl;
     }
     @GetMapping("/api/public/config")
-    Map<String, Object> config() { return Map.of("demo", demo, "publicDemo", publicDemo, "registrationEnabled", registrationEnabled, "mailMode", mailSettings.mode(), "version", "0.10.0", "storageMode", storage.mode(),
+    Map<String, Object> config() { return Map.of("demo", demo, "publicDemo", publicDemo, "registrationEnabled", registrationEnabled, "mailMode", mailSettings.mode(), "version", "0.11.0", "storageMode", storage.mode(),
             "distribution", Map.of("sourceUrl", sourceUrl, "downloadUrl", downloadUrl)); }
     @GetMapping("/api/public/businesses")
     List<Business> businesses() { return catalog.businesses(); }
@@ -49,7 +49,7 @@ public class ScheduleController {
     }
     @PostMapping("/api/public/{slug}/bookings")
     ResponseEntity<BookingReceipt> book(@PathVariable String slug, @Valid @RequestBody BookingRequest request) {
-        BookingOutcome outcome = schedule.book(catalog.business(slug), request);
+        BookingOutcome outcome = schedule.bookPublic(catalog.business(slug), request);
         return ResponseEntity.status(outcome.created() ? 201 : 200).body(outcome.receipt());
     }
     @GetMapping("/api/admin/catalog")
@@ -59,6 +59,10 @@ public class ScheduleController {
     @GetMapping("/api/admin/agenda")
     DayAgenda agenda(@AuthenticationPrincipal AgendaUser user, @RequestParam LocalDate date) {
         return schedule.day(catalog.business(user.businessId()), date);
+    }
+    @GetMapping("/api/admin/appointments/{id}/availability")
+    Availability adminAvailability(@AuthenticationPrincipal AgendaUser user,@PathVariable UUID id,@RequestParam LocalDate date){
+        return schedule.adminAvailability(catalog.business(user.businessId()),id,date);
     }
     @PostMapping("/api/admin/appointments/{id}/cancel")
     AppointmentView cancel(@AuthenticationPrincipal AgendaUser user, @PathVariable UUID id, @Valid @RequestBody(required=false) CancelRequest request) {
