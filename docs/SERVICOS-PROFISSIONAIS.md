@@ -43,3 +43,6 @@ Autenticação, CSRF e isolamento por estabelecimento continuam obrigatórios. N
 Os novos testes cobrem API, constraints do banco, concorrência nas duas ordens, repetição segura da reserva, migração 6→7, preservação por backup e telas responsivas. scripts/professional-services-smoke.mjs também verifica o JAR real e é executado no CI e na publicação.
 
 Resultados finais e links: [VALIDACAO-0.9.0.md](VALIDACAO-0.9.0.md).
+
+## Compatibilidade atual (0.10.0)
+A ferramenta 0.10.0 aceita esquemas 6, 7 e 8, incluindo os acessos de clientes da etapa [Minha reserva](MINHA-RESERVA.md). Preserve banco e chave e use a ferramenta nova para o banco migrado. As regras dos vínculos deste guia continuam vigentes.
