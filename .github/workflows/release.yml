@@ -48,6 +48,7 @@ jobs:
           export REGISTRATION_REQUESTS_PER_MINUTE=10
           export ACCESS_REQUESTS_PER_MINUTE=120
           export API_REQUESTS_PER_MINUTE=5000
+          export WRITE_REQUESTS_PER_MINUTE=1000
           export AGENDA_DATA_DIR="$GITHUB_WORKSPACE/.cache/release-data"
           java -jar target/agenda-clara-${RELEASE_VERSION}.jar --spring.profiles.active=demo > .cache/release-server.log 2>&1 &
           APP_PID=$!

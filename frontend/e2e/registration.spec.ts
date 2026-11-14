@@ -40,7 +40,9 @@ test('responsável cria empresa, configura atendimento, publica, recebe reserva 
   await page.getByLabel('Nome do serviço', { exact: true }).fill('Consulta de teste');
   await page.getByLabel('Descrição', { exact: true }).fill('Serviço fictício próprio');
   await page.getByLabel('Preço (R$)', { exact: true }).fill('50');
+  const serviceCreated=page.waitForResponse(response=>new URL(response.url()).pathname==='/api/admin/services'&&response.request().method()==='POST');
   await page.getByRole('button', { name: 'Adicionar ao catálogo', exact: true }).click();
+  expect((await serviceCreated).status()).toBe(201);
   await expect(page.getByText('Serviço adicionado. Vincule-o aos profissionais em Equipe e horários para liberar reservas.', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Equipe e horários', exact: true }).click();
   await page.getByRole('button', { name: 'Cadastrar profissional', exact: true }).click();
