@@ -117,3 +117,6 @@ A inspeção aceita os esquemas 6, 7 e 8. A migração V8 acrescenta acessos e s
 
 ## Compatibilidade na 0.11.0
 A ferramenta aceita esquemas 6, 7, 8 e 9. Backups incluem as regras atuais da empresa e as condições preservadas de cada reserva, além da chave e dos acessos privados. ACBK0001 permanece. Use a ferramenta nova para o banco migrado e mantenha banco e chave juntos.
+
+## Resultados e histórico — 0.12.0
+A ferramenta 0.12.0 aceita esquemas 6 a 10. V10 acrescenta as novas situações e appointment_history. Backup H2 e dump PostgreSQL incluem os resultados e eventos, além das regras e acessos privados. Restauração deve usar a ferramenta nova em destino separado; mantenha a chave original. O formato ACBK0001 permanece. Consulte VALIDACAO-0.12.0.md.

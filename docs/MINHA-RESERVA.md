@@ -66,3 +66,6 @@ Não foi contratado serviço, adicionado provedor de mensagem ou programada roti
 - O mesmo script aceita before/after com arquivo privado para conferir restauração e atualização; nunca publique esse arquivo.
 
 Referências: [RFC 5869](https://www.rfc-editor.org/rfc/rfc5869.html) e [OWASP — sessões](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html).
+
+## Resultado do atendimento — 0.12.0
+O cliente visualiza Concluído ou Não compareceu depois do registro pelo responsável, enquanto seu acesso privado estiver válido. Não pode classificar nem consultar o histórico interno. As condições e os prazos de acesso continuam preservados. Consulte [RESULTADOS-ATENDIMENTOS.md](RESULTADOS-ATENDIMENTOS.md).
