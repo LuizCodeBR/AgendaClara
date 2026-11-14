@@ -57,6 +57,7 @@ jobs:
       ACCESS_REQUESTS_PER_MINUTE: 120
       API_REQUESTS_PER_MINUTE: 5000
       WRITE_REQUESTS_PER_MINUTE: 1000
+      ACCOUNT_REQUESTS_PER_MINUTE: 120
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-java@v6
