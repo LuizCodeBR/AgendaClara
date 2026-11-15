@@ -29,7 +29,7 @@ O controlador converte QueryTimeoutException e TransactionTimedOutException em 5
 ### Controle Unicode ainda presente nos rótulos — prioridade baixa
 O normalizador usava a classe ASCII Cntrl, que não removia U+0085. Um teste confirmou sua permanência no campo exportado. Não foi demonstrada execução de fórmula por esse caractere.
 
-A normalização passou a usar a categoria Unicode Cc, mantendo Cf, separadores de linha e espaços. Prefixos textuais fixos e aspas escapadas foram preservados. Treze casos verificam fórmulas aparentes, aspas/separadores, quebras de linha, caracteres de largura completa e controles em todos os rótulos exportados.
+A normalização passou a substituir controles da categoria Unicode Cc por espaços, mantendo o tratamento de Cf, separadores de linha e espaços repetidos. Prefixos textuais fixos e aspas escapadas foram preservados. Treze casos verificam fórmulas aparentes, aspas/separadores, quebras de linha, caracteres de largura completa e controles em todos os rótulos exportados.
 
 ## Verificações de concorrência e autorização
 - Novas reservas confirmadas entre a agregação dos grupos e a dos dias, com período vazio e não vazio: métricas consistentes; nova consulta inclui a reserva.
