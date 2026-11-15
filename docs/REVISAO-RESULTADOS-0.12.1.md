@@ -30,6 +30,6 @@ A ordem de bloqueios foi preservada. Não foi acrescentado bloqueio global da em
 
 Nenhuma migração nova: V10, dados, chaves e ACBK0001 permanecem. Ferramentas aceitam esquemas 6 a 10. Web/PWA compartilham o servidor online; a cópia local usa seu banco independente. Arquivos no D:, nenhuma nova dependência/extensão, nenhum recurso pago ou tarefa recorrente. Backups e monitoramento continuam sob demanda.
 
-Referências técnicas: [enum no Jackson 3](https://github.com/FasterXML/jackson-databind/blob/3.1/src/main/java/tools/jackson/databind/cfg/EnumFeature.java), [propriedades Spring Boot](https://docs.spring.io/spring-boot/appendix/application-properties/index.html), [transações Spring](https://docs.spring.io/spring-framework/reference/data-access/transaction/declarative/tx-propagation.html).
+Referências técnicas: [enum no Jackson 3](https://github.com/FasterXML/jackson-databind/blob/3.1/src/main/java/tools/jackson/databind/cfg/EnumFeature.java), [propriedades Spring Boot](https://docs.spring.io/spring-boot/appendix/application-properties/index.html), [transações Spring](https://docs.spring.io/spring-framework/reference/data-access/transaction/declarative/tx-propagation.html), [texto no PostgreSQL](https://www.postgresql.org/docs/17/datatype-character.html).
 
 As evidências de execução e publicação estão em [VALIDACAO-0.12.1.md](VALIDACAO-0.12.1.md).
