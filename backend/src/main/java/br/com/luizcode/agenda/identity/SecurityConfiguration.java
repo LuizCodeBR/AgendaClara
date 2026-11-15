@@ -21,9 +21,9 @@ public class SecurityConfiguration {
 
     @Bean
     UserDetailsService userDetailsService(JdbcTemplate jdbc) {
-        return email -> jdbc.query("select * from app_user where email = ?", (rs, row) ->
+        return email -> jdbc.query("select u.*,p.active as professional_active from app_user u left join professional p on p.id=u.professional_id and p.business_id=u.business_id where u.email = ?", (rs, row) ->
                 new AgendaUser(rs.getObject("id", java.util.UUID.class), rs.getObject("business_id", java.util.UUID.class),
-                        rs.getString("display_name"), rs.getString("email"), rs.getString("password_hash"),rs.getInt("credentials_version")),
+                        rs.getString("display_name"), rs.getString("email"), rs.getString("password_hash"),rs.getInt("credentials_version"),rs.getString("role"),rs.getObject("professional_id",java.util.UUID.class),rs.getBoolean("enabled") && (rs.getString("role").equals("OWNER") || rs.getBoolean("professional_active"))),
                 email.strip().toLowerCase(Locale.ROOT)).stream().findFirst()
                 .orElseThrow(() -> new UsernameNotFoundException("Credenciais inválidas."));
     }
@@ -47,7 +47,10 @@ public class SecurityConfiguration {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/customer/**").permitAll()
                 .requestMatchers("/api/public/**", "/api/auth/csrf", "/api/auth/login", "/api/auth/register", "/api/auth/email/request", "/api/auth/email/confirm", "/api/auth/password/request", "/api/auth/password/reset", "/api/auth/demo-mailbox", "/api/auth/demo-mailbox/open").permitAll()
-                .requestMatchers("/api/admin/**", "/api/auth/me").hasRole("OWNER")
+                .requestMatchers("/api/auth/professional-invitations/preview","/api/auth/professional-invitations/accept").permitAll()
+                .requestMatchers("/api/auth/me").hasAnyRole("OWNER","PROFESSIONAL")
+                .requestMatchers("/api/professional/**").hasRole("PROFESSIONAL")
+                .requestMatchers("/api/admin/**").hasRole("OWNER")
                 .requestMatchers("/api/**").denyAll()
                 .anyRequest().permitAll())
             .requestCache(cache -> cache.disable())

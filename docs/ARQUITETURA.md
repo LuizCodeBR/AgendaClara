@@ -186,3 +186,6 @@ ReportController oferece leitura JSON, opções e CSV autenticados. ReportCsv us
 
 ## Revisão dos relatórios — 0.14.1
 ReportController compara a precondição opcional X-Agenda-Business com AgendaUser.businessId antes da leitura, mantendo a sessão como fonte exclusiva da autorização. O controlador traduz tempo esgotado em ProblemDetail 503 sem anexo. ReportsPanel envia a empresa nas três rotas, encerra o contexto em 401/403/412, aborta os três tipos de requisição pendente e rejeita Blob com tipo diferente de text/csv. A normalização usa Cc para cobrir controles Unicode. Transações, esquema V12 e dependências preservados; detalhes em REVISAO-RELATORIOS-0.14.1.md.
+
+## Identidades profissionais — 0.15.0
+V13 amplia app_user com role/professional_id/enabled e cria professional_access para convites. Contas legadas preservadas como OWNER. PROFESSIONAL usa rotas próprias e respostas reduzidas; profissional/empresa vêm da sessão. Mesma autenticação Spring Security, versão de credenciais e recuperação existente. Operações de acesso seguem profissional → conta; gravação de resultado revalida a conta sob bloqueio antes de gravar. A revogação tem ordem definida em relação às gravações. Veja [o guia e os limites](ACESSO-PROFISSIONAIS.md).

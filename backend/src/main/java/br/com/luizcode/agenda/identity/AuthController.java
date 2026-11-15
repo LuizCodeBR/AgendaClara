@@ -22,11 +22,11 @@ public class AuthController {
                 .body(Map.of("token", token.getToken(), "headerName", token.getHeaderName()));
     }
 
-    public record CurrentUser(String name, String email, Business business) {}
+    public record CurrentUser(java.util.UUID id,String name,String email,String role,java.util.UUID professionalId,Business business) {}
 
     @GetMapping("/api/auth/me")
     ResponseEntity<CurrentUser> me(@AuthenticationPrincipal AgendaUser user) {
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
-                .body(new CurrentUser(user.name(), user.email(), catalog.business(user.businessId())));
+                .body(new CurrentUser(user.id(),user.name(),user.email(),user.role(),user.professionalId(),catalog.business(user.businessId())));
     }
 }

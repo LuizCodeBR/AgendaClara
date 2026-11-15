@@ -10,7 +10,7 @@ public class AppointmentHistory {
     public record Actor(String type,UUID userId,String name){
         public static Actor customer(){return new Actor("CUSTOMER",null,"Cliente");}
         public static Actor system(){return new Actor("SYSTEM",null,"Sistema");}
-        public static Actor owner(br.com.luizcode.agenda.identity.AgendaUser user){return new Actor("OWNER",user.id(),user.name());}
+        public static Actor owner(br.com.luizcode.agenda.identity.AgendaUser user){return new Actor(user.role(),user.id(),user.name());}
     }
     public record Entry(UUID id,int version,String action,String fromStatus,String toStatus,Instant fromStart,Instant fromEnd,
         Instant toStart,Instant toEnd,String actorType,String actorName,String reason,Instant occurredAt){}

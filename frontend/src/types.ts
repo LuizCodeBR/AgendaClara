@@ -11,7 +11,7 @@ export interface Appointment extends Receipt { id: string; professionalId: strin
 export interface Block extends Slot { id: string; professionalId: string; reason: string }
 export interface DayAgenda { date: string; zoneId: string; appointments: Appointment[]; blocks: Block[] }
 export interface BusinessSetup { business: Business; published: boolean; version: number; services: number; professionals: number; hasHours: boolean; emailVerified?: boolean; verificationRequired?: boolean; verificationSimulated?: boolean; horizonDays?: number; ready: boolean; hasBookableProfessional: boolean }
-export interface CurrentUser { name: string; email: string; business: Business }
+export interface CurrentUser { id?: string; role?: 'OWNER'|'PROFESSIONAL'; professionalId?: string|null; name: string; email: string; business: Business }
 
 export interface WeeklyWindow { weekday: number; opensAt: string; closesAt: string }
 export interface ProfessionalConfiguration extends Professional { active: boolean; version: number; hours: WeeklyWindow[] }

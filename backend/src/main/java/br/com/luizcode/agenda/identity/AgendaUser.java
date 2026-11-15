@@ -14,10 +14,21 @@ public final class AgendaUser implements UserDetails, CredentialsContainer {
     private final String name, email;
     private String passwordHash;
     private final int credentialsVersion;
+    private final String role;
+    private final UUID professionalId;
+    private final boolean enabled;
+    public String role(){return role;}
+    public UUID professionalId(){return professionalId;}
+    @Override public boolean isEnabled(){return enabled;}
+    public boolean professional(){return "PROFESSIONAL".equals(role);}
     public AgendaUser(UUID id, UUID businessId, String name, String email, String passwordHash) {
         this(id,businessId,name,email,passwordHash,0);
     }
     public AgendaUser(UUID id,UUID businessId,String name,String email,String passwordHash,int credentialsVersion) {
+        this(id,businessId,name,email,passwordHash,credentialsVersion,"OWNER",null,true);
+    }
+    public AgendaUser(UUID id,UUID businessId,String name,String email,String passwordHash,int credentialsVersion,String role,UUID professionalId,boolean enabled) {
+        this.role=role;this.professionalId=professionalId;this.enabled=enabled;
         this.credentialsVersion=credentialsVersion;
         this.id=id; this.businessId=businessId; this.name=name; this.email=email; this.passwordHash=passwordHash;
     }
@@ -30,7 +41,7 @@ public final class AgendaUser implements UserDetails, CredentialsContainer {
     @Override public String getPassword() { return passwordHash; }
     @Override public void eraseCredentials() { passwordHash = null; }
     @Override public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ROLE_OWNER"));
+        return List.of(new SimpleGrantedAuthority("ROLE_"+role));
     }
     @Override public String toString() { return "AgendaUser[id=" + id + "]"; }
 }

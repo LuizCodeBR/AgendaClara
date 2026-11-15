@@ -48,6 +48,9 @@ public class AccountAccessController {
         attach(access.openDemoMailbox(user.email(),proof(request)),response);
         return ResponseEntity.noContent().build();
     }
+    void professionalActivated(String email,HttpServletRequest request,HttpServletResponse response){
+        attach(access.openDemoMailbox(email,proof(request)),response);
+    }
     void registered(String email,HttpServletRequest request,HttpServletResponse response) {
         String proof=access.openDemoMailbox(email,proof(request));
         attach(proof,response);

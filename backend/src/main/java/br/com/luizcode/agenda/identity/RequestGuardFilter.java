@@ -31,7 +31,7 @@ public final class RequestGuardFilter extends OncePerRequestFilter {
         if (!admit(response, "api", apiLimit)) return;
         if (request.getContentLengthLong() > MAX_BODY) { reject(response, 413, "A solicitação excede o tamanho permitido."); return; }
         boolean mutation = !java.util.Set.of("GET","HEAD","OPTIONS").contains(request.getMethod());
-        if (mutation && path.startsWith("/api/admin/") && !admit(response, "admin-write", writeLimit)) return;
+        if (mutation && (path.startsWith("/api/admin/")||path.startsWith("/api/professional/")) && !admit(response, "admin-write", writeLimit)) return;
         if ("POST".equals(request.getMethod()) && path.startsWith("/api/public/") && path.endsWith("/bookings")
                 && !admit(response, "booking", bookingLimit)) return;
         if ("POST".equals(request.getMethod()) && path.equals("/api/auth/login")) {
@@ -47,7 +47,7 @@ public final class RequestGuardFilter extends OncePerRequestFilter {
         }
         if ("POST".equals(request.getMethod()) && path.equals("/api/auth/register")
                 && !admit(response, "registration", registrationLimit)) return;
-        if (mutation && (path.startsWith("/api/auth/email/") || path.startsWith("/api/auth/password/") || path.equals("/api/auth/demo-mailbox/open"))
+        if (mutation && (path.startsWith("/api/auth/professional-invitations/") || path.startsWith("/api/auth/email/") || path.startsWith("/api/auth/password/") || path.equals("/api/auth/demo-mailbox/open"))
                 && !admit(response, "access-action", accessLimit)) return;
         if ("POST".equals(request.getMethod()) && path.equals("/api/customer/session") && !admit(response,"customer-access",accessLimit)) return;
         if (mutation && path.startsWith("/api/customer/") && !path.equals("/api/customer/session")

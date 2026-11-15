@@ -28,7 +28,7 @@ Todas as operações pertencem ao estabelecimento do usuário autenticado; não 
 
 Configuração e agendamento bloqueiam a mesma linha do profissional no banco. Assim, uma reserva e o fechamento do expediente não podem confirmar simultaneamente uma combinação inválida. O contador version impede que uma aba sobrescreva uma edição mais recente: a API responde 409 para versões antigas.
 
-O campo profissional representa alguém que atende clientes. Ele não cria uma conta de login. Não há exclusão definitiva; use inativação.
+O campo profissional representa alguém que atende clientes. Cadastrá-lo não cria login automaticamente. Desde a versão 0.15.0, o responsável pode liberar uma conta individual em Acessos da equipe; consulte [ACESSO-PROFISSIONAIS.md](ACESSO-PROFISSIONAIS.md). Não há exclusão definitiva; use inativação.
 
 ## Arquivos principais
 - team/TeamController.java: rotas administrativas.

@@ -1,4 +1,4 @@
-# Agenda Clara — demonstração 0.14.1
+# Agenda Clara — demonstração 0.15.0
 
 1. Instale Java 21 ou mais recente até a versão 27, caso ainda não possua.
 2. Extraia todos os arquivos deste ZIP em uma pasta gravável.
@@ -66,3 +66,5 @@ Em Meu negócio, abra Indicadores e relatórios. Consulte até 90 dias, filtre p
 V12 adiciona somente um índice. Faça backup, encerre a versão anterior e preserve data e mail-outbox.key. As ferramentas 0.14.0 aceitam esquemas 6 a 12. Sem instalação adicional ou serviço pago. Site/PWA usam o banco online; a cópia local continua independente.
 
 Revisão 0.14.1: consulta/CSV conferem a empresa exibida, interrompem operações após acesso negado e recusam arquivo de formato inesperado. Tempo esgotado apresenta orientação; controles Unicode são normalizados. Recarregue a página/PWA após atualizar. V12 e backups permanecem compatíveis, sem nova instalação. Preserve data/mail-outbox.key. Guia REVISAO-RELATORIOS-0.14.1.md no repositório.
+
+Acesso profissional: entre como responsável, abra Acessos da equipe, gere um convite e compartilhe o link privadamente. O profissional define a própria senha e entra no mesmo painel, que mostra somente Minha agenda. Convites valem 24 horas e podem ser revogados. Na demonstração, use dados fictícios. Um convite localhost vale apenas na instalação local; para outro aparelho, utilize a versão HTTPS. Ao atualizar, encerre a anterior e preserve data/mail-outbox.key. Ferramentas 0.15.0 aceitam esquemas 6 a 13.

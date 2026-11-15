@@ -17,7 +17,9 @@ public class AppointmentOutcomeService {
     private final CatalogRepository catalog;
     private final AppointmentHistory history;
     private final Clock clock;
-    public AppointmentOutcomeService(ScheduleRepository appointments,CatalogRepository catalog,AppointmentHistory history,Clock clock){
+    private final br.com.luizcode.agenda.identity.ProfessionalAccessService access;
+    public AppointmentOutcomeService(ScheduleRepository appointments,CatalogRepository catalog,AppointmentHistory history,Clock clock,br.com.luizcode.agenda.identity.ProfessionalAccessService access){
+        this.access=access;
         this.appointments=appointments;this.catalog=catalog;this.history=history;this.clock=clock;
     }
     @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
@@ -30,6 +32,10 @@ public class AppointmentOutcomeService {
         UUID business=user.businessId();
         var initial=appointments.appointment(business,id);
         catalog.lockProfessional(business,initial.professionalId());
+        if(user.professional()){
+            access.requireCurrent(user,true);
+            if(!initial.professionalId().equals(user.professionalId()))throw BusinessException.notFound();
+        }
         var current=appointments.appointment(business,id);
         String reason=request.reason()==null?"":request.reason().strip();
         var previous=history.attempt(business,request.requestKey());

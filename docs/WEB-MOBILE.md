@@ -2,7 +2,7 @@
 
 **Site:** https://agenda-clara-luizcodebr.onrender.com
 
-**Downloads:** https://github.com/LuizCodeBR/AgendaClara/releases/tag/v0.14.1
+**Downloads:** https://github.com/LuizCodeBR/AgendaClara/releases/tag/v0.15.0
 
 ## Três formas de acesso
 
@@ -114,3 +114,6 @@ Revisão 0.13.1: o mesmo painel de resumo nas três modalidades revalida a agend
 Site, PWA e pacote local compartilham filtros, indicadores, gráfico diário, tabelas e CSV. No celular, deslize as tabelas para as demais colunas. O CSV baixa pelo navegador; escolha a pasta D: no computador. A PWA não guarda relatórios privados para uso offline. Recarregue após atualizar; banco local continua independente. V12 adiciona índice, sem alteração dos dados. Consulte [o guia](RELATORIOS.md).
 
 Revisão 0.14.1: recarregue site/PWA para ativar a conferência da empresa nas consultas e no CSV. Trocar de conta em outra aba pode exigir entrar novamente; respostas inválidas ou acesso negado não geram download. Mesmas correções no pacote local, sem mudança de banco ou dependências. Veja REVISAO-RELATORIOS-0.14.1.md.
+
+## Acesso profissional — 0.15.0
+O login identifica responsável ou profissional e abre o painel correspondente. Convites e Minha agenda funcionam no site, celular/PWA e pacote local, com as mesmas permissões no servidor. Recarregue o site/PWA para usar a nova interface. Guia: [ACESSO-PROFISSIONAIS.md](ACESSO-PROFISSIONAIS.md).

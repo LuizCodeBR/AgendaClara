@@ -219,3 +219,22 @@ Período inclusivo de 1 a 90 dias, entre 1900 e 2100, pelo início atual do aten
 Opções, JSON e exportação aceitam o cabeçalho opcional X-Agenda-Business (UUID) como precondição da empresa esperada na tela. A interface sempre o envia. Se divergir da sessão: 412, sem anexo. Não autoriza nem escolhe o escopo dos dados; a empresa continua derivada da sessão. Cabeçalho inválido: 400. Clientes anteriores sem cabeçalho mantêm o isolamento por sessão.
 
 QueryTimeoutException/TransactionTimedOutException nas rotas de relatório retornam 503 application/problem+json, no-store e sem Content-Disposition, orientando reduzir o período/filtros. Normalização dos rótulos agora abrange a categoria Unicode Cc. Sem alteração de esquema ou campos dos relatórios.
+
+## Acesso profissional — 0.15.0
+GET /api/auth/me agora inclui id, role (OWNER/PROFESSIONAL) e professionalId (nulo para responsável), além dos campos anteriores. Cookie de sessão, CSRF e no-store preservados.
+
+Rotas OWNER, com X-Agenda-Account obrigatório contendo o id da conta esperada:
+- GET /api/admin/professional-access: lista até 200 profissionais e estado/versão do acesso.
+- POST /api/admin/professional-access/{id}/invite: {email,version}; retorna {token,expiresAt} uma única vez.
+- POST /api/admin/professional-access/{id}/revoke: {version}; 204.
+
+Rotas de convite, sem login obrigatório e com CSRF:
+- POST /api/auth/professional-invitations/preview: {token}; retorna empresa, profissional, e-mail e validade.
+- POST /api/auth/professional-invitations/accept: {token,password}; 204, sem login automático. Exige sair da conta atual antes de aceitar.
+
+Rotas PROFESSIONAL com X-Agenda-Account obrigatório:
+- GET /api/professional/agenda?date=YYYY-MM-DD: date,zoneId,professionalName,appointments (id,customerName,serviceName,startsAt,endsAt,status,version).
+- POST /api/professional/appointments/{id}/outcome: mesmo corpo/versão/regras do resultado administrativo, retorno reduzido aos campos do próprio atendimento.
+- GET /api/professional/appointments/{id}/history?beforeVersion=N: events resumidos (version,action,status,actor,occurredAt),nextBeforeVersion.
+
+Divergência de conta: 412. Falta de permissão: 403. Sem sessão/revogada: 401 na próxima requisição; revalidação transacional pode retornar 403 para gravação que já estava aguardando. Registro de colega/outra empresa: 404. Versão antiga: 409. Convite inválido/expirado/usado: 400. Somente a sessão determina empresa e profissional. A API reduzida não retorna preço, telefone, referência, token, justificativa privada ou identidade de outras contas.
