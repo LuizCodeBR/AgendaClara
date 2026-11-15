@@ -3,7 +3,7 @@ import type {FormEvent} from 'react';
 import {api,apiBlob,ApiError,errorMessage} from './api';
 import {Message} from './components';
 import {money,plusDays,todayInZone} from './format';
-import {downloadReport,fetchReport,reportQuery,reportRangeError} from './reports';
+import {downloadReport,fetchReport,reportHeaders,reportQuery,reportRangeError} from './reports';
 import type {PeriodReport,ReportFilters,ReportMetrics,ReportOptions} from './reports';
 import './reports.css';
 const dateLabel=(s:string)=>s.split('-').reverse().join('/');
@@ -11,32 +11,49 @@ function MetricsTable({items,label}:{items:{id:string;label:string;metrics:Repor
  const [page,setPage]=useState(0),pages=Math.max(1,Math.ceil(items.length/25));
  return <><div className="report-table-scroll" role="region" aria-label={label} tabIndex={0}><table><caption>{label}</caption><thead><tr><th scope="col">Identificação</th><th scope="col">Total</th><th scope="col">Concluídos</th><th scope="col">Faltas</th><th scope="col">Cancelados</th><th scope="col">Pendentes</th><th scope="col">Sem término</th><th scope="col">Valor concluído</th></tr></thead><tbody>{items.slice(page*25,(page+1)*25).map(item=><tr key={item.id}><th scope="row">{item.label}</th>{[item.metrics.total,item.metrics.completed,item.metrics.noShow,item.metrics.cancelled,item.metrics.pending,item.metrics.upcoming].map((v,i)=><td key={i}>{v}</td>)}<td>{money(item.metrics.completedValueCents)}</td></tr>)}</tbody></table></div>{pages>1&&<div className="report-pages"><button className="button secondary" disabled={page===0} onClick={()=>setPage(v=>v-1)}>Anterior</button><span>Página {page+1} de {pages}</span><button className="button secondary" disabled={page+1===pages} onClick={()=>setPage(v=>v+1)}>Próxima</button></div>}</>;
 }
-export default function ReportsPanel({online,zoneId,onUnauthorized}:{online:boolean;zoneId:string;onUnauthorized:()=>void}){
+export default function ReportsPanel({businessId,online,zoneId,onUnauthorized}:{businessId:string;online:boolean;zoneId:string;onUnauthorized:()=>void}){
  const initial=()=>{const to=todayInZone(zoneId);return{from:plusDays(to,-29),to,professionalId:'',serviceId:''};};
  const [draft,setDraft]=useState<ReportFilters>(initial),[applied,setApplied]=useState<ReportFilters>(initial),[revision,setRevision]=useState(0);
  const [options,setOptions]=useState<ReportOptions|null>(null),[optionsError,setOptionsError]=useState(''),[optionsRevision,setOptionsRevision]=useState(0);
  const [report,setReport]=useState<PeriodReport|null>(null),[loading,setLoading]=useState(true),[exporting,setExporting]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState('');
  const exportRequest=useRef<AbortController|null>(null),busy=useRef(false),denied=useRef(onUnauthorized);denied.current=onUnauthorized;
+ const optionRequest=useRef<AbortController|null>(null),reportRequest=useRef<AbortController|null>(null),sessionInvalid=useRef(false);
+ const failSession=(e:unknown)=>{
+  if(!(e instanceof ApiError)||![401,403,412].includes(e.status))return false;
+  if(!sessionInvalid.current){
+   sessionInvalid.current=true;optionRequest.current?.abort();reportRequest.current?.abort();exportRequest.current?.abort();
+   busy.current=false;setReport(null);setOptions(null);setLoading(false);setExporting(false);setNotice('');setError(errorMessage(e));denied.current();
+  }
+  return true;
+ };
+ const failSessionRef=useRef(failSession);failSessionRef.current=failSession;
  const signature=reportQuery(draft),dirty=signature!==reportQuery(applied),rangeError=reportRangeError(draft);
  useEffect(()=>{
-  const controller=new AbortController();setOptionsError('');
-  api<ReportOptions>('/api/admin/reports/options',{signal:controller.signal}).then(v=>{if(!controller.signal.aborted)setOptions(v);}).catch(e=>{if(!controller.signal.aborted){setOptionsError(errorMessage(e));if(e instanceof ApiError&&e.status===401)denied.current();}});
+  if(sessionInvalid.current)return;
+  const controller=new AbortController();optionRequest.current=controller;setOptionsError('');
+  api<ReportOptions>('/api/admin/reports/options',{signal:controller.signal,headers:reportHeaders(businessId)}).then(v=>{if(!controller.signal.aborted)setOptions(v);}).catch(e=>{if(!controller.signal.aborted&&!failSessionRef.current(e))setOptionsError(errorMessage(e));});
   return()=>controller.abort();
- },[optionsRevision]);
+ },[optionsRevision,businessId]);
  useEffect(()=>{
-  const controller=new AbortController();setReport(null);setError('');setNotice('');setLoading(true);
-  fetchReport(applied,controller.signal).then(v=>{if(!controller.signal.aborted)setReport(v);}).catch(e=>{if(!controller.signal.aborted){setError(errorMessage(e));if(e instanceof ApiError&&e.status===401)denied.current();}}).finally(()=>{if(!controller.signal.aborted)setLoading(false);});
+  if(sessionInvalid.current)return;
+  const controller=new AbortController();reportRequest.current=controller;setReport(null);setError('');setNotice('');setLoading(true);
+  fetchReport(applied,controller.signal,businessId).then(v=>{if(!controller.signal.aborted)setReport(v);}).catch(e=>{if(!controller.signal.aborted&&!failSessionRef.current(e))setError(errorMessage(e));}).finally(()=>{if(!controller.signal.aborted)setLoading(false);});
   return()=>controller.abort();
- },[applied,revision]);
- useEffect(()=>{exportRequest.current?.abort();busy.current=false;setExporting(false);setNotice('');return()=>exportRequest.current?.abort();},[signature,revision,online]);
+ },[applied,revision,businessId]);
+ useEffect(()=>{exportRequest.current?.abort();busy.current=false;setExporting(false);setNotice('');return()=>exportRequest.current?.abort();},[signature,revision,online,businessId]);
  function change(key:keyof ReportFilters,value:string){setDraft(v=>({...v,[key]:value}));}
- function consult(event?:FormEvent){event?.preventDefault();if(!online||rangeError)return;setApplied({...draft});setRevision(v=>v+1);}
- function preset(days:number){const to=todayInZone(zoneId),next={...draft,from:plusDays(to,1-days),to};setDraft(next);setApplied(next);setRevision(v=>v+1);}
+ function consult(event?:FormEvent){event?.preventDefault();if(sessionInvalid.current||!online||rangeError)return;setApplied({...draft});setRevision(v=>v+1);}
+ function preset(days:number){if(sessionInvalid.current||!online)return;const to=todayInZone(zoneId),next={...draft,from:plusDays(to,1-days),to};setDraft(next);setApplied(next);setRevision(v=>v+1);}
  async function exportCsv(){
-  if(!online||busy.current||loading||dirty||!report||rangeError)return;
+  if(sessionInvalid.current||!online||busy.current||loading||dirty||!report||rangeError)return;
   const controller=new AbortController();exportRequest.current=controller;busy.current=true;setExporting(true);setError('');setNotice('');
-  try{const blob=await apiBlob('/api/admin/reports/export?'+reportQuery(applied),{signal:controller.signal});if(!controller.signal.aborted){downloadReport(blob,applied);setNotice('CSV preparado. O arquivo contém uma nova consulta dos filtros aplicados.');}}
-  catch(e){if(!controller.signal.aborted){setError(errorMessage(e));if(e instanceof ApiError&&e.status===401){setReport(null);setOptions(null);denied.current();}}}
+  try{
+   const blob=await apiBlob('/api/admin/reports/export?'+reportQuery(applied),{signal:controller.signal,headers:reportHeaders(businessId)});
+   if(controller.signal.aborted)return;
+   if(blob.type.split(';')[0].trim().toLowerCase()!=='text/csv')throw new ApiError('O servidor não retornou um arquivo CSV. Atualize a consulta e tente novamente.',0);
+   downloadReport(blob,applied);setNotice('CSV preparado. O arquivo contém uma nova consulta dos filtros aplicados.');
+  }
+  catch(e){if(!controller.signal.aborted&&!failSessionRef.current(e))setError(errorMessage(e));}
   finally{if(!controller.signal.aborted){busy.current=false;setExporting(false);}}
  }
  const current=!loading&&!dirty?report:null;
@@ -44,16 +61,16 @@ export default function ReportsPanel({online,zoneId,onUnauthorized}:{online:bool
  return <section className="agenda-panel reports-panel">
   <span className="eyebrow">ACOMPANHE O NEGÓCIO</span><h2>Indicadores e relatórios</h2>
   <p>Consulte até 90 dias por vez. As datas consideram o início atual do atendimento no fuso da empresa.</p>
-  <div className="report-presets" aria-label="Períodos rápidos">{[[1,'Hoje'],[7,'Últimos 7 dias'],[30,'Últimos 30 dias']].map(([days,label])=><button key={days} className="button secondary" disabled={!online} onClick={()=>preset(Number(days))}>{label}</button>)}</div>
+  <div className="report-presets" aria-label="Períodos rápidos">{[[1,'Hoje'],[7,'Últimos 7 dias'],[30,'Últimos 30 dias']].map(([days,label])=><button key={days} className="button secondary" disabled={sessionInvalid.current||!online} onClick={()=>preset(Number(days))}>{label}</button>)}</div>
   <form onSubmit={consult} className="report-filters">
    <label>Data inicial<input type="date" min="1900-01-01" max="2100-12-31" required value={draft.from} onChange={e=>change('from',e.target.value)}/></label>
    <label>Data final<input type="date" min="1900-01-01" max="2100-12-31" required value={draft.to} onChange={e=>change('to',e.target.value)}/></label>
    <label>Profissional do relatório<select aria-label="Profissional do relatório" value={draft.professionalId} disabled={!options} onChange={e=>change('professionalId',e.target.value)}><option value="">Todos os profissionais</option>{options?.professionals.map(p=><option key={p.id} value={p.id}>{p.name}{p.active?'':' (inativo)'}</option>)}</select></label>
    <label>Serviço do relatório<select aria-label="Serviço do relatório" value={draft.serviceId} disabled={!options} onChange={e=>change('serviceId',e.target.value)}><option value="">Todos os serviços</option>{options?.services.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></label>
-   <button className="button primary" disabled={!online||!!rangeError}>Consultar relatório</button>
+   <button className="button primary" disabled={sessionInvalid.current||!online||!!rangeError}>Consultar relatório</button>
   </form>
   {rangeError&&<Message>{rangeError}</Message>}{dirty&&!rangeError&&<Message kind="info">Filtros alterados. Consulte para apresentar os resultados correspondentes.</Message>}
-  {optionsError&&<><Message>{optionsError}</Message><button className="button secondary" disabled={!online} onClick={()=>setOptionsRevision(v=>v+1)}>Recarregar opções</button></>}
+  {optionsError&&<><Message>{optionsError}</Message><button className="button secondary" disabled={sessionInvalid.current||!online} onClick={()=>setOptionsRevision(v=>v+1)}>Recarregar opções</button></>}
   {error&&<Message>{error}</Message>}{notice&&<Message kind="info">{notice}</Message>}
   {!online&&<Message>Sem conexão. Os dados visíveis são da última consulta; reconecte para atualizar ou exportar.</Message>}
   {loading&&<p role="status">Calculando os indicadores…</p>}

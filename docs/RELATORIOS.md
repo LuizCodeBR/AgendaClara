@@ -1,4 +1,4 @@
-# Indicadores e relatórios — 0.14.0
+# Indicadores e relatórios — 0.14.1
 
 ## Como consultar
 Entre em **Meu negócio → Indicadores e relatórios** como responsável. Escolha **Hoje**, **Últimos 7 dias**, **Últimos 30 dias** ou preencha as datas. Os atalhos incluem hoje; o padrão é 30 dias. Combine profissional e serviço e pressione **Consultar relatório**.
@@ -56,3 +56,6 @@ Não há dependência nova, extensão obrigatória do VS Code, serviço adiciona
 ReportTest cobre filtros/isolamento, situações, limites de datas, dias de 23 horas, preços históricos, somas acima de 32 bits, nomes hostis no CSV, remarcação, correções de resultado e cancelamento concorrente. ReportMigrationTest verifica a atualização V11 → V12 preservando dados e a compatibilidade do backup.
 
 A interface tem testes de filtros, respostas tardias, erros, sessão expirada, cancelamento de exportação, paginação e download. O teste de navegador reports.spec.ts executa o fluxo desktop/mobile com CSV real. scripts/reports-smoke.mjs verifica a API e compara relatórios antes/depois de backup/restauração. Resultados de execução ficam em VALIDACAO-0.14.0.md.
+
+## Revisão 0.14.1
+A tela confere a empresa esperada em cada consulta e exportação. Trocar de conta em outra aba pode exigir novo acesso. Falhas de autorização cancelam operações pendentes e removem o relatório; formato inesperado não gera arquivo. Tempo esgotado orienta reduzir o período ou usar filtros. Controles Unicode são normalizados nos rótulos. Recarregue a página/PWA após atualizar. Veja [a revisão](REVISAO-RELATORIOS-0.14.1.md) e [a validação atual](VALIDACAO-0.14.1.md).

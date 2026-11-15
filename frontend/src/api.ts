@@ -29,7 +29,7 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
   if (response.status === 204) return undefined as T;
   return await response.json() as T;
 }
-export async function apiBlob(path:string,options:Pick<RequestInit,'signal'>={}):Promise<Blob>{
+export async function apiBlob(path:string,options:Pick<RequestInit,'signal'|'headers'>={}):Promise<Blob>{
   return (await checkedFetch(path,{...options,method:'GET'})).blob();
 }
 export const errorMessage = (error: unknown) => error instanceof Error ? error.message : 'Ocorreu um erro inesperado.';

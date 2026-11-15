@@ -11,7 +11,8 @@ export function reportRangeError(filters:ReportFilters):string{
  const days=(Date.parse(filters.to+'T12:00:00Z')-Date.parse(filters.from+'T12:00:00Z'))/86400000+1;
  return filters.from<'1900-01-01'||filters.to>'2100-12-31'||days<1||days>90?'Escolha um período de 1 a 90 dias, entre 1900 e 2100.':'';
 }
-export const fetchReport=(filters:ReportFilters,signal:AbortSignal)=>api<PeriodReport>('/api/admin/reports?'+reportQuery(filters),{signal});
+export const reportHeaders=(businessId:string)=>({'X-Agenda-Business':businessId});
+export const fetchReport=(filters:ReportFilters,signal:AbortSignal,businessId:string)=>api<PeriodReport>('/api/admin/reports?'+reportQuery(filters),{signal,headers:reportHeaders(businessId)});
 export function downloadReport(blob:Blob,filters:ReportFilters){
  const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download='AgendaClara-relatorio-'+filters.from+'-a-'+filters.to+'.csv';link.style.display='none';document.body.appendChild(link);
  try{link.click();}finally{link.remove();window.setTimeout(()=>URL.revokeObjectURL(url),1500);}

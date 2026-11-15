@@ -214,3 +214,8 @@ Todas as rotas exigem OWNER da empresa da sessão e retornam no-store.
 O JSON retorna from,to,zoneId,businessName,professionalId,serviceId,professionalLabel,serviceLabel,generatedAt,totals,professionals,rows,days. Metrics contém total,completed,noShow,cancelled,pending,upcoming,completedValueCents. Days tem {date,metrics}; professionals tem {id,name,active,metrics}; rows tem {professionalId,professionalName,active,serviceId,serviceName,metrics}.
 
 Período inclusivo de 1 a 90 dias, entre 1900 e 2100, pelo início atual do atendimento no fuso da empresa. Pending = BOOKED com endsAt <= generatedAt; upcoming = BOOKED com término posterior. Preços/nomes de serviço são os da reserva. Limite de 2000 opções por cadastro e 2000 combinações, erro explícito ao exceder. Erros: 400 entrada/limite inválido, 401 sem sessão, 403 função sem permissão, 404 filtro fora da empresa. CSV tem TOTAL e PROFISSIONAL_SERVICO, sem informações pessoais de clientes. Consulte RELATORIOS.md para semântica e importação.
+
+### Revisão dos relatórios — 0.14.1
+Opções, JSON e exportação aceitam o cabeçalho opcional X-Agenda-Business (UUID) como precondição da empresa esperada na tela. A interface sempre o envia. Se divergir da sessão: 412, sem anexo. Não autoriza nem escolhe o escopo dos dados; a empresa continua derivada da sessão. Cabeçalho inválido: 400. Clientes anteriores sem cabeçalho mantêm o isolamento por sessão.
+
+QueryTimeoutException/TransactionTimedOutException nas rotas de relatório retornam 503 application/problem+json, no-store e sem Content-Disposition, orientando reduzir o período/filtros. Normalização dos rótulos agora abrange a categoria Unicode Cc. Sem alteração de esquema ou campos dos relatórios.

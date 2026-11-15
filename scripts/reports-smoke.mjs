@@ -5,7 +5,7 @@ const phase=['before','after'].includes(process.argv[2])?process.argv[2]:'smoke'
 class Client{
  cookies=[];
  async request(path,method='GET',body,form=false){
-  const headers={};if(method!=='GET'){const csrf=await this.request('/api/auth/csrf');headers[csrf.body.headerName]=csrf.body.token;}
+  const headers={};if(this.businessId&&path.startsWith('/api/admin/reports'))headers['X-Agenda-Business']=this.businessId;if(method!=='GET'){const csrf=await this.request('/api/auth/csrf');headers[csrf.body.headerName]=csrf.body.token;}
   headers.Cookie=this.cookies.filter(c=>path===c.path||path.startsWith(c.path.endsWith('/')?c.path:c.path+'/')).map(c=>c.name+'='+c.value).join('; ');
   if(body)headers['Content-Type']=form?'application/x-www-form-urlencoded':'application/json';
   const r=await fetch(base+path,{method,headers,redirect:'manual',signal:AbortSignal.timeout(45000),body:body?(form?new URLSearchParams(body).toString():JSON.stringify(body)):undefined});
@@ -15,6 +15,7 @@ class Client{
  async ok(path,method='GET',body,status=200,form=false){const r=await this.request(path,method,body,form);assert.equal(r.status,status,method+' '+path);return r.body;}
 }
 const owner=new Client(),anonymous=new Client();await owner.ok('/api/auth/login','POST',{username:'marina@demo.agendaclara.dev',password:'Demo@12345'},204,true);
+owner.businessId=(await owner.ok('/api/auth/me')).business.id;
 let person,appointment,date,service;
 const query=()=>new URLSearchParams({from:date,to:date,professionalId:person.id,serviceId:service.id}).toString();
 const report=()=>owner.ok('/api/admin/reports?'+query());
@@ -33,6 +34,11 @@ if(phase==='after'){
  for(const path of ['/api/admin/reports?','/api/admin/reports/export?'])await anonymous.ok(path+query(),'GET',undefined,401);
  const other=(await anonymous.ok('/api/public/estudio-aurora/catalog')).professionals[0];await owner.ok('/api/admin/reports?'+new URLSearchParams({from:date,to:date,professionalId:other.id}),'GET',undefined,404);
  await owner.ok('/api/admin/reports?from=2020-01-01&to=2021-01-01','GET',undefined,400);
+ if(phase==='smoke'){
+  const currentBusiness=owner.businessId;owner.businessId=randomUUID();
+  try{for(const path of ['/api/admin/reports/options','/api/admin/reports?'+query(),'/api/admin/reports/export?'+query()])await owner.ok(path,'GET',undefined,412);}
+  finally{owner.businessId=currentBusiness;}
+ }
  const csv=await owner.request('/api/admin/reports/export?'+query());assert.equal(csv.status,200);assert.ok(csv.headers.get('cache-control').includes('no-store'));assert.ok(csv.headers.get('content-disposition').startsWith('attachment;'));assert.ok(csv.body.includes('PROFISSIONAL_SERVICO'));assert.ok(!csv.body.includes('Cliente privado'));assert.ok(!csv.body.includes('11999991234'));
  if(phase==='before'){fs.writeFileSync(file,JSON.stringify({person,appointment,date,service,totals:result.totals,rows:result.rows,days:result.days}),{flag:'wx',mode:0o600});await owner.ok('/api/auth/logout','POST',undefined,204);console.log('OK: prova privada de indicadores preparada para restauração.');}
  else{await owner.ok('/api/admin/appointments/'+appointment.id+'/cancel','POST',{version:0});assert.equal((await report()).totals.cancelled,1);console.log('OK: relatório real, filtros combinados, isolamento, CSV privado e atualização dos indicadores.');}

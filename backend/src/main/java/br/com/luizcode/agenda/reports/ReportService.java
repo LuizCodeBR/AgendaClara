@@ -43,7 +43,7 @@ public class ReportService {
         long pending=r.getLong("pending"),booked=r.getLong("booked");
         return new Metrics(safe(r.getLong("total")),safe(r.getLong("completed")),safe(r.getLong("no_show")),safe(r.getLong("cancelled")),safe(pending),safe(booked-pending),safe(r.getLong("completed_value")));
     }
-    static String line(String value){return value.replaceAll("[\\p{Cntrl}\\p{Cf}\\p{Zl}\\p{Zp}]+"," ").replaceAll("[\\s\\p{Zs}]+"," ").strip();}
+    static String line(String value){return value.replaceAll("[\\p{Cc}\\p{Cf}\\p{Zl}\\p{Zp}]+"," ").replaceAll("[\\s\\p{Zs}]+"," ").strip();}
     private Choice person(UUID business,UUID id){return jdbc.query("select id,name,active from professional where business_id=? and id=?",(r,n)->new Choice(r.getObject(1,UUID.class),line(r.getString(2)),r.getBoolean(3)),business,id).stream().findFirst().orElseThrow(BusinessException::notFound);}
     @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ,timeout=15)
     public Options options(UUID business){
