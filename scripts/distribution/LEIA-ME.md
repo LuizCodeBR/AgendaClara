@@ -1,4 +1,4 @@
-# Agenda Clara — demonstração 0.13.1
+# Agenda Clara — demonstração 0.14.0
 
 1. Instale Java 21 ou mais recente até a versão 27, caso ainda não possua.
 2. Extraia todos os arquivos deste ZIP em uma pasta gravável.
@@ -59,3 +59,8 @@ A revisão 0.12.1 reforçou a validação dos resultados, as transações e o ca
 Resumo diário (0.13.0): em Meu negócio, abra Resumo diário, escolha profissional/data e confira a prévia. Salve telefone com DDI para abrir a conversa, ou copie o texto. Confirme o envio no WhatsApp; a aplicação não envia automaticamente. V11 acrescenta contato privado vazio nos registros antigos. Use as ferramentas 0.13.0 para backups de esquemas 6 a 11. Guia RESUMO-DIARIO.md no repositório.
 
 Na 0.13.1, confirmar a prévia faz nova consulta à agenda/contato e exige nova conferência se houver mudança. Atualize ao retornar de outra aba/aplicativo, perder conexão ou após cinco minutos. Falha ao salvar telefone exige consultar o cadastro atual; a resposta pode ter se perdido depois da gravação. Esquema V11 preservado, sem nova instalação. Veja REVISAO-RESUMO-0.13.1.md no repositório.
+
+## Indicadores e relatórios (0.14.0)
+Em Meu negócio, abra Indicadores e relatórios. Consulte até 90 dias, filtre profissional/serviço, acompanhe concluídos, faltas, cancelamentos e pendências e baixe o CSV. Valor concluído usa o preço da reserva e não comprova pagamento. O CSV contém totais e grupos, sem nomes/telefones de clientes; use a coluna Tipo para não somar TOTAL com seus detalhes. No celular, deslize as tabelas horizontalmente. Guia docs/RELATORIOS.md no repositório.
+
+V12 adiciona somente um índice. Faça backup, encerre a versão anterior e preserve data e mail-outbox.key. As ferramentas 0.14.0 aceitam esquemas 6 a 12. Sem instalação adicional ou serviço pago. Site/PWA usam o banco online; a cópia local continua independente.

@@ -123,3 +123,6 @@ A ferramenta 0.12.0 aceita esquemas 6 a 10. V10 acrescenta as novas situações 
 
 ## Contato do resumo — 0.13.0
 V11 adiciona professional.whatsapp_phone, inicialmente vazio. Ferramentas 0.13.0 aceitam esquemas 6 a 11 e preservam o contato nos backups H2/PostgreSQL; ACBK0001 permanece. Use a chave original e restaure em destino separado. Veja RESUMO-DIARIO.md e VALIDACAO-0.13.0.md.
+
+## Indicadores — 0.14.0
+V12 acrescenta idx_appointment_report_period, um índice por empresa/início. Não altera dados. Ferramentas 0.14.0 aceitam esquemas 6 a 12 e preservam ACBK0001. Faça backup antes da atualização, mantenha a chave original e use a ferramenta nova para bancos V12. Os testes de distribuição comparam indicadores antes/depois da restauração, além das provas anteriores de reservas, acessos, regras, resultados e resumo diário.

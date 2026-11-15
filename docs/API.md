@@ -204,3 +204,13 @@ GET /api/admin/professionals/{id}/daily-summary?date=AAAA-MM-DD retorna date, zo
 PUT /api/admin/professionals/{id}/whatsapp-contact aceita {phone,version}. Requer OWNER/CSRF e versão atual. Telefone vazio remove; formato internacional com 8 a 15 dígitos, DDI e sem zero inicial. Separadores comuns e + inicial são normalizados. Resposta {id,name,phone,version}; mudança incrementa a versão do profissional, valor idêntico é sem alteração. Edição antiga retorna 409. Não há endpoint de envio ou confirmação de entrega.
 
 Na revisão 0.13.1, generatedAt do resumo diário representa o início da leitura. Contratos e V11 preservados. A interface repete o GET privado ao confirmar a prévia, comparando o conteúdo e destinatário antes de liberar o link/cópia.
+
+## Indicadores e relatórios — 0.14.0
+Todas as rotas exigem OWNER da empresa da sessão e retornam no-store.
+- GET /api/admin/reports/options: professionals [{id,name,active}] incluindo inativos e services [{id,name,active}].
+- GET /api/admin/reports?from=AAAA-MM-DD&to=AAAA-MM-DD&professionalId=UUID&serviceId=UUID: datas obrigatórias; IDs opcionais e combináveis, limitados à própria empresa.
+- GET /api/admin/reports/export com os mesmos parâmetros: text/csv;charset=UTF-8, BOM, attachment e nome seguro por datas.
+
+O JSON retorna from,to,zoneId,businessName,professionalId,serviceId,professionalLabel,serviceLabel,generatedAt,totals,professionals,rows,days. Metrics contém total,completed,noShow,cancelled,pending,upcoming,completedValueCents. Days tem {date,metrics}; professionals tem {id,name,active,metrics}; rows tem {professionalId,professionalName,active,serviceId,serviceName,metrics}.
+
+Período inclusivo de 1 a 90 dias, entre 1900 e 2100, pelo início atual do atendimento no fuso da empresa. Pending = BOOKED com endsAt <= generatedAt; upcoming = BOOKED com término posterior. Preços/nomes de serviço são os da reserva. Limite de 2000 opções por cadastro e 2000 combinações, erro explícito ao exceder. Erros: 400 entrada/limite inválido, 401 sem sessão, 403 função sem permissão, 404 filtro fora da empresa. CSV tem TOTAL e PROFISSIONAL_SERVICO, sem informações pessoais de clientes. Consulte RELATORIOS.md para semântica e importação.

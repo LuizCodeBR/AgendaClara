@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { api, ApiError } from './api';
+import { api, apiBlob, ApiError } from './api';
 afterEach(() => vi.unstubAllGlobals());
 describe('comunicação com o servidor', () => {
   it('busca CSRF antes de uma alteração e mantém a sessão no cookie', async () => {
@@ -56,3 +56,6 @@ describe('falhas antes de enviar uma alteração', () => {
     expect(fetch).toHaveBeenCalledTimes(2);
   });
 });
+
+it('download privado mantém cookie, cancela requisição e não usa cache',async()=>{const fetch=vi.fn().mockResolvedValue(new Response('csv',{headers:{'Content-Type':'text/csv'}}));vi.stubGlobal('fetch',fetch);const controller=new AbortController();const result=await apiBlob('/api/admin/reports/export',{signal:controller.signal});expect(await result.text()).toBe('csv');expect(fetch).toHaveBeenCalledWith('/api/admin/reports/export',expect.objectContaining({method:'GET',credentials:'same-origin',cache:'no-store',signal:controller.signal}));});
+it('erro de sessão no CSV não vira arquivo baixado',async()=>{vi.stubGlobal('fetch',vi.fn().mockResolvedValue(new Response(JSON.stringify({detail:'Entre novamente.'}),{status:401})));await expect(apiBlob('/api/admin/reports/export')).rejects.toMatchObject({status:401,message:'Entre novamente.'});});

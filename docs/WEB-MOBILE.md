@@ -2,7 +2,7 @@
 
 **Site:** https://agenda-clara-luizcodebr.onrender.com
 
-**Downloads:** https://github.com/LuizCodeBR/AgendaClara/releases/tag/v0.13.1
+**Downloads:** https://github.com/LuizCodeBR/AgendaClara/releases/tag/v0.14.0
 
 ## Três formas de acesso
 
@@ -109,3 +109,6 @@ Site, PWA e pacote local recebem as mesmas correções de resultados e históric
 Meu negócio → Resumo diário: escolha profissional/data, confira a prévia e o contato e copie ou abra o WhatsApp para confirmar manualmente. Web, PWA e pacote local usam a mesma tela; o local consulta seu próprio banco. Resumos extensos têm partes numeradas. Nenhum envio automático ocorre. Atualize o aplicativo conectado após a publicação. Guia em RESUMO-DIARIO.md.
 
 Revisão 0.13.1: o mesmo painel de resumo nas três modalidades revalida a agenda/contato antes de liberar o compartilhamento. Retorno do segundo plano exige atualização, especialmente ao alternar entre a PWA e o WhatsApp. Não há push, agendador ou envio automático. Veja [a revisão](REVISAO-RESUMO-0.13.1.md).
+
+## Indicadores e relatórios — 0.14.0
+Site, PWA e pacote local compartilham filtros, indicadores, gráfico diário, tabelas e CSV. No celular, deslize as tabelas para as demais colunas. O CSV baixa pelo navegador; escolha a pasta D: no computador. A PWA não guarda relatórios privados para uso offline. Recarregue após atualizar; banco local continua independente. V12 adiciona índice, sem alteração dos dados. Consulte [o guia](RELATORIOS.md).
