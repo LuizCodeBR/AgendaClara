@@ -25,3 +25,6 @@ Os cenários novos de navegador usam API e banco reais. Verificam o endereço/te
 ## Operação
 
 Nenhuma nova dependência, extensão, serviço pago ou tarefa recorrente. Código, caches, provas privadas e entregas no D:. Backups e monitoramento continuam sob demanda. Download oficial, restauração do pacote e publicação online serão registrados após confirmação.
+
+## Ajuste do ambiente de integração
+A primeira execução CI identificou acúmulo de pools dos contextos Spring em cache, levando o PostgreSQL de testes ao limite de clientes ao iniciar SecurityReviewTest. O cache de contextos da suíte foi limitado a oito pelo Maven Surefire; a expulsão fecha os contextos/pools antigos. O limite de conexões do aplicativo e seus testes de concorrência permanecem os mesmos. Outro grupo teve falha transitória ao baixar Maven antes dos testes. A nova rodada será registrada após confirmação. Referência: [cache de contextos Spring](https://docs.spring.io/spring-framework/reference/testing/testcontext-framework/ctx-management/caching.html).
