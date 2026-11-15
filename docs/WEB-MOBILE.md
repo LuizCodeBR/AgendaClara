@@ -2,7 +2,7 @@
 
 **Site:** https://agenda-clara-luizcodebr.onrender.com
 
-**Downloads:** https://github.com/LuizCodeBR/AgendaClara/releases/tag/v0.13.0
+**Downloads:** https://github.com/LuizCodeBR/AgendaClara/releases/tag/v0.13.1
 
 ## Três formas de acesso
 
@@ -102,8 +102,8 @@ Web, PWA e pacote local incluem Regras de agendamento, prazos na confirmação e
 ## Resultados e histórico (0.12.0)
 O painel permite concluir, registrar faltas e corrigir o resultado com justificativa. A mesma interface atende computador e celular. Minha reserva mostra a situação registrada. Consulte [o guia](RESULTADOS-ATENDIMENTOS.md).
 
-## Revisão 0.13.0
-Site, PWA e pacote local recebem as mesmas correções de resultados e histórico. Consultas de registros anteriores são canceladas ao fechar a janela; respostas antigas não substituem o atendimento aberto. Reabra ou recarregue o aplicativo conectado após a atualização. Não há nova dependência nem serviço pago. Consulte [a revisão](REVISAO-RESULTADOS-0.13.0.md).
+## Revisão 0.12.1
+Site, PWA e pacote local recebem as mesmas correções de resultados e histórico. Consultas de registros anteriores são canceladas ao fechar a janela; respostas antigas não substituem o atendimento aberto. Reabra ou recarregue o aplicativo conectado após a atualização. Não há nova dependência nem serviço pago. Consulte [a revisão](REVISAO-RESULTADOS-0.12.1.md).
 
 ## Resumo diário — 0.13.0
 Meu negócio → Resumo diário: escolha profissional/data, confira a prévia e o contato e copie ou abra o WhatsApp para confirmar manualmente. Web, PWA e pacote local usam a mesma tela; o local consulta seu próprio banco. Resumos extensos têm partes numeradas. Nenhum envio automático ocorre. Atualize o aplicativo conectado após a publicação. Guia em RESUMO-DIARIO.md.
