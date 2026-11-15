@@ -57,3 +57,5 @@ Mesmo código no site, PWA e pacote local. Site/PWA compartilham o banco online;
 Arquivos desta instalação em D:/Projetos/AgendaClara e entregas em D:/Projetos/Entregas. Sem dependência nova, extensão obrigatória, contratação ou tarefa recorrente. Mantenha as cotas Free dos provedores.
 
 Faça backup antes de atualizar, encerre a instalação anterior e preserve data e mail-outbox.key. Ferramentas 0.15.0 aceitam esquemas 6 a 13 e mantêm ACBK0001. Restauração preserva contas, estado de acesso e digest/validade dos convites; restaurar um backup também pode recuperar acessos/convites que eram válidos naquele momento. Confira e revogue acessos necessários após uma recuperação. Convites vencidos continuam vencidos pelo relógio atual.
+
+Não execute a versão 0.14.1 ou anterior sobre um banco V13 com contas profissionais: o código antigo considera todas as contas como responsáveis. Para recuperar uma versão anterior, utilize seu backup anterior compatível em destino separado e siga o procedimento de restauração; substituir apenas o JAR não desfaz a migração nem reconstitui as permissões. Encerre a instalação antiga antes de atualizar.
