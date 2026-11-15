@@ -1,4 +1,4 @@
-# Agenda Clara — demonstração 0.12.0
+# Agenda Clara — demonstração 0.12.1
 
 1. Instale Java 21 ou mais recente até a versão 27, caso ainda não possua.
 2. Extraia todos os arquivos deste ZIP em uma pasta gravável.
@@ -53,3 +53,5 @@ A cópia local tem banco próprio. Um link localhost funciona somente no computa
 No painel, abra Regras de agendamento para definir a antecedência mínima e os prazos de cancelamento e remarcação do cliente. Alterações valem para novas reservas; as já confirmadas preservam as condições anteriores. O responsável pode atender exceções futuras. O backup novo inclui essas regras e aceita esquemas 6 a 9.
 
 Na versão 0.12.0, após o término previsto, use Concluir atendimento ou Registrar falta em Minha agenda. Corrigir resultado exige justificativa e preserva o registro anterior. Histórico mostra as mudanças feitas a partir desta versão; reservas antigas continuam preservadas, sem classificação automática. A ferramenta de backup aceita esquemas 6 a 10. Consulte RESULTADOS-ATENDIMENTOS.md no repositório.
+
+A revisão 0.12.1 reforça a validação dos resultados, as transações e o carregamento do histórico. Preserva o esquema V10, os dados e o formato de backup. Consulte REVISAO-RESULTADOS-0.12.1.md no repositório. Use a mesma pasta de dados e a chave original ao atualizar; faça backup com o servidor local encerrado.

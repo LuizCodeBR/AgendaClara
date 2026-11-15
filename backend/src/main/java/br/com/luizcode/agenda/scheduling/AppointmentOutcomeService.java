@@ -12,7 +12,7 @@ import org.springframework.transaction.annotation.*;
 @Service
 public class AppointmentOutcomeService {
     public enum Result {COMPLETED,NO_SHOW}
-    public record Change(@NotNull Result status,@NotNull @Min(0) Integer version,@NotNull UUID requestKey,@Size(max=500) String reason){}
+    public record Change(@NotNull Result status,@NotNull @Min(0) Integer version,@NotNull UUID requestKey,@Size(max=500) @Pattern(regexp="[^\\x00]*",message="não pode conter caractere nulo") String reason){}
     private final ScheduleRepository appointments;
     private final CatalogRepository catalog;
     private final AppointmentHistory history;

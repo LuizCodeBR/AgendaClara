@@ -34,13 +34,18 @@ export function OutcomeDialog({appointment,initial,online,onClose,onSaved,onPend
 }
 export function HistoryDialog({appointment,zone,online,onClose}:{appointment:Appointment;zone:string;online:boolean;onClose:()=>void}){
   const [page,setPage]=useState<HistoryPage|null>(null),[pending,setPending]=useState(true),[error,setError]=useState(''),[retry,setRetry]=useState(0);
-  useEffect(()=>{const controller=new AbortController();setPending(true);setError('');
+  const activeRequest=useRef<AbortController|null>(null),loading=useRef(false);
+  useEffect(()=>{const controller=new AbortController();activeRequest.current=controller;loading.current=true;setPage(null);setPending(true);setError('');
     api<HistoryPage>('/api/admin/appointments/'+appointment.id+'/history',{signal:controller.signal}).then(result=>{if(!controller.signal.aborted)setPage(result);})
-      .catch(e=>{if(!controller.signal.aborted)setError(errorMessage(e));}).finally(()=>{if(!controller.signal.aborted)setPending(false);});return()=>controller.abort();
+      .catch(e=>{if(!controller.signal.aborted)setError(errorMessage(e));}).finally(()=>{if(!controller.signal.aborted){loading.current=false;setPending(false);}});
+    return()=>{controller.abort();activeRequest.current?.abort();};
   },[appointment.id,retry]);
-  async function older(){if(!page||page.nextBeforeVersion===null||pending||!online)return;setPending(true);setError('');
-    try{const next=await api<HistoryPage>('/api/admin/appointments/'+appointment.id+'/history?beforeVersion='+page.nextBeforeVersion);setPage({events:[...page.events,...next.events],nextBeforeVersion:next.nextBeforeVersion});}
-    catch(e){setError(errorMessage(e));}finally{setPending(false);}}
+  async function older(){if(!page||page.nextBeforeVersion===null||loading.current||!online)return;
+    const controller=new AbortController();activeRequest.current=controller;loading.current=true;setPending(true);setError('');
+    try{const next=await api<HistoryPage>('/api/admin/appointments/'+appointment.id+'/history?beforeVersion='+page.nextBeforeVersion,{signal:controller.signal});
+      if(!controller.signal.aborted)setPage({events:[...page.events,...next.events],nextBeforeVersion:next.nextBeforeVersion});}
+    catch(e){if(!controller.signal.aborted)setError(errorMessage(e));}
+    finally{if(!controller.signal.aborted){loading.current=false;setPending(false);}}}
   const date=(value:string)=>new Intl.DateTimeFormat('pt-BR',{timeZone:zone,dateStyle:'short',timeStyle:'short'}).format(new Date(value));
   const actions:Record<string,string>={CREATED:'Reserva criada',CANCELLED:'Reserva cancelada',RESCHEDULED:'Horário remarcado',OUTCOME:'Resultado registrado',CORRECTION:'Resultado corrigido'};
   return <Modal title="Histórico do atendimento" onClose={onClose}><p>{appointment.customerName} · {appointment.serviceName}</p>

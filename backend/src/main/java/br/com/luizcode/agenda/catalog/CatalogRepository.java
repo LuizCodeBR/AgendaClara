@@ -74,6 +74,7 @@ public class CatalogRepository {
     }
 
     public void lockProfessional(UUID businessId, UUID id) {
+        br.com.luizcode.agenda.shared.WriteTransaction.require();
         List<UUID> ids = jdbc.query("select id from professional where business_id = ? and id = ? for update",
                 (rs, row) -> rs.getObject(1, UUID.class), businessId, id);
         if (ids.isEmpty()) throw BusinessException.notFound();

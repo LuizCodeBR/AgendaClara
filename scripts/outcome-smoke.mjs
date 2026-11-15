@@ -39,6 +39,8 @@ if(phase==='after'){
  await client.ok(path+'/outcome','POST',{status:'COMPLETED',version:0,requestKey:randomUUID()},401);
  await owner.ok(path+'/outcome','POST',{status:'COMPLETED',version:0,requestKey:randomUUID()},409);
  await owner.ok(path+'/outcome','POST',{status:'BOOKED',version:0,requestKey:randomUUID()},400);
+ for(const status of [0,1,'0','1'])await owner.ok(path+'/outcome','POST',{status,version:0,requestKey:randomUUID()},400);
+ await owner.ok(path+'/outcome','POST',{status:'COMPLETED',version:0,requestKey:randomUUID(),reason:'Texto'+String.fromCharCode(0)+'inválido'},400);
  await owner.ok(path+'/outcome','POST',{status:'NO_SHOW',version:0.5,requestKey:randomUUID()},400);
  await owner.ok(path+'/history?beforeVersion=-1','GET',undefined,400);
  appointment=await owner.ok(path+'/reschedule','PATCH',{version:0,startsAt:slots[1].startsAt});

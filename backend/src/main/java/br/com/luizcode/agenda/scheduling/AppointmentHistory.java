@@ -24,6 +24,7 @@ public class AppointmentHistory {
     }
     public void append(ScheduleRepository.Appointment before,ScheduleRepository.Appointment after,String action,Actor actor,
             String reason,Instant now,UUID key,Integer expected){
+        br.com.luizcode.agenda.shared.WriteTransaction.require();
         jdbc.update("""
             insert into appointment_history(id,business_id,appointment_id,appointment_version,action,from_status,to_status,
                 from_start,from_end,to_start,to_end,actor_type,actor_user_id,actor_name,reason,occurred_at,request_key,expected_version)

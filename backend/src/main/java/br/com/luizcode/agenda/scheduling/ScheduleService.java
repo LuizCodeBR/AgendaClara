@@ -191,6 +191,8 @@ public class ScheduleService {
         catalog.lockProfessional(business.id(), first.professionalId());
         var current = schedule.appointment(business.id(), id);
         if (current.status().equals("CANCELLED")) return current.view();
+        if (!current.status().equals("BOOKED"))
+            throw BusinessException.conflict("Só é possível cancelar atendimentos confirmados, ainda sem resultado.");
         requireVersion(current,version);
         Instant acceptedAt=clock.instant();
         if (!current.startsAt().isAfter(acceptedAt))
@@ -219,7 +221,7 @@ public class ScheduleService {
         var current = schedule.appointment(business.id(), id);
         catalog.requireServiceAssignment(business.id(), current.professionalId(), current.serviceId());
         if (!current.status().equals("BOOKED"))
-            throw BusinessException.conflict("Um agendamento cancelado não pode ser remarcado.");
+            throw BusinessException.conflict("Só é possível remarcar atendimentos confirmados, ainda sem resultado.");
         if (!current.startsAt().isAfter(clock.instant()))
             throw BusinessException.invalid("Só é possível remarcar atendimentos futuros.");
         if(request.version()!=null && request.version()==current.version()-1 && request.startsAt().toInstant().equals(current.startsAt()))

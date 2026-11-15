@@ -194,3 +194,6 @@ Ações do cliente exigem prazo válido e antecedência do novo horário. O resp
 POST /api/admin/appointments/{id}/outcome recebe {status:"COMPLETED"|"NO_SHOW",version,requestKey,reason?}. Exige responsável, CSRF e versão vigente. Somente após endsAt no servidor. Correção entre resultados exige reason com 5 a 500 caracteres; status inicial aceita motivo opcional. Cancelada não pode ser classificada. Repetição da mesma chave/dados retorna a situação atual sem novo evento. Conflitos retornam 409, entradas inválidas 400.
 
 GET /api/admin/appointments/{id}/history?beforeVersion=N exige responsável da mesma empresa. Retorna {events,nextBeforeVersion}, até 50 eventos ordenados por versão decrescente. beforeVersion é exclusivo, inteiro não negativo. Não retorna chaves de tentativa, credenciais, IDs de acesso, telefone ou e-mail. Consulte RESULTADOS-ATENDIMENTOS.md.
+
+### Validação reforçada na 0.12.1
+Resultados exigem os nomes JSON COMPLETED ou NO_SHOW; 0, 1, "0" e "1" são inválidos (400). Justificativa contendo U+0000 também recebe 400 antes do banco. Nomes continuam sujeitos às demais condições: versão atual, horário final e justificativa de correção. Cancelar um atendimento COMPLETED/NO_SHOW recebe conflito 409 independentemente do relógio. Sem alteração de URLs, campos ou esquema do histórico.

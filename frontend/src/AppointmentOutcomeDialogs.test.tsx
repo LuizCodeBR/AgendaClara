@@ -1,4 +1,4 @@
-import {render,screen,waitFor} from '@testing-library/react';
+import {act,render,screen,waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {beforeEach,expect,it,vi} from 'vitest';
 import {OutcomeDialog,HistoryDialog} from './AppointmentOutcomeDialogs';
@@ -36,3 +36,34 @@ it('carrega páginas do histórico e conserva os registros anteriores',async()=>
  render(<HistoryDialog appointment={appointment} zone="America/Sao_Paulo" online onClose={vi.fn()}/>);await screen.findByText('Resultado registrado');await userEvent.setup().click(screen.getByRole('button',{name:'Carregar registros anteriores'}));await screen.findByText('Reserva criada');expect(screen.getByText('Resultado registrado')).toBeInTheDocument();expect(mocked.mock.calls[1][0]).toContain('beforeVersion=1');
 });
 it('não inventa histórico quando a consulta retorna vazia',async()=>{mocked.mockResolvedValue({events:[],nextBeforeVersion:null});render(<HistoryDialog appointment={appointment} zone="America/Sao_Paulo" online onClose={vi.fn()}/>);await screen.findByText('Nenhuma alteração registrada desde a implantação do histórico.');});
+
+it('ignora uma página antiga que termina depois da troca de atendimento',async()=>{
+ let resolveOlder!:(value:unknown)=>void;
+ mocked.mockResolvedValueOnce({events:[entry],nextBeforeVersion:1})
+  .mockImplementationOnce(()=>new Promise(resolve=>{resolveOlder=resolve;}))
+  .mockResolvedValueOnce({events:[{...entry,id:'new',reason:'Histórico do segundo atendimento'}],nextBeforeVersion:null});
+ const view=render(<HistoryDialog appointment={appointment} zone="America/Sao_Paulo" online onClose={vi.fn()}/>);
+ await screen.findByText('Ausência registrada');
+ await userEvent.setup().click(screen.getByRole('button',{name:'Carregar registros anteriores'}));
+ view.rerender(<HistoryDialog appointment={{...appointment,id:'another',customerName:'Outro cliente'}} zone="America/Sao_Paulo" online onClose={vi.fn()}/>);
+ await screen.findByText('Histórico do segundo atendimento');
+ await act(async()=>{resolveOlder({events:[{...entry,id:'old',reason:'Resposta atrasada'}],nextBeforeVersion:null});});
+ expect(screen.getByText('Histórico do segundo atendimento')).toBeInTheDocument();
+ expect(screen.queryByText('Resposta atrasada')).not.toBeInTheDocument();
+ expect(screen.queryByText('Ausência registrada')).not.toBeInTheDocument();
+});
+it('cancela a consulta de registros antigos ao fechar o histórico',async()=>{
+ mocked.mockResolvedValueOnce({events:[entry],nextBeforeVersion:1}).mockImplementationOnce(()=>new Promise(()=>{}));
+ const view=render(<HistoryDialog appointment={appointment} zone="America/Sao_Paulo" online onClose={vi.fn()}/>);
+ await screen.findByText('Ausência registrada');
+ await userEvent.setup().click(screen.getByRole('button',{name:'Carregar registros anteriores'}));
+ const signal=mocked.mock.calls[1][1]?.signal;
+ view.unmount();expect(signal?.aborted).toBe(true);
+});
+it('exibe conteúdo do histórico como texto, sem criar elementos HTML',async()=>{
+ const payload='<img src=x onerror=alert(1)>';
+ mocked.mockResolvedValueOnce({events:[{...entry,actorName:payload,reason:payload}],nextBeforeVersion:null});
+ const view=render(<HistoryDialog appointment={appointment} zone="America/Sao_Paulo" online onClose={vi.fn()}/>);
+ expect(await screen.findAllByText(payload,{exact:false})).toHaveLength(2);
+ expect(view.container.querySelector('img')).toBeNull();
+});

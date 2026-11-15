@@ -38,3 +38,6 @@ A migração V10 substitui a restrição dos estados da reserva e cria appointme
 Preserve banco e chave originais. Encerre o servidor local normalmente, faça backup e ensaie a atualização em uma cópia. A ferramenta 0.12 aceita backups dos esquemas 6 a 10; ACBK0001 permanece. Não execute ferramentas antigas sobre o esquema novo.
 
 Não foi acrescentada dependência, extensão, serviço pago ou tarefa recorrente. Projeto e entregas desta instalação ficam no D:. [Validação](VALIDACAO-0.12.0.md).
+
+## Revisão de segurança e concorrência — 0.12.1
+A API aceita somente os nomes COMPLETED e NO_SHOW para resultado; números e textos numéricos são recusados com 400. Justificativas não aceitam o caractere nulo U+0000. Cancelamento exige explicitamente BOOKED, mesmo se o relógio retroceder. O bloqueio do profissional e a inclusão de eventos exigem transação de escrita ativa. O carregamento de páginas do histórico é cancelado ao fechar/trocar o atendimento e ignora respostas atrasadas. Não há migração nova: esquema V10 e backups 6 a 10 permanecem. [Revisão](REVISAO-RESULTADOS-0.12.1.md) · [Validação](VALIDACAO-0.12.1.md).
