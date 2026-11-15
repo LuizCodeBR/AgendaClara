@@ -1,0 +1,61 @@
+{
+  "version": "0.15.1",
+  "capturedAt": "2026-11-15T22:10:53.915Z",
+  "source": "Aplicação local real, perfil demo, banco descartável separado.",
+  "data": "Exclusivamente exemplos fictícios; APIs e conteúdo visual sem mocks.",
+  "bookingDate": "2026-11-16",
+  "desktop": {
+    "width": 1440,
+    "height": 1000
+  },
+  "mobile": {
+    "device": "Pixel 7 emulado",
+    "width": 412,
+    "height": 839,
+    "deviceScaleFactor": 1
+  },
+  "images": [
+    {
+      "file": "01-inicio-desktop.png",
+      "bytes": 313813,
+      "width": 1440,
+      "height": 1000,
+      "sha256": "9c0673543ee2a6acec5c90046db8a52e4fe92279be0983ff9e8d03dfee9a7cbb"
+    },
+    {
+      "file": "02-reserva-desktop.png",
+      "bytes": 179204,
+      "width": 1440,
+      "height": 1670,
+      "sha256": "a0212534b1f7917eb0229ec50cbcb0e7a6999eca326284a8eeddab783c7476a9"
+    },
+    {
+      "file": "03-agenda-responsavel.png",
+      "bytes": 110068,
+      "width": 1440,
+      "height": 1141,
+      "sha256": "7ae88854edec1de6af0c9a87fcbad8a1ecf383285fd3ffcaf346f8727658cc54"
+    },
+    {
+      "file": "04-indicadores-desktop.png",
+      "bytes": 137117,
+      "width": 1440,
+      "height": 1830,
+      "sha256": "a3f2116f01b1e80fc58916bd3ef983495d0319212c1aa6d89602869cd9c210e7"
+    },
+    {
+      "file": "05-minha-agenda-mobile.png",
+      "bytes": 41186,
+      "width": 412,
+      "height": 1141,
+      "sha256": "524e51712a509c6326ee5cfd699550167b391d329feea032219728b67832d8d8"
+    },
+    {
+      "file": "06-reserva-mobile.png",
+      "bytes": 139800,
+      "width": 412,
+      "height": 2825,
+      "sha256": "4d3559d0b3545291b893331357f65a200b7e7df43ce818af9c90057ad204d398"
+    }
+  ]
+}

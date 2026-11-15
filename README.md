@@ -1,228 +1,170 @@
 # Agenda Clara
 
-Agendamento para pequenos negócios com página pública de reservas, painel do responsável e interface instalável pelo navegador.
+Sistema de agendamento para pequenos negócios, com reservas públicas, gestão da empresa e acesso próprio dos profissionais. Organiza serviços e atendimentos com regras verificadas no servidor e proteção contra alterações simultâneas.
 
-**Resultados e histórico revisados.** Consulte [os achados e correções](docs/REVISAO-RESULTADOS-0.12.1.md). Registre o resultado após o término previsto, corrija com justificativa e acompanhe as alterações por empresa. Consulte [o guia](docs/RESULTADOS-ATENDIMENTOS.md) e [a validação](docs/VALIDACAO-0.12.1.md).
+**[Experimentar online](https://agenda-clara-luizcodebr.onrender.com) · [Baixar o pacote local](https://github.com/LuizCodeBR/AgendaClara/releases/tag/v0.15.1) · [Decisões técnicas](docs/DECISOES-TECNICAS.md) · [Roteiro de apresentação](docs/PORTFOLIO.md)**
 
-**Regras de agendamento revisadas.** Prazos revalidados imediatamente antes da gravação e números fracionários recusados. Consulte [a revisão de segurança e concorrência](docs/REVISAO-REGRAS-0.11.1.md). Configure a antecedência mínima e os prazos de cancelamento e remarcação pelo cliente. As regras aparecem antes da confirmação e são preservadas por reserva, com proteção contra versões antigas e alterações concorrentes. Consulte [o guia](docs/REGRAS-AGENDAMENTO.md) e [a validação](docs/VALIDACAO-0.12.1.md).
+**Status:** escopo de portfólio concluído na versão **0.15.1**, em manutenção corretiva. Melhorias futuras partem de problemas reproduzíveis ou de uma necessidade concreta. A demonstração utiliza exclusivamente dados fictícios.
 
-**Minha reserva.** O cliente consulta, remarca e cancela seu atendimento com link privado, sem criar conta. O responsável pode gerar e revogar acessos na agenda. A remarcação preserva preço e duração; sessões por reserva e controle de versão protegem alterações concorrentes. Consulte [Minha reserva](docs/MINHA-RESERVA.md) e [a validação atual](docs/VALIDACAO-0.10.0.md).
+![Painel do responsável com três atendimentos fictícios, dois profissionais e valor previsto dos serviços](docs/imagens/03-agenda-responsavel.png)
 
-**Serviços por profissional.** Escolha os serviços atendidos por cada pessoa em Equipe e horários. A página pública filtra a equipe e a API protege reservas e alterações concorrentes. A migração preserva combinações e atendimentos existentes; novos cadastros exigem vínculo explícito. Consulte [o guia](docs/SERVICOS-PROFISSIONAIS.md). Revisão dos backups e limites sob demanda: Histórico vinculado à origem, registro de interrupções, bloqueio desde a primeira inicialização e cliente PostgreSQL reforçado. Consulte [a revisão](docs/REVISAO-BACKUPS-0.8.1.md). A rotina operacional reúne criação, verificação e registro da cópia com relatório privado HTML/JSON. Dados de consumo ausentes ou antigos exigem conferência; nenhum agendamento ou recurso pago é ativado. Consulte [OPERACAO-BACKUPS-LIMITES.md](docs/OPERACAO-BACKUPS-LIMITES.md). O pacote inclui backup criptografado do banco e da chave dos e-mails, verificação e restauração em destino separado. As rotinas PostgreSQL usam ferramentas nativas. Consulte [ARMAZENAMENTO-BACKUPS.md](docs/ARMAZENAMENTO-BACKUPS.md). Mensagens de acesso são gravadas com a alteração da conta, protegidas por criptografia e acompanhadas no painel **E-mails e envios**. A demonstração usa uma caixa privada de teste; o envio real está preparado para configuração. Consulte [FILA-EMAILS.md](docs/FILA-EMAILS.md) e [EMAIL-ACESSO.md](docs/EMAIL-ACESSO.md). Cadastre sua empresa e seu acesso, prepare serviços, equipe e horários e publique sua página de reservas. O site e a PWA usam PostgreSQL persistente no Neon Free; reinícios do servidor preservam contas, reservas e fila. A demonstração continua restrita a dados fictícios. A cópia local preserva seu próprio banco em arquivo.
+## Experimentar em poucos minutos
 
-**Versão 0.15.1 — revisão de segurança dos acessos profissionais.** Revogação também invalida recuperação e caixa de demonstração; reativação renova a caixa atomicamente. Tentativas sobre atendimentos de colegas são recusadas antes dos bloqueios. Convites substituídos e respostas atrasadas são descartados na interface. Consulte [o guia](docs/ACESSO-PROFISSIONAIS.md) e [a validação](docs/VALIDACAO-0.15.1.md).
+### Online, sem instalar
 
-**Versão 0.14.1 — relatórios revisados.** A consulta e o CSV conferem a empresa esperada; falhas de acesso cancelam respostas pendentes e arquivos inválidos não são baixados. Consulte [os achados e correções](docs/REVISAO-RELATORIOS-0.14.1.md) e [a validação](docs/VALIDACAO-0.14.1.md).
+1. Abra o [site](https://agenda-clara-luizcodebr.onrender.com) e escolha **Agendar um horário**.
+2. Selecione estabelecimento, serviço, profissional, data e horário; confirme com dados fictícios.
+3. Em **Meu negócio**, selecione uma conta de demonstração para consultar agenda e relatórios.
 
-**Indicadores e relatórios (0.14.0).** Consulte períodos de até 90 dias, filtre profissional/serviço, acompanhe resultados e exporte CSV sem dados pessoais de clientes. Preços históricos são preservados; valor concluído não significa pagamento recebido. Consulte [o guia](docs/RELATORIOS.md) e [a validação](docs/VALIDACAO-0.14.0.md).
-
-**Resumo diário revisado (0.13.1).** A confirmação consulta novamente agenda e destinatário; falhas de gravação exigem reconciliar o contato e prévias antigas perdem a validade. Confira [a revisão](docs/REVISAO-RESUMO-0.13.1.md), [o guia](docs/RESUMO-DIARIO.md) e [a validação](docs/VALIDACAO-0.13.1.md). O compartilhamento pelo WhatsApp continua manual.
-
-**Acessos:** [Abrir o site](https://agenda-clara-luizcodebr.onrender.com) · [Baixar a demonstração](https://github.com/LuizCodeBR/AgendaClara/releases/tag/v0.15.1) · [Testes automáticos](https://github.com/LuizCodeBR/AgendaClara/actions)
-
-## Site, app mobile e versão local
-
-A tela inicial apresenta as três opções. O site hospedado e a PWA usam o mesmo servidor; a cópia local tem um banco próprio. A publicação gratuita é uma demonstração com banco persistente externo, sujeita às cotas dos provedores. Consulte [WEB-MOBILE.md](docs/WEB-MOBILE.md).
-
-## Experimentar em poucos passos
-
-### Windows — código-fonte
-
-Pré-requisitos: **JDK 21 a 27** e **Node.js 24.18+ da linha 24, ou 26+**. Recomendação para novos ambientes: JDK 21 ou 25 LTS e Node 24 LTS. Git é útil para clonar, mas não é obrigatório para um ZIP.
-
-1. Baixe e extraia o código-fonte em uma pasta de sua escolha.
-2. Abra essa pasta no terminal.
-3. Execute:
-
-```powershell
-.\iniciar.cmd
-```
-
-Na primeira execução, o comando baixa as dependências, executa os testes, compila a interface e a API e inicia a aplicação.
-
-Abra **http://localhost:8080**. Mantenha o terminal aberto. Use **Ctrl+C** para encerrar.
-
-Depois de uma compilação, para iniciar rapidamente sem reconstruir:
-
-```powershell
-.\iniciar.cmd -SkipBuild
-```
-
-Se a porta estiver ocupada:
-
-```powershell
-.\iniciar.cmd -SkipBuild -Port 8081
-```
-
-O comando Windows usa PowerShell com liberação de execução restrita a esse processo. Não altera a política permanente do computador.
-
-### Linux e macOS — código-fonte
-
-Com os mesmos requisitos de Java e Node:
-
-```bash
-chmod +x mvnw iniciar.sh scripts/build.sh
-./iniciar.sh
-# Em execuções seguintes:
-./iniciar.sh --skip-build
-```
-
-As dependências precisam de internet no primeiro download. Depois de compilado, o JAR usa arquivos locais e não precisa de um serviço externo. A aplicação e o banco precisam estar em execução.
-
-### Demonstração compilada — somente Java
-
-O pacote de demonstração contém `agenda-clara.jar`, instruções e iniciadores. Ele exige **Java 21 a 27**, sem Node, Maven, Docker ou banco instalado.
-
-Extraia-o em uma pasta gravável e execute `iniciar-demo.cmd` no Windows, ou `bash iniciar-demo.sh` no Linux/macOS.
-
-Também é possível iniciar diretamente:
-
-```bash
-java -jar agenda-clara.jar --spring.profiles.active=demo
-```
-
-## Backup e recuperação
-
-Com o servidor local encerrado, execute `backup.cmd` no Windows ou `bash backup.sh` no Linux/macOS. Informe uma senha exclusiva e guarde o arquivo .acbackup fora do disco do banco. A ferramenta pode verificar o arquivo e restaurar em uma nova pasta; não substitui o banco original. Limite do conjunto: 64 MiB. O pacote local usa somente Java; exportações PostgreSQL exigem pg_dump/pg_restore compatíveis ou Docker. Consulte [as instruções completas](docs/ARMAZENAMENTO-BACKUPS.md).
-
-A hospedagem usa Render Free com PostgreSQL 17 no Neon Free, sem recurso pago. Configuração, limites e recuperação estão em [PERSISTENCIA-GRATUITA.md](docs/PERSISTENCIA-GRATUITA.md). Executar os iniciadores mantém o banco local independente e não contrata serviços.
-
-## Usar como aplicativo
-
-Abra a demonstração no **Chrome ou Edge**. Use **Instalar app**, ou a opção de instalar o site no menu do navegador. O aplicativo abre em uma janela própria.
-
-Essa é uma **PWA**, e não um executável nativo com servidor embutido. O servidor Java continua necessário. A instalação não instala Java nem inicia o servidor automaticamente.
-
-Em outro aparelho, `localhost` aponta para esse próprio aparelho, não para o computador que iniciou o servidor. Para acesso compartilhado e instalação no celular, use o site publicado com **HTTPS**. A execução local escuta somente no computador local. A versão hospedada usa uma URL HTTPS própria.
-
-Quando o servidor fica indisponível, a tela de reconexão é exibida. Disponibilidade, dados de clientes e alterações de reserva não são armazenados nem enviados posteriormente pelo service worker.
-
-## Contas fictícias
-
-Na opção **Meu negócio**, clique em uma conta para preencher o acesso.
-
-| Estabelecimento | E-mail | Senha |
+| Empresa fictícia | E-mail | Senha pública de demonstração |
 | --- | --- | --- |
 | Barbearia Horizonte | marina@demo.agendaclara.dev | Demo@12345 |
 | Estúdio Aurora | rafael@demo.agendaclara.dev | Demo@12345 |
 
-Todos os dados são exemplos. O perfil de demonstração não deve ser usado para receber dados de clientes reais. Cada profissional atende os serviços marcados em Equipe e horários. A migração preserva as combinações que já eram permitidas.
+A hospedagem gratuita pode precisar de tempo para iniciar após inatividade. Site e PWA usam o mesmo banco online. Para avaliar o acesso profissional, o responsável gera um convite em **Acessos da equipe**; abra-o em janela privada para ativar uma conta separada. [Guia de acessos](docs/ACESSO-PROFISSIONAIS.md).
 
-## O que funciona
+### Pacote local, somente Java
 
-- Seleção de estabelecimento, serviço, profissional, data e horário.
-- Reservas com preço e duração calculados no servidor.
-- Expediente de demonstração: segunda a sábado, 09h–12h e 13h–18h, em Brasília.
-- Grade de início a cada 15 minutos e horizonte de 60 dias.
-- Impedimento de sobreposição, inclusive entre horários de início diferentes.
-- Repetição segura de uma mesma confirmação após falha de conexão.
-- Cadastro de empresa e responsável, página em rascunho e publicação controlada. Consulte [CADASTRO-EMPRESAS.md](docs/CADASTRO-EMPRESAS.md).
-- Login, logout e painel exclusivo do estabelecimento.
-- Confirmação de e-mail e recuperação de senha com links de uso único.
-- Fila transacional criptografada, recuperação de processamento interrompido e monitoramento de e-mails por empresa.
-- Agenda diária, filtro de status, cancelamento e remarcação.
-- Bloqueio e liberação de períodos.
-- Inclusão de novos serviços no catálogo.
-- Cadastro, edição, ativação e inativação de profissionais.
-- Expediente semanal por profissional, com intervalos, dias fechados e proteção das reservas existentes. Consulte [PROFISSIONAIS.md](docs/PROFISSIONAIS.md).
-- Folgas, feriados e horários especiais por profissional e data, com proteção dos atendimentos. Consulte [EXCECOES.md](docs/EXCECOES.md).
-- Interface responsiva, manifesto de instalação e tela de reconexão.
-- Banco local persistente e migração versionada do esquema.
+Requer **Java 21 a 27**. Baixe **AgendaClara-0.15.1-demo.zip** na [release](https://github.com/LuizCodeBR/AgendaClara/releases/tag/v0.15.1), extraia em pasta gravável e execute:
 
-Na primeira inicialização são criados exemplos de atendimentos no próximo dia útil da demonstração. Esses exemplos não são recriados a cada reinício. As reservas reais que você fizer na demonstração permanecem no banco local.
+- Windows: abra iniciar-demo.cmd.
+- Linux/macOS: execute bash iniciar-demo.sh.
+
+Acesse **http://localhost:8080** e mantenha o terminal aberto. Use **Ctrl+C** para encerrar. Inclui interface, servidor e H2 em arquivo; não exige Node, Maven, Docker ou banco instalado. Cada instalação mantém seu próprio banco.
+
+### Código-fonte
+
+Requer **JDK 21 a 27** e **Node.js 24.18+ da linha 24, ou 26+**. Maven Wrapper incluído. A primeira compilação baixa dependências pela internet.
+
+No Windows, para manter projeto e caches no D:
+
+~~~powershell
+git clone https://github.com/LuizCodeBR/AgendaClara.git D:\Projetos\AgendaClara
+Set-Location D:\Projetos\AgendaClara
+.\iniciar.cmd
+~~~
+
+Se já possui o código, abra a pasta existente. Em execuções seguintes, use .\iniciar.cmd -SkipBuild; para outra porta, acrescente -Port 8081.
+
+Linux/macOS, na pasta clonada ou extraída:
+
+~~~bash
+chmod +x mvnw iniciar.sh scripts/build.sh
+./iniciar.sh
+# Depois da primeira compilação:
+./iniciar.sh --skip-build
+~~~
+
+Os iniciadores usam pastas locais para dependências e temporários. Navegador, editor e sistema operacional mantêm suas próprias configurações de armazenamento.
+
+## Funcionalidades
+
+| Área | Comportamento implementado |
+| --- | --- |
+| Reservas | Disponibilidade por serviço/profissional, confirmação, link privado do cliente, cancelamento e remarcação |
+| Equipe e expediente | Serviços por profissional, horários semanais, intervalos, bloqueios, folgas e exceções por data |
+| Regras por empresa | Antecedência mínima e prazos de cancelamento/remarcação, preservados na reserva |
+| Contas e permissões | Cadastro da empresa, responsável, convites profissionais, Minha agenda e revogação |
+| Atendimentos | Conclusão e falta após o término previsto, correções com justificativa e histórico |
+| Gestão | Resumo diário com WhatsApp manual, indicadores por período, filtros e CSV |
+| Recuperação e operação | Links de uso único, fila persistente de e-mails, banco versionado e backup criptografado |
+
+O cliente gerencia sua reserva por link privado. O responsável administra a empresa. O profissional consulta e registra resultados somente dos próprios atendimentos, com histórico reduzido. Preços e duração são calculados no servidor; editar o catálogo não reescreve os valores preservados nas reservas.
+
+## Telas
+
+Capturas da aplicação **0.15.1** com banco local novo, API real e dados fictícios. As datas são as do registro das imagens.
+
+| Reserva no navegador | Indicadores por período |
+| --- | --- |
+| [![Serviços, profissional, horários e resumo da reserva](docs/imagens/02-reserva-desktop.png)](docs/imagens/02-reserva-desktop.png) | [![Filtros, indicadores e exportação CSV](docs/imagens/04-indicadores-desktop.png)](docs/imagens/04-indicadores-desktop.png) |
+
+**Minha agenda no celular — acesso do profissional:**
+
+<img src="docs/imagens/05-minha-agenda-mobile.png" alt="Minha agenda de Lucas Almeida no celular, mostrando somente seus dois atendimentos fictícios" width="300">
+
+[Galeria completa, origem e reprodução das capturas](docs/imagens/README.md).
+
+## Decisões que o projeto demonstra
+
+- **Uma entrega para web e local:** React servido pelo Spring Boot, API na mesma origem e distribuição em um JAR.
+- **Reserva concorrente:** transação e bloqueio antes de conferir sobreposição; disponibilidade revalidada ao confirmar.
+- **Repetição e edição concorrente:** chave da tentativa reconhece repetições e versões recusam comandos sobre dados antigos.
+- **Permissões e revogação:** empresa e profissional vêm da sessão; a conta é revalidada nas gravações sensíveis.
+- **Histórico e relatórios:** alteração e histórico gravados juntos, valores preservados e CSV sem dados pessoais de clientes.
+- **Recuperação operacional:** fila transacional, conteúdo protegido, migrações e provas de backup/restauração.
+
+O [registro das decisões](docs/DECISOES-TECNICAS.md) explica contexto, implementação, alternativas e limites com links para código e testes.
 
 ## Arquitetura e tecnologias
 
-- **Java 21 / Spring Boot 4.1.2**: API e servidor da aplicação.
-- **Spring Security**: sessão protegida por cookie HttpOnly, senha BCrypt e CSRF.
-- **Spring JDBC**: consultas explícitas e transações com bloqueio por profissional.
-- **Flyway**: criação e evolução do banco.
-- **H2 em arquivo**: demonstração sem instalação de banco.
-- **PostgreSQL**: configuração alternativa e matriz de testes preparada.
-- **React 19 / TypeScript / Vite**: interface.
-- **JUnit, Spring Test, Vitest e Testing Library**: testes.
-- **Playwright**: cenários preparados para desktop e celular no fluxo automático.
+**Java 21 / Spring Boot 4.1.2 · Spring Security · Spring JDBC · Flyway · PostgreSQL 17 / H2 · React 19 / TypeScript / Vite · JUnit / Vitest / Playwright**
 
-O React compilado é servido pelo próprio Java. Para experimentar, basta um servidor e uma URL. Consulte [a arquitetura](docs/ARQUITETURA.md) e [o contrato da API](docs/API.md).
+~~~mermaid
+flowchart LR
+    C[Cliente] --> UI[React / PWA]
+    R[Responsável] --> UI
+    P[Profissional] --> UI
+    UI -->|mesma origem /api| APP[Spring Boot]
+    APP --> DB[(PostgreSQL online / H2 local)]
+    APP --> FILA[Fila persistente de e-mails]
+    FILA --> DB
+    APP --> BK[Backup sob demanda]
+~~~
 
-## Arquivos e armazenamento
+Organização por funcionalidades em [backend](backend/src/main/java/br/com/luizcode/agenda) e [frontend](frontend/src), com execução e distribuição em [scripts](scripts). [Arquitetura detalhada](docs/ARQUITETURA.md) · [Contrato da API](docs/API.md).
 
-```text
-backend/          API, regras, banco e testes Java
-frontend/         interface React, PWA e testes da interface
-scripts/          execução, compilação e verificação de entrega
-docs/             arquitetura e contrato da API
-.github/          fluxo de verificações para GitHub Actions
-data/             banco local da demonstração (ignorado pelo Git)
-.cache/           dependências e temporários locais (ignorados pelo Git)
-target/           JAR e relatórios Java (ignorados pelo Git)
-```
+## Qualidade e evidências
 
-O pacote local preserva o banco e a chave data/mail-outbox.key. Faça backup da pasta data completa com o servidor parado; perder a chave impede recuperar os conteúdos protegidos. Consulte [as instruções de backup](docs/FILA-EMAILS.md#chave-e-backup).
+Resultados da validação da **0.15.1**, registrados em 15/11/2026:
 
-Os iniciadores colocam dependências e arquivos temporários dentro do projeto. Se a pasta estiver no D:, esses arquivos também ficam no D:. Configurações normais do sistema operacional, do navegador e do editor seguem os locais definidos pelos próprios aplicativos.
+| Verificação | Resultado |
+| --- | --- |
+| Backend local, Windows/H2 | 411 casos: 408 aprovados e 3 condicionais não aplicáveis; zero falhas |
+| Backend PostgreSQL, Java 21 e 26 na CI | 411 casos por configuração: 410 aprovados e 1 condicional; zero falhas |
+| Interface | 181 testes aprovados |
+| Navegador | 40 cenários aprovados em desktop e Pixel 7 emulado |
+| Entrega e recuperação | Docker/PostgreSQL, pacote oficial, 12 rotinas HTTP e 7 provas após restauração aprovados |
 
-## Desenvolvimento e testes
+[CI de referência](https://github.com/LuizCodeBR/AgendaClara/actions/runs/43758801503) · [Validação completa](docs/VALIDACAO-0.15.1.md) · [Revisão dos acessos](docs/REVISAO-ACESSOS-0.15.1.md). As contagens descrevem a versão validada; não são uma medida de cobertura percentual.
 
-Windows, na raiz do projeto:
+Para testar e compilar, na raiz:
 
-```powershell
+~~~powershell
+# Windows
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\build.ps1
-```
+~~~
 
-Linux/macOS:
-
-```bash
+~~~bash
+# Linux/macOS
 bash scripts/build.sh
-```
+~~~
 
-Para verificar um servidor já iniciado:
+Playwright exige a aplicação em execução e o Chromium de testes. Consulte [Desenvolvimento](docs/DESENVOLVIMENTO.md) para testar a API, executar o navegador, usar Docker/PostgreSQL e manter o cache no D:. Os testes Java usam banco separado; TEST_DB_URL deve apontar exclusivamente para banco descartável.
 
-```bash
-node scripts/smoke.mjs http://127.0.0.1:8080
-node scripts/customer-portal-smoke.mjs http://127.0.0.1:8080
-node scripts/booking-policy-smoke.mjs http://127.0.0.1:8080
-```
+## Web, mobile e limites da demonstração
 
-A verificação usa dados fictícios: cria uma reserva, repete a confirmação, entra no painel e cancela a reserva de teste.
+A versão mobile é uma **PWA responsiva**, instalável pelo navegador compatível. Precisa de conexão com o servidor para consultar e alterar a agenda. O service worker oferece reconexão e não armazena respostas privadas da API nem enfileira reservas offline.
 
-Durante o desenvolvimento, é possível executar a API com o Maven Wrapper e a interface com `npm run dev`, dentro de `frontend`. O Vite encaminha `/api` para a porta 8080. O service worker é registrado somente na compilação de entrega.
+Site em Render Free e Neon Free, sujeito às cotas. Banco local independente do online, sem sincronização entre eles. Em outro aparelho, use o site HTTPS: localhost aponta para o próprio aparelho.
 
-Testes de navegador, opcionais no computador do desenvolvedor, com a aplicação compilada em execução:
+E-mails usam caixa privada de demonstração; envio real depende do provedor/remetente. WhatsApp manual. Relatórios mostram valores de serviços, não recebimentos. Mobile testado por emulação; uso com clientes reais requer validação operacional própria. [Web e mobile](docs/WEB-MOBILE.md).
 
-```bash
-cd frontend
-npm exec -- playwright install chromium
-npm run test:e2e
-```
+## Dados e backups
 
-O comando de instalação acima baixa um navegador de testes. Os testes comuns não precisam desse download. Para mantê-lo no D:, configure `PLAYWRIGHT_BROWSERS_PATH` apontando para `.cache/browsers` da sua pasta do projeto antes de instalar.
+H2 local em data/; dependências e temporários em .cache/; ambos ignorados pelo Git. Preserve data e a chave mail-outbox.key. Com o servidor local encerrado, execute backup.cmd ou bash backup.sh e siga o guia para verificar e restaurar em outro destino.
 
-Os testes Java usam banco separado e relógio fixo. Nunca apontar `TEST_DB_URL` para um banco com dados que devam ser preservados: os testes limpam a agenda desse banco.
+Backups e relatórios de limites são **sob demanda**, sem agenda recorrente. Não execute 0.14.1 ou anterior sobre banco V13 com contas profissionais: recuperação de versão antiga exige backup compatível em destino separado. [Armazenamento](docs/ARMAZENAMENTO-BACKUPS.md) · [Operação sob demanda](docs/OPERACAO-BACKUPS-LIMITES.md) · [Persistência gratuita](docs/PERSISTENCIA-GRATUITA.md).
 
-## PostgreSQL e Docker — opcionais
+## Documentação para explorar
 
-Docker não é necessário para a demonstração local. Com Docker Engine/Desktop e Compose disponíveis:
+| Interesse | Leitura |
+| --- | --- |
+| Apresentar em entrevista ou demonstração | [Portfólio e roteiro](docs/PORTFOLIO.md) |
+| Entender escolhas e limites | [Decisões técnicas](docs/DECISOES-TECNICAS.md) |
+| Executar, testar e usar bancos opcionais | [Desenvolvimento](docs/DESENVOLVIMENTO.md) |
+| Operar o agendamento | [Regras](docs/REGRAS-AGENDAMENTO.md), [Minha reserva](docs/MINHA-RESERVA.md), [Resultados](docs/RESULTADOS-ATENDIMENTOS.md) |
+| Configurar empresa e equipe | [Cadastro](docs/CADASTRO-EMPRESAS.md), [Profissionais](docs/PROFISSIONAIS.md), [Acessos](docs/ACESSO-PROFISSIONAIS.md) |
+| Acompanhar o negócio | [Resumo diário](docs/RESUMO-DIARIO.md), [Relatórios](docs/RELATORIOS.md), [Fila de e-mails](docs/FILA-EMAILS.md) |
 
-```bash
-docker compose up --build
-```
-
-Abra a mesma URL. O Compose mantém o PostgreSQL sem porta pública e publica a aplicação somente em `127.0.0.1:8080`. A senha presente no Compose é um exemplo local. Banco e chave da fila ficam nos volumes postgres-data e mail-data. O armazenamento físico dos volumes segue a configuração do Docker Desktop; configure-o no D: se escolher essa opção.
-
-Para encerrar preservando os dados:
-
-```bash
-docker compose down
-```
-
-Para usar um PostgreSQL próprio, configure `SPRING_PROFILES_ACTIVE=postgres`, `DB_URL` (JDBC), `DB_USER` e `DB_PASSWORD`. Os exemplos só são criados quando `APP_DEMO_ENABLED=true`. Sem esse sinalizador, não há contas ou empresas automáticas. A primeira conta pode ser criada pela interface quando REGISTRATION_ENABLED=true. Uso comercial ainda requer as medidas descritas em CADASTRO-EMPRESAS.md.
-
-## Próximas etapas
-
-1. Definir destino externo e política de cópias de segurança; a [persistência gratuita](docs/PERSISTENCIA-GRATUITA.md) já está configurada.
-2. Configuração e validação do remetente real, com confirmação de recebimento e tratamento de eventos de entrega.
-3. Gestão de contas e comunicação real de confirmação/cancelamento de reservas.
-4. Cópias externas, ensaios periódicos de restauração e ampliação da proteção contra abuso antes de receber clientes reais.
-
-A funcionalidade atual está em [RESULTADOS-ATENDIMENTOS.md](docs/RESULTADOS-ATENDIMENTOS.md), com resultados em [VALIDACAO-0.12.1.md](docs/VALIDACAO-0.12.1.md). O acesso privado está em [MINHA-RESERVA.md](docs/MINHA-RESERVA.md). A operação de backups e limites está em [OPERACAO-BACKUPS-LIMITES.md](docs/OPERACAO-BACKUPS-LIMITES.md); sua revisão anterior está em [VALIDACAO-0.8.1.md](docs/VALIDACAO-0.8.1.md). A revisão anterior está em [VALIDACAO-0.6.1.md](docs/VALIDACAO-0.6.1.md). O histórico da fila está em [VALIDACAO-0.6.0.md](docs/VALIDACAO-0.6.0.md). A etapa anterior está em [EMAIL-ACESSO.md](docs/EMAIL-ACESSO.md) e [VALIDACAO-0.5.0.md](docs/VALIDACAO-0.5.0.md). Cadastro de empresas: [CADASTRO-EMPRESAS.md](docs/CADASTRO-EMPRESAS.md), com validação anterior em [VALIDACAO-0.4.0.md](docs/VALIDACAO-0.4.0.md). Folgas e horários especiais: [EXCECOES.md](docs/EXCECOES.md), com resultados anteriores em [VALIDACAO-0.3.0.md](docs/VALIDACAO-0.3.0.md). A revisão de uso anterior está em [REVISAO-USO-0.2.2.md](docs/REVISAO-USO-0.2.2.md). A revisão de segurança anterior está em [REVISAO-SEGURANCA-0.2.1.md](docs/REVISAO-SEGURANCA-0.2.1.md). Históricos: [0.2.0](docs/VALIDACAO-0.2.0.md) e [primeira versão](docs/VALIDACAO.md).
+Notas e validações anteriores permanecem em [docs](docs). O [fechamento do portfólio](docs/FECHAMENTO-PORTFOLIO.md) registra esta apresentação. O ciclo funcional está concluído; a referência executável continua sendo a release **0.15.1**.
