@@ -107,3 +107,5 @@ Site, PWA e pacote local recebem as mesmas correções de resultados e históric
 
 ## Resumo diário — 0.13.0
 Meu negócio → Resumo diário: escolha profissional/data, confira a prévia e o contato e copie ou abra o WhatsApp para confirmar manualmente. Web, PWA e pacote local usam a mesma tela; o local consulta seu próprio banco. Resumos extensos têm partes numeradas. Nenhum envio automático ocorre. Atualize o aplicativo conectado após a publicação. Guia em RESUMO-DIARIO.md.
+
+Revisão 0.13.1: o mesmo painel de resumo nas três modalidades revalida a agenda/contato antes de liberar o compartilhamento. Retorno do segundo plano exige atualização, especialmente ao alternar entre a PWA e o WhatsApp. Não há push, agendador ou envio automático. Veja [a revisão](REVISAO-RESUMO-0.13.1.md).

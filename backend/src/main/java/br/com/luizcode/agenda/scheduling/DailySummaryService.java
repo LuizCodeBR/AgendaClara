@@ -33,8 +33,9 @@ public class DailySummaryService {
     }
     @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
     public Summary read(UUID business,UUID id,LocalDate date){
+        var generatedAt=clock.instant();
         var company=catalog.business(business);var zone=ZoneId.of(company.zoneId());
-        var today=LocalDate.now(clock.withZone(zone));
+        var today=generatedAt.atZone(zone).toLocalDate();
         if(date==null||date.isBefore(today.minusDays(365))||date.isAfter(today.plusDays(365)))
             throw BusinessException.invalid("Escolha uma data até um ano antes ou depois de hoje.");
         var person=professional(business,id);
@@ -45,7 +46,7 @@ public class DailySummaryService {
             order by starts_at,id limit 201
             """,(r,n)->new Item(r.getObject(1,OffsetDateTime.class).toInstant(),line(r.getString(2)),line(r.getString(3))),business,id,start,end);
         if(items.size()>200)throw BusinessException.invalid("Este dia excede o limite de 200 atendimentos do resumo. Consulte a agenda.");
-        return new Summary(date,zone.getId(),line(company.name()),person,clock.instant(),List.copyOf(items));
+        return new Summary(date,zone.getId(),line(company.name()),person,generatedAt,List.copyOf(items));
     }
     @Transactional(isolation=Isolation.READ_COMMITTED)
     public Professional saveContact(UUID business,UUID id,Contact contact){

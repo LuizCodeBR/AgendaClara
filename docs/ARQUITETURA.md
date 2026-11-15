@@ -176,3 +176,5 @@ AppointmentOutcomeService usa o bloqueio de profissional e a versão da reserva.
 
 ## Resumo diário — 0.13.0
 DailySummaryService usa leitura REPEATABLE_READ para empresa, contato e atendimentos da data, selecionando somente os campos do resumo. Consulta por empresa/profissional/status e faixa temporal, com retorno limitado. A migração V11 inclui o contato privado; salvar compartilha bloqueio/versão do profissional e não muda o DTO público. React prepara partes e link fixo wa.me somente para ação manual. Nenhum worker/scheduler ou SDK de WhatsApp foi adicionado.
+
+Resumo diário 0.13.1: a confirmação faz novo GET autenticado; conteúdo/contato divergente exige conferência nova. Resposta incerta ao gravar força reconciliação. A validade é medida desde o início da requisição pelos relógios civil e monotônico, invalidada ao ocultar a página/perder conexão. Respostas pendentes não revalidam uma época de visualização invalidada. Não há bloqueio da agenda durante compartilhamento manual nem nova migração.

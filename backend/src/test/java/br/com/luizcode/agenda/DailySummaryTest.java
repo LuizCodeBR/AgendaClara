@@ -18,6 +18,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 class DailySummaryTest extends ApiTestBase {
     @Autowired DailySummaryService summaries;
+    @Autowired br.com.luizcode.agenda.team.TeamService team;
     @MockitoSpyBean br.com.luizcode.agenda.catalog.CatalogRepository catalogSpy;
     private record SavedContact(UUID id,String phone,int version){}
     private List<SavedContact> savedContacts;
@@ -32,6 +33,33 @@ class DailySummaryTest extends ApiTestBase {
     String path(UUID id){return "/api/admin/professionals/"+id;}
     UUID book(String time){var receipt=schedule.book(catalog.business(BUSINESS),request(time)).receipt();return jdbc.queryForObject("select id from appointment where reference=?",UUID.class,receipt.reference());}
     int version(){return jdbc.queryForObject("select version from professional where id=?",Integer.class,PROFESSIONAL);}
+    @Test void timestampDescribesStartOfReadEvenWhenTheDatabaseIsSlow(){
+        var start=Instant.parse("2030-06-03T10:00:00Z");var now=new java.util.concurrent.atomic.AtomicReference<>(start);
+        var slowClock=mock(Clock.class);when(slowClock.instant()).thenAnswer(i->now.get());when(slowClock.withZone(any())).thenAnswer(i->Clock.fixed(now.get(),i.getArgument(0)));
+        doAnswer(i->{var value=i.callRealMethod();now.set(start.plusSeconds(360));return value;}).when(catalogSpy).business(BUSINESS);
+        var service=new DailySummaryService(jdbc,catalogSpy,slowClock);
+        assertThat(service.read(BUSINESS,PROFESSIONAL,DATE).generatedAt()).isEqualTo(start);
+    }
+    @Test void privateResponsesCannotBeCachedAndAUserWithoutOwnerRoleCannotReadOrWrite() throws Exception {
+        mvc.perform(get(path(PROFESSIONAL)+"/daily-summary?date="+DATE).with(user(owner()))).andExpect(status().isOk())
+            .andExpect(header().string("Cache-Control",org.hamcrest.Matchers.containsString("no-store")));
+        mvc.perform(get(path(PROFESSIONAL)+"/daily-summary?date="+DATE).with(user("client").roles("CUSTOMER"))).andExpect(status().isForbidden());
+        mvc.perform(put(path(PROFESSIONAL)+"/whatsapp-contact").with(user("client").roles("CUSTOMER")).with(csrf()).contentType("application/json").content(json(new Contact("5511000000000",version())))).andExpect(status().isForbidden());
+    }
+    @Test void contactRemovalAndTeamEditCannotBothOverwriteTheSameVersion() throws Exception {
+        var before=team.list(BUSINESS).stream().filter(p->p.id().equals(PROFESSIONAL)).findFirst().orElseThrow();
+        var saved=summaries.saveContact(BUSINESS,PROFESSIONAL,new Contact("5511000000000",before.version()));
+        var update=new br.com.luizcode.agenda.team.TeamModels.UpdateProfessional(before.name()+" rev",before.specialty(),before.active(),saved.version(),before.hours(),before.serviceIds());
+        var ready=new CountDownLatch(2);var go=new CountDownLatch(1);
+        try(var pool=Executors.newFixedThreadPool(2)){
+            var removal=pool.submit(()->{ready.countDown();go.await(10,TimeUnit.SECONDS);try{summaries.saveContact(BUSINESS,PROFESSIONAL,new Contact("",saved.version()));return 200;}catch(br.com.luizcode.agenda.shared.BusinessException e){return e.status().value();}});
+            var edit=pool.submit(()->{ready.countDown();go.await(10,TimeUnit.SECONDS);try{team.update(BUSINESS,PROFESSIONAL,update);return 200;}catch(br.com.luizcode.agenda.shared.BusinessException e){return e.status().value();}});
+            assertThat(ready.await(10,TimeUnit.SECONDS)).isTrue();go.countDown();var removed=removal.get(15,TimeUnit.SECONDS);
+            assertThat(List.of(removed,edit.get(15,TimeUnit.SECONDS))).containsExactlyInAnyOrder(200,409);
+            var current=summaries.read(BUSINESS,PROFESSIONAL,DATE).professional();assertThat(current.version()).isEqualTo(saved.version()+1);
+            assertThat(current.phone()).isEqualTo(removed==200?"":saved.phone());assertThat(current.name()).isEqualTo(removed==200?before.name():update.name());
+        }finally{go.countDown();jdbc.update("update professional set name=? where id=?",before.name(),PROFESSIONAL);}
+    }
     @Test void summaryIsSortedAndIncludesOnlyTheSelectedProfessionalsConfirmedAppointments(){
         book("11:00");var cancelled=book("10:00");schedule.cancelOwner(catalog.business(BUSINESS),cancelled,0,owner());var first=book("09:00");
         var completed=book("14:00");var missing=book("15:00");

@@ -28,3 +28,16 @@ export function summaryParts(summary:DailySummary):string[]{
  groups.push(group);
  return groups.map((rows,index)=>head+(groups.length>1?'\nParte '+(index+1)+'/'+groups.length:'')+'\n\n'+rows.join('\n')+foot);
 }
+
+const SUMMARY_TTL=5*60*1000;
+export const summaryLifetime=()=>({wall:Date.now(),monotonic:performance.now()});
+export function summaryRemaining(start:ReturnType<typeof summaryLifetime>|null):number{
+ if(!start)return 0;
+ const wall=Date.now()-start.wall,monotonic=performance.now()-start.monotonic;
+ // Either clock can expire the snapshot; clock rollback never extends it.
+ return wall<0||monotonic<0?0:Math.max(0,SUMMARY_TTL-Math.max(wall,monotonic));
+}
+export function sameSummary(a:DailySummary,b:DailySummary):boolean{
+ const content=(s:DailySummary)=>[s.date,s.zoneId,s.businessName,s.professional.id,s.professional.name,s.professional.phone,s.professional.version,s.appointments.map(a=>[a.startsAt,a.customerName,a.serviceName])];
+ return JSON.stringify(content(a))===JSON.stringify(content(b));
+}
