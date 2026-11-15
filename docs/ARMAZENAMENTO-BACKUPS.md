@@ -120,3 +120,6 @@ A ferramenta aceita esquemas 6, 7, 8 e 9. Backups incluem as regras atuais da em
 
 ## Resultados e histórico — 0.12.0
 A ferramenta 0.12.0 aceita esquemas 6 a 10. V10 acrescenta as novas situações e appointment_history. Backup H2 e dump PostgreSQL incluem os resultados e eventos, além das regras e acessos privados. Restauração deve usar a ferramenta nova em destino separado; mantenha a chave original. O formato ACBK0001 permanece. Consulte VALIDACAO-0.12.0.md.
+
+## Contato do resumo — 0.13.0
+V11 adiciona professional.whatsapp_phone, inicialmente vazio. Ferramentas 0.13.0 aceitam esquemas 6 a 11 e preservam o contato nos backups H2/PostgreSQL; ACBK0001 permanece. Use a chave original e restaure em destino separado. Veja RESUMO-DIARIO.md e VALIDACAO-0.13.0.md.

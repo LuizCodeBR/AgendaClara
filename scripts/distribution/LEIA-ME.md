@@ -1,4 +1,4 @@
-# Agenda Clara — demonstração 0.12.1
+# Agenda Clara — demonstração 0.13.0
 
 1. Instale Java 21 ou mais recente até a versão 27, caso ainda não possua.
 2. Extraia todos os arquivos deste ZIP em uma pasta gravável.
@@ -54,4 +54,6 @@ No painel, abra Regras de agendamento para definir a antecedência mínima e os 
 
 Na versão 0.12.0, após o término previsto, use Concluir atendimento ou Registrar falta em Minha agenda. Corrigir resultado exige justificativa e preserva o registro anterior. Histórico mostra as mudanças feitas a partir desta versão; reservas antigas continuam preservadas, sem classificação automática. A ferramenta de backup aceita esquemas 6 a 10. Consulte RESULTADOS-ATENDIMENTOS.md no repositório.
 
-A revisão 0.12.1 reforça a validação dos resultados, as transações e o carregamento do histórico. Preserva o esquema V10, os dados e o formato de backup. Consulte REVISAO-RESULTADOS-0.12.1.md no repositório. Use a mesma pasta de dados e a chave original ao atualizar; faça backup com o servidor local encerrado.
+A revisão 0.13.0 reforça a validação dos resultados, as transações e o carregamento do histórico. Preserva o esquema V10, os dados e o formato de backup. Consulte REVISAO-RESULTADOS-0.13.0.md no repositório. Use a mesma pasta de dados e a chave original ao atualizar; faça backup com o servidor local encerrado.
+
+Resumo diário (0.13.0): em Meu negócio, abra Resumo diário, escolha profissional/data e confira a prévia. Salve telefone com DDI para abrir a conversa, ou copie o texto. Confirme o envio no WhatsApp; a aplicação não envia automaticamente. V11 acrescenta contato privado vazio nos registros antigos. Use as ferramentas 0.13.0 para backups de esquemas 6 a 11. Guia RESUMO-DIARIO.md no repositório.

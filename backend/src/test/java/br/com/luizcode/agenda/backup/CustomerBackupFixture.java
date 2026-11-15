@@ -10,6 +10,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 final class CustomerBackupFixture {
     static void seed(JdbcTemplate jdbc,MailPayloadCipher cipher,UUID business,UUID person,UUID service) {
         UUID appointment=UUID.randomUUID();var now=OffsetDateTime.now(ZoneOffset.UTC);
+        jdbc.update("update professional set whatsapp_phone='5511999991234' where id=?",person);
         jdbc.update("update business set booking_notice_minutes=120,cancel_notice_minutes=1440,reschedule_notice_minutes=720,booking_policy_version=3 where id=?",business);
         jdbc.update("""
             insert into appointment(id,business_id,professional_id,service_id,service_name,price_cents,customer_name,customer_phone,
@@ -30,6 +31,7 @@ final class CustomerBackupFixture {
     }
     static void verify(JdbcTemplate jdbc,MailPayloadCipher original,MailPayloadCipher restored,UUID business) {
         var id=jdbc.queryForObject("select id from appointment where business_id=?",UUID.class,business);
+        assertThat(jdbc.queryForObject("select p.whatsapp_phone from professional p join appointment a on a.professional_id=p.id where a.id=?",String.class,id)).isEqualTo("5511999991234");
         assertThat(jdbc.queryForObject("select version from appointment where id=?",Integer.class,id)).isEqualTo(4);
         var policy=new br.com.luizcode.agenda.policy.BookingPolicyService(jdbc).get(business);
         assertThat(policy).isEqualTo(new br.com.luizcode.agenda.policy.BookingPolicy(120,1440,720,3));

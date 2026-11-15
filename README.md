@@ -2,7 +2,7 @@
 
 Agendamento para pequenos negócios com página pública de reservas, painel do responsável e interface instalável pelo navegador.
 
-**Versão 0.12.1 — revisão de segurança e concorrência dos resultados.** Consulte [os achados e correções](docs/REVISAO-RESULTADOS-0.12.1.md). Registre o resultado após o término previsto, corrija com justificativa e acompanhe as alterações por empresa. Consulte [o guia](docs/RESULTADOS-ATENDIMENTOS.md) e [a validação](docs/VALIDACAO-0.12.1.md).
+**Resultados e histórico revisados.** Consulte [os achados e correções](docs/REVISAO-RESULTADOS-0.12.1.md). Registre o resultado após o término previsto, corrija com justificativa e acompanhe as alterações por empresa. Consulte [o guia](docs/RESULTADOS-ATENDIMENTOS.md) e [a validação](docs/VALIDACAO-0.12.1.md).
 
 **Regras de agendamento revisadas.** Prazos revalidados imediatamente antes da gravação e números fracionários recusados. Consulte [a revisão de segurança e concorrência](docs/REVISAO-REGRAS-0.11.1.md). Configure a antecedência mínima e os prazos de cancelamento e remarcação pelo cliente. As regras aparecem antes da confirmação e são preservadas por reserva, com proteção contra versões antigas e alterações concorrentes. Consulte [o guia](docs/REGRAS-AGENDAMENTO.md) e [a validação](docs/VALIDACAO-0.12.1.md).
 
@@ -10,7 +10,9 @@ Agendamento para pequenos negócios com página pública de reservas, painel do 
 
 **Serviços por profissional.** Escolha os serviços atendidos por cada pessoa em Equipe e horários. A página pública filtra a equipe e a API protege reservas e alterações concorrentes. A migração preserva combinações e atendimentos existentes; novos cadastros exigem vínculo explícito. Consulte [o guia](docs/SERVICOS-PROFISSIONAIS.md). Revisão dos backups e limites sob demanda: Histórico vinculado à origem, registro de interrupções, bloqueio desde a primeira inicialização e cliente PostgreSQL reforçado. Consulte [a revisão](docs/REVISAO-BACKUPS-0.8.1.md). A rotina operacional reúne criação, verificação e registro da cópia com relatório privado HTML/JSON. Dados de consumo ausentes ou antigos exigem conferência; nenhum agendamento ou recurso pago é ativado. Consulte [OPERACAO-BACKUPS-LIMITES.md](docs/OPERACAO-BACKUPS-LIMITES.md). O pacote inclui backup criptografado do banco e da chave dos e-mails, verificação e restauração em destino separado. As rotinas PostgreSQL usam ferramentas nativas. Consulte [ARMAZENAMENTO-BACKUPS.md](docs/ARMAZENAMENTO-BACKUPS.md). Mensagens de acesso são gravadas com a alteração da conta, protegidas por criptografia e acompanhadas no painel **E-mails e envios**. A demonstração usa uma caixa privada de teste; o envio real está preparado para configuração. Consulte [FILA-EMAILS.md](docs/FILA-EMAILS.md) e [EMAIL-ACESSO.md](docs/EMAIL-ACESSO.md). Cadastre sua empresa e seu acesso, prepare serviços, equipe e horários e publique sua página de reservas. O site e a PWA usam PostgreSQL persistente no Neon Free; reinícios do servidor preservam contas, reservas e fila. A demonstração continua restrita a dados fictícios. A cópia local preserva seu próprio banco em arquivo.
 
-**Acessos:** [Abrir o site](https://agenda-clara-luizcodebr.onrender.com) · [Baixar a demonstração](https://github.com/LuizCodeBR/AgendaClara/releases/tag/v0.12.1) · [Testes automáticos](https://github.com/LuizCodeBR/AgendaClara/actions)
+**Versão 0.13.0 — resumo diário por profissional.** Confira a prévia, salve um contato privado com DDI e copie ou abra o WhatsApp para confirmar o envio manualmente. Consulte [o guia](docs/RESUMO-DIARIO.md) e [a validação](docs/VALIDACAO-0.13.0.md).
+
+**Acessos:** [Abrir o site](https://agenda-clara-luizcodebr.onrender.com) · [Baixar a demonstração](https://github.com/LuizCodeBR/AgendaClara/releases/tag/v0.13.0) · [Testes automáticos](https://github.com/LuizCodeBR/AgendaClara/actions)
 
 ## Site, app mobile e versão local
 

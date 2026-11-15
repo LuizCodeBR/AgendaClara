@@ -197,3 +197,8 @@ GET /api/admin/appointments/{id}/history?beforeVersion=N exige responsável da m
 
 ### Validação reforçada na 0.12.1
 Resultados exigem os nomes JSON COMPLETED ou NO_SHOW; 0, 1, "0" e "1" são inválidos (400). Justificativa contendo U+0000 também recebe 400 antes do banco. Nomes continuam sujeitos às demais condições: versão atual, horário final e justificativa de correção. Cancelar um atendimento COMPLETED/NO_SHOW recebe conflito 409 independentemente do relógio. Sem alteração de URLs, campos ou esquema do histórico.
+
+## Resumo diário — 0.13.0
+GET /api/admin/professionals/{id}/daily-summary?date=AAAA-MM-DD retorna date, zoneId, businessName, professional {id,name,phone,version}, generatedAt e appointments [{startsAt,customerName,serviceName}]. Requer OWNER da mesma empresa. Faixa de 365 dias antes/depois de hoje; máximo 200 itens, sem truncamento; apenas BOOKED cujo início pertença à data no fuso da empresa. Telefone do profissional é privado, não consta no catálogo público.
+
+PUT /api/admin/professionals/{id}/whatsapp-contact aceita {phone,version}. Requer OWNER/CSRF e versão atual. Telefone vazio remove; formato internacional com 8 a 15 dígitos, DDI e sem zero inicial. Separadores comuns e + inicial são normalizados. Resposta {id,name,phone,version}; mudança incrementa a versão do profissional, valor idêntico é sem alteração. Edição antiga retorna 409. Não há endpoint de envio ou confirmação de entrega.

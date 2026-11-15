@@ -173,3 +173,6 @@ CustomerPortalService aplica as condições da reserva e calcula permissões e p
 
 ## Resultados e histórico — 0.12.0
 AppointmentOutcomeService usa o bloqueio de profissional e a versão da reserva. AppointmentHistory recebe os eventos dentro da mesma transação. A migração Java V10 substitui o CHECK anterior pelo nome descoberto em information_schema, para compatibilidade com os nomes gerados por H2/PostgreSQL, sem alterar migrações históricas. O histórico é paginado e isolado por empresa. Consulte RESULTADOS-ATENDIMENTOS.md.
+
+## Resumo diário — 0.13.0
+DailySummaryService usa leitura REPEATABLE_READ para empresa, contato e atendimentos da data, selecionando somente os campos do resumo. Consulta por empresa/profissional/status e faixa temporal, com retorno limitado. A migração V11 inclui o contato privado; salvar compartilha bloqueio/versão do profissional e não muda o DTO público. React prepara partes e link fixo wa.me somente para ação manual. Nenhum worker/scheduler ou SDK de WhatsApp foi adicionado.
