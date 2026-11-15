@@ -45,11 +45,12 @@ public class AccountAccessController {
     @PostMapping("/api/auth/demo-mailbox/open")
     ResponseEntity<Void> open(@AuthenticationPrincipal AgendaUser user,HttpServletRequest request,HttpServletResponse response) {
         if(user==null) return ResponseEntity.status(401).build();
-        attach(access.openDemoMailbox(user.email(),proof(request)),response);
+        attach(access.openDemoMailbox(user,proof(request)),response);
         return ResponseEntity.noContent().build();
     }
-    void professionalActivated(String email,HttpServletRequest request,HttpServletResponse response){
-        attach(access.openDemoMailbox(email,proof(request)),response);
+    void professionalActivated(String mailboxProof,HttpServletResponse response){
+        // Only attach the capability minted atomically with activation; never reopen by email here.
+        attach(mailboxProof,response);
     }
     void registered(String email,HttpServletRequest request,HttpServletResponse response) {
         String proof=access.openDemoMailbox(email,proof(request));

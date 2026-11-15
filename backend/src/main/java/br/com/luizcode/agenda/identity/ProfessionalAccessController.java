@@ -28,8 +28,8 @@ public class ProfessionalAccessController {
     @PostMapping("/api/auth/professional-invitations/preview")
     ProfessionalAccessService.Preview preview(@Valid @RequestBody ProfessionalAccessService.Token request){return service.preview(request.token());}
     @PostMapping("/api/auth/professional-invitations/accept")
-    ResponseEntity<Void> accept(@AuthenticationPrincipal AgendaUser user,@Valid @RequestBody ProfessionalAccessService.Accept request,jakarta.servlet.http.HttpServletRequest http,jakarta.servlet.http.HttpServletResponse response){
+    ResponseEntity<Void> accept(@AuthenticationPrincipal AgendaUser user,@Valid @RequestBody ProfessionalAccessService.Accept request,jakarta.servlet.http.HttpServletResponse response){
         if(user!=null)throw BusinessException.conflict("Saia da conta atual antes de ativar outro acesso.");
-        String email=service.accept(request);accounts.professionalActivated(email,http,response);return ResponseEntity.noContent().build();
+        var accepted=service.accept(request);accounts.professionalActivated(accepted.mailboxProof(),response);return ResponseEntity.noContent().build();
     }
 }

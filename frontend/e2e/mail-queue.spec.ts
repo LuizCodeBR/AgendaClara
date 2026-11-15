@@ -27,11 +27,14 @@ test('responsável acompanha seus e-mails e outra empresa não vê o histórico'
  await expect(page.getByText('Nenhum envio nesta situação.',{exact:true})).toBeVisible();
  await page.getByLabel('Situação dos envios',{exact:true}).selectOption('');
  await expect(page.getByText('Disponível na caixa de teste',{exact:true})).toBeVisible();
+ const ownMessages=(await(await page.request.get('/api/admin/emails')).json()).messages.map((m:{id:string})=>m.id);
+ expect(ownMessages.length).toBeGreaterThan(0);
  await page.getByRole('button',{name:'Sair do painel',exact:true}).click();
  await expect(page.getByRole('heading',{name:'Bem-vindo de volta.',exact:true})).toBeVisible();
  await page.getByRole('button',{name:'Barbearia Horizonte Marina · responsável'}).click();
  await page.getByRole('button',{name:'Entrar no painel',exact:true}).click();
  await page.getByRole('button',{name:'E-mails e envios',exact:true}).click();
- await expect(page.getByText('Nenhum envio nesta situação.',{exact:true})).toBeVisible();
- await expect(page.getByText('Disponível na caixa de teste',{exact:true})).toHaveCount(0);
+ const otherMessages=(await(await page.request.get('/api/admin/emails')).json()).messages;
+ expect(otherMessages.some((m:{id:string})=>ownMessages.includes(m.id))).toBe(false);
+ await expect(page.getByText(email,{exact:true})).toHaveCount(0);
 });

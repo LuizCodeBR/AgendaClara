@@ -31,11 +31,10 @@ public class AppointmentOutcomeService {
     public ScheduleModels.AppointmentView change(AgendaUser user,UUID id,Change request){
         UUID business=user.businessId();
         var initial=appointments.appointment(business,id);
+        // Reject foreign resources before acquiring any calendar/account mutex.
+        if(user.professional()&&!initial.professionalId().equals(user.professionalId()))throw BusinessException.notFound();
         catalog.lockProfessional(business,initial.professionalId());
-        if(user.professional()){
-            access.requireCurrent(user,true);
-            if(!initial.professionalId().equals(user.professionalId()))throw BusinessException.notFound();
-        }
+        if(user.professional())access.requireCurrent(user,true);
         var current=appointments.appointment(business,id);
         String reason=request.reason()==null?"":request.reason().strip();
         var previous=history.attempt(business,request.requestKey());

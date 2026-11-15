@@ -43,7 +43,9 @@ public class MailOutboxRepository {
     public List<Job> previews(String digest) {
         return jdbc.query("""
                 select m.* from mail_outbox m join app_user u on u.id=m.user_id and u.business_id=m.business_id
-                where u.demo_mailbox_digest=? and u.demo_mailbox_expires_at>? and m.delivery_mode='demo'
+                where u.demo_mailbox_digest=? and u.demo_mailbox_expires_at>? and u.enabled=true
+                and (u.role='OWNER' or exists(select 1 from professional p where p.id=u.professional_id and p.business_id=u.business_id and p.active=true))
+                and m.delivery_mode='demo'
                 and m.status='ACCEPTED' and m.expires_at>? and m.payload is not null
                 order by m.created_at desc,m.queue_seq desc limit 5
                 """,JOB,digest,utc(clock.instant()),utc(clock.instant()));

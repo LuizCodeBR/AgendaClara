@@ -26,6 +26,8 @@ class ProfessionalAccessTest extends ApiTestBase {
  @Autowired ProfessionalAccessService access;
  @Autowired ProfessionalAgendaService mine;
  @Autowired UserDetailsService users;
+ @Autowired AccountAccessService accountAccess;
+ @Autowired MailDispatcher mails;
  @Autowired PlatformTransactionManager transactions;
  @MockitoSpyBean(name="deterministicClock") Clock clock;
  @MockitoSpyBean CatalogRepository catalogSpy;
@@ -36,7 +38,7 @@ class ProfessionalAccessTest extends ApiTestBase {
   jdbc.update("update professional set active=true where id in (?,?)",PROFESSIONAL,SECOND_PROFESSIONAL);
  }
  @AfterEach void cleanup(){
-  reset(clock,catalogSpy);jdbc.update("delete from appointment");jdbc.update("delete from professional_access");
+  reset(clock,catalogSpy);jdbc.update("delete from mail_outbox where user_id in (select id from app_user where professional_id is not null)");jdbc.update("delete from appointment");jdbc.update("delete from professional_access");
   jdbc.update("delete from account_action where user_id in (select id from app_user where professional_id is not null)");
   jdbc.update("delete from app_user where professional_id is not null");
   jdbc.update("update professional set active=true where id=?",PROFESSIONAL);
@@ -55,6 +57,11 @@ class ProfessionalAccessTest extends ApiTestBase {
   assertThat(staff.getAuthorities()).extracting(Object::toString).containsExactly("ROLE_PROFESSIONAL");
   assertThat(jdbc.queryForObject("select email_verified_at from app_user where id=?",OffsetDateTime.class,staff.id())).isNull();
   assertThatThrownBy(()->access.accept(new ProfessionalAccessService.Accept(issued.token(),PASSWORD))).hasMessageContaining("Convite inválido");
+ }
+ @Test void issuedExpirationMatchesDatabasePrecisionExactly() {
+  doReturn(Instant.parse("2030-06-03T10:00:00.123456789Z")).when(clock).instant();
+  var issued=invite();var state=access.list(BUSINESS).stream().filter(p->p.professionalId().equals(PROFESSIONAL)).findFirst().orElseThrow();
+  assertThat(issued.expiresAt()).isEqualTo(state.inviteExpiresAt()).isEqualTo(Instant.parse("2030-06-04T10:00:00.123456Z"));
  }
  @Test void passwordValidationDoesNotConsumeInvite(){
   var i=invite();assertThatThrownBy(()->access.accept(new ProfessionalAccessService.Accept(i.token(),"curta"))).isInstanceOf(BusinessException.class);
@@ -143,6 +150,101 @@ class ProfessionalAccessTest extends ApiTestBase {
   mvc.perform(get("/api/admin/professional-access").with(user(owner())).header("X-Agenda-Account",UUID.randomUUID())).andExpect(status().isPreconditionFailed());
   mvc.perform(post("/api/admin/professional-access/"+PROFESSIONAL+"/invite").with(user(owner())).header("X-Agenda-Account",accountHeader(owner())).contentType("application/json").content(json(new ProfessionalAccessService.Invite(EMAIL,0)))).andExpect(status().isForbidden());
   mvc.perform(post("/api/admin/professional-access/"+PROFESSIONAL+"/invite").with(user(owner())).with(csrf()).header("X-Agenda-Account",accountHeader(owner())).contentType("application/json").content(json(new ProfessionalAccessService.Invite(EMAIL,0)))).andExpect(status().isOk());
+ }
+ @Test void revocationRemovesDemoMailboxAndOutstandingRecoveryLinks() {
+  var staff=activate();String proof=accountAccess.openDemoMailbox(EMAIL,null);
+  accountAccess.request(EMAIL,"RESET",proof,"http://localhost:8080");
+  String digest=accountAccess.mailboxDigest(proof);
+  String url=mails.preview(digest).stream().filter(m->m.purpose().equals("RESET")).findFirst().orElseThrow().actionUrl();
+  String token=url.substring(url.indexOf("token=")+6);
+  access.revoke(BUSINESS,PROFESSIONAL,2);
+  assertThat(accountAccess.mailboxDigest(proof)).isNull();
+  assertThatThrownBy(()->accountAccess.reset(token,PASSWORD+"2")).hasMessageContaining("Link inválido");
+  assertThat(jdbc.queryForObject("select count(*) from account_action where user_id=? and used_at is null",Integer.class,staff.id())).isZero();
+ }
+ @Test void forbiddenOutcomeNeverLocksAnotherProfessionalsCalendar() {
+  var staff=activate();
+  var receipt=schedule.book(catalog.business(BUSINESS),new ScheduleModels.BookingRequest(UUID.randomUUID(),SECOND_PROFESSIONAL,SERVICE,at("10:00"),"Outro cliente","11999991234")).receipt();
+  UUID other=jdbc.queryForObject("select id from appointment where reference=?",UUID.class,receipt.reference());
+  clearInvocations(catalogSpy);
+  assertThatThrownBy(()->mine.change(staff,other,result())).isInstanceOf(BusinessException.class);
+  verify(catalogSpy,never()).lockProfessional(any(),any());
+ }
+ @Test void revokedAccountCannotIssueRecoveryEvenWithLegacyMailboxProof() {
+  var staff=activate();String proof=accountAccess.openDemoMailbox(EMAIL,null);
+  accountAccess.request(EMAIL,"VERIFY",proof,"http://localhost:8080");
+  String legacyDigest=accountAccess.mailboxDigest(proof);
+  // Simulate an already revoked V13 account from a 0.15.0 installation.
+  jdbc.update("update app_user set enabled=false where id=?",staff.id());
+  accountAccess.request(EMAIL,"RESET",proof,"http://localhost:8080");
+  assertThat(accountAccess.mailboxDigest(proof)).isNull();
+  assertThat(mails.preview(legacyDigest)).isEmpty();
+  assertThat(jdbc.queryForObject("select count(*) from account_action where user_id=?",Integer.class,staff.id())).isEqualTo(1);
+ }
+ @Test void reactivationRotatesMailboxAtomicallyAndOldSessionCannotReopenIt() {
+  var invitation=invite();var first=access.accept(new ProfessionalAccessService.Accept(invitation.token(),PASSWORD));
+  var old=(AgendaUser)users.loadUserByUsername(EMAIL);
+  accountAccess.request(EMAIL,"RESET",first.mailboxProof(),"http://localhost:8080");
+  String resetUrl=mails.preview(accountAccess.mailboxDigest(first.mailboxProof())).getFirst().actionUrl();
+  access.revoke(BUSINESS,PROFESSIONAL,2);
+  var next=access.invite(BUSINESS,PROFESSIONAL,new ProfessionalAccessService.Invite(EMAIL,3));
+  var current=access.accept(new ProfessionalAccessService.Accept(next.token(),PASSWORD+"2"));
+  assertThat(current.mailboxProof()).isNotEqualTo(first.mailboxProof());
+  assertThat(accountAccess.mailboxDigest(first.mailboxProof())).isNull();
+  assertThat(accountAccess.mailboxDigest(current.mailboxProof())).isNotNull();
+  assertThatThrownBy(()->accountAccess.openDemoMailbox(old,null)).isInstanceOf(BusinessException.class);
+  assertThatThrownBy(()->accountAccess.reset(resetUrl.substring(resetUrl.indexOf("token=")+6),PASSWORD+"3")).hasMessageContaining("Link inválido");
+  assertThat(accountAccess.mailboxDigest(current.mailboxProof())).isNotNull();
+  assertThat(current.toString()).doesNotContain(current.mailboxProof());
+ }
+ @Test void mailboxWaitingForAccountLockCannotBypassRevocationAndReactivation()throws Exception {
+  var staff=activate();var waiting=new CountDownLatch(1);
+  try(var pool=Executors.newSingleThreadExecutor()){
+   var work=new java.util.concurrent.atomic.AtomicReference<Future<String>>();
+   new TransactionTemplate(transactions).executeWithoutResult(s->{
+    jdbc.queryForObject("select id from app_user where id=? for update",UUID.class,staff.id());
+    work.set(pool.submit(()->{waiting.countDown();return accountAccess.openDemoMailbox(staff,null);}));
+    try{assertThat(waiting.await(5,TimeUnit.SECONDS)).isTrue();}catch(InterruptedException e){throw new RuntimeException(e);}
+    access.revoke(BUSINESS,PROFESSIONAL,2);
+    var next=access.invite(BUSINESS,PROFESSIONAL,new ProfessionalAccessService.Invite(EMAIL,3));
+    access.accept(new ProfessionalAccessService.Accept(next.token(),PASSWORD+"2"));
+   });
+   assertThatThrownBy(()->work.get().get(10,TimeUnit.SECONDS)).hasCauseInstanceOf(BusinessException.class);
+  }
+ }
+ @Test void twoProfessionalsCannotActivateTheSameEmailConcurrently()throws Exception {
+  var first=invite();var second=access.invite(BUSINESS,SECOND_PROFESSIONAL,new ProfessionalAccessService.Invite(EMAIL,0));
+  assertThat(race(()->access.accept(new ProfessionalAccessService.Accept(first.token(),PASSWORD)),
+    ()->access.accept(new ProfessionalAccessService.Accept(second.token(),PASSWORD)))).containsExactlyInAnyOrder(200,409);
+  assertThat(jdbc.queryForObject("select count(*) from app_user where email=?",Integer.class,EMAIL)).isEqualTo(1);
+ }
+ @Test void acceptAndRevokeHaveOneVersionedWinner()throws Exception {
+  var i=invite();var outcomes=race(()->access.accept(new ProfessionalAccessService.Accept(i.token(),PASSWORD)),
+    ()->{access.revoke(BUSINESS,PROFESSIONAL,1);return null;});
+  assertThat(outcomes).isIn(List.of(200,409),List.of(400,200));
+  assertThatThrownBy(()->access.preview(i.token())).hasMessageContaining("Convite inválido");
+  assertThat(jdbc.queryForObject("select count(*) from app_user where email=? and enabled=true",Integer.class,EMAIL))
+    .isEqualTo(outcomes.getFirst()==200?1:0);
+ }
+ @Test void disabledAccountRejectsPreviouslyIssuedRecoveryAndVerification() {
+  var staff=activate();String proof=accountAccess.openDemoMailbox(EMAIL,null);
+  accountAccess.request(EMAIL,"RESET",proof,"http://localhost:8080");
+  accountAccess.request(EMAIL,"VERIFY",proof,"http://localhost:8080");
+  var previews=mails.preview(accountAccess.mailboxDigest(proof));
+  jdbc.update("update app_user set enabled=false where id=?",staff.id());
+  for(var mail:previews){
+   var token=mail.actionUrl().substring(mail.actionUrl().indexOf("token=")+6);
+   if(mail.purpose().equals("RESET"))assertThatThrownBy(()->accountAccess.reset(token,PASSWORD+"2")).hasMessageContaining("Link inválido");
+   else assertThatThrownBy(()->accountAccess.verify(token)).hasMessageContaining("Link inválido");
+  }
+  assertThat(jdbc.queryForObject("select credentials_version from app_user where id=?",Integer.class,staff.id())).isEqualTo(staff.credentialsVersion());
+ }
+ @Test void activationAndMailboxRollBackTogether() {
+  var i=invite();final String[] proof=new String[1];
+  new TransactionTemplate(transactions).executeWithoutResult(s->{proof[0]=access.accept(new ProfessionalAccessService.Accept(i.token(),PASSWORD)).mailboxProof();s.setRollbackOnly();});
+  assertThat(accountAccess.mailboxDigest(proof[0])).isNull();
+  assertThat(jdbc.queryForObject("select count(*) from app_user where email=?",Integer.class,EMAIL)).isZero();
+  assertThat(access.preview(i.token()).email()).isEqualTo(EMAIL);
  }
  List<Integer> race(Callable<?> a,Callable<?> b)throws Exception{
   var start=new CountDownLatch(1);try(var pool=Executors.newFixedThreadPool(2)){

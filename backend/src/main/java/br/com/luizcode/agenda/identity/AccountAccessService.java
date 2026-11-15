@@ -12,7 +12,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AccountAccessService {
-    private record Account(UUID id,String email,boolean verified,String mailbox,Instant mailboxExpires) {}
+    private record Account(UUID id,String email,boolean verified,String mailbox,Instant mailboxExpires,
+            boolean enabled,int credentialsVersion,UUID businessId,String role,UUID professionalId) {}
     private record Action(UUID userId,String purpose,Instant expires,Instant used,boolean simulated) {}
     private final JdbcTemplate jdbc;
     private final PasswordEncoder passwords;
@@ -23,11 +24,16 @@ public class AccountAccessService {
         this.jdbc=jdbc; this.passwords=passwords; this.settings=settings; this.clock=clock; this.events=events;
     }
     private List<Account> accounts(String clause,Object value,boolean lock) {
-        return jdbc.query("select id,email,email_verified_at,demo_email_verified_at,demo_mailbox_digest,demo_mailbox_expires_at from app_user where "+clause+(lock?" for update":""),
+        return jdbc.query("select id,email,email_verified_at,demo_email_verified_at,demo_mailbox_digest,demo_mailbox_expires_at,enabled,credentials_version,business_id,role,professional_id from app_user where "+clause+(lock?" for update":""),
                 (rs,row)->new Account(rs.getObject(1,UUID.class),rs.getString(2),rs.getObject(3)!=null||(settings.demo()&&rs.getObject(4)!=null),
-                        rs.getString(5),rs.getObject(6,OffsetDateTime.class)==null?null:rs.getObject(6,OffsetDateTime.class).toInstant()),value);
+                        rs.getString(5),rs.getObject(6,OffsetDateTime.class)==null?null:rs.getObject(6,OffsetDateTime.class).toInstant(),
+                        rs.getBoolean(7),rs.getInt(8),rs.getObject(9,UUID.class),rs.getString(10),rs.getObject(11,UUID.class)),value);
     }
     private static boolean shared(Account account) { return account.email().endsWith("@demo.agendaclara.dev"); }
+    private boolean available(Account account) {
+        return account.enabled() && (account.role().equals("OWNER") || jdbc.queryForObject(
+            "select count(*) from professional where id=? and business_id=? and active=true",Integer.class,account.professionalId(),account.businessId())==1);
+    }
     private boolean ownsMailbox(Account account,String proof) {
         return SecretTokens.wellFormed(proof) && account.mailbox()!=null && account.mailboxExpires()!=null
                 && account.mailboxExpires().isAfter(clock.instant()) && account.mailbox().equals(SecretTokens.digest(proof));
@@ -38,7 +44,25 @@ public class AccountAccessService {
         if(!settings.demo()) return null;
         var found=accounts("email=?",email,true);
         if(found.isEmpty()||shared(found.getFirst())) return null;
-        Account account=found.getFirst();
+        return openMailbox(found.getFirst(),currentProof);
+    }
+    /** Recheck the authenticated identity after obtaining the account lock. */
+    @Transactional
+    public String openDemoMailbox(AgendaUser user,String currentProof) {
+        if(!settings.demo()) return null;
+        var found=accounts("id=?",user.id(),true);
+        if(found.isEmpty()) throw staleAccount();
+        var account=found.getFirst();
+        if(!available(account)||account.credentialsVersion()!=user.credentialsVersion()
+                ||!account.businessId().equals(user.businessId())||!account.role().equals(user.role())
+                ||!Objects.equals(account.professionalId(),user.professionalId())) throw staleAccount();
+        return openMailbox(account,currentProof);
+    }
+    private static BusinessException staleAccount() {
+        return new BusinessException(org.springframework.http.HttpStatus.FORBIDDEN,"Seu acesso foi atualizado. Entre novamente com sua senha atual.");
+    }
+    private String openMailbox(Account account,String currentProof) {
+        if(shared(account)||!available(account)) return null;
         if(ownsMailbox(account,currentProof)) return currentProof;
         String proof=SecretTokens.create();
         jdbc.update("update app_user set demo_mailbox_digest=?,demo_mailbox_expires_at=? where id=?",
@@ -49,7 +73,7 @@ public class AccountAccessService {
     public String mailboxDigest(String proof) {
         if(!settings.demo()||!SecretTokens.wellFormed(proof)) return null;
         var found=accounts("demo_mailbox_digest=?",SecretTokens.digest(proof),false);
-        return found.isEmpty()||!ownsMailbox(found.getFirst(),proof)?null:found.getFirst().mailbox();
+        return found.isEmpty()||!available(found.getFirst())||!ownsMailbox(found.getFirst(),proof)?null:found.getFirst().mailbox();
     }
     @Transactional
     public void request(String email,String purpose,String proof,String origin) {
@@ -57,7 +81,7 @@ public class AccountAccessService {
         var found=accounts("email=?",email,true);
         if(found.isEmpty()) return;
         Account account=found.getFirst();
-        if(shared(account)||("VERIFY".equals(purpose)&&account.verified())||(settings.demo()&&!ownsMailbox(account,proof))) return;
+        if(!available(account)||shared(account)||("VERIFY".equals(purpose)&&account.verified())||(settings.demo()&&!ownsMailbox(account,proof))) return;
         Instant now=clock.instant();
         var recent=jdbc.query("select created_at from account_action where user_id=? and purpose=? order by created_at desc limit 1",
                 (rs,row)->rs.getObject(1,OffsetDateTime.class).toInstant(),account.id(),purpose);
@@ -102,7 +126,7 @@ public class AccountAccessService {
         var initial=actions(digest);
         if(initial.isEmpty()) throw invalid();
         var owner=accounts("id=?",initial.getFirst().userId(),true);
-        if(owner.isEmpty()||shared(owner.getFirst())) throw invalid();
+        if(owner.isEmpty()||!available(owner.getFirst())||shared(owner.getFirst())) throw invalid();
         var remaining=actions(digest); if(remaining.isEmpty()) throw invalid();
         Action action=remaining.getFirst();
         if((action.simulated()&&!settings.demo())||!action.purpose().equals(purpose)||action.used()!=null||!action.expires().isAfter(clock.instant())) throw invalid();

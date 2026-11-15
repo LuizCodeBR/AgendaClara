@@ -1,4 +1,4 @@
-# Acesso próprio dos profissionais — 0.15.0
+# Acesso próprio dos profissionais — 0.15.1
 
 ## Liberar o acesso
 1. Entre com a conta responsável e configure o profissional em Equipe e horários.
@@ -31,11 +31,11 @@ O histórico profissional é resumido e paginado: situação, momento e função
 Empresa e profissional vêm da conta autenticada. Identificadores ou funções enviados pelo navegador não concedem permissões. APIs profissionais exigem X-Agenda-Account com a conta esperada, inclusive para distinguir profissionais da mesma empresa quando outra aba troca o login. APIs administrativas de acessos usam o mesmo cabeçalho. Divergência retorna 412; função incorreta, 403; ausência de sessão, 401. Alterações e prévia/aceite de convite exigem CSRF.
 
 ## Revogar ou reativar
-Em Acessos da equipe, escolha Revogar acesso e convites e confirme. Isso invalida convites, desabilita a conta e incrementa a versão de credenciais. Sessões antigas perdem acesso na próxima requisição. Dados já exibidos não são apagados remotamente de outra tela sem nova comunicação com o servidor.
+Em Acessos da equipe, escolha Revogar acesso e convites e confirme. Isso invalida convites, desabilita a conta, incrementa a versão de credenciais, remove o acesso à caixa de demonstração e invalida links pendentes de confirmação/recuperação. Sessões antigas perdem acesso na próxima requisição. Dados já exibidos não são apagados remotamente de outra tela sem nova comunicação com o servidor.
 
 Revogar login não inativa o cadastro nem cancela reservas. As configurações e os históricos ficam preservados. Inativar o profissional também impede uso da conta enquanto estiver inativo, mas continua sujeito às proteções existentes para atendimentos futuros.
 
-Para reativar uma conta revogada, gere outro convite usando o mesmo e-mail. A pessoa define nova senha; a identidade e o histórico são preservados, e sessões anteriores continuam inválidas. Alteração do e-mail da conta e múltiplos vínculos de empresa ficam fora desta etapa. Um e-mail já utilizado por outra conta não pode ser apropriado.
+Para reativar uma conta revogada, gere outro convite usando o mesmo e-mail. A pessoa define nova senha; a identidade e o histórico são preservados, e sessões anteriores continuam inválidas. A nova caixa de demonstração é criada junto com a ativação, na mesma transação. Uma solicitação antiga não consegue reabrir essa caixa. Alteração do e-mail da conta e múltiplos vínculos de empresa ficam fora desta etapa. Um e-mail já utilizado por outra conta não pode ser apropriado.
 
 ## Concorrência e segurança
 Emissão, rotação, revogação, ativação e alterações da agenda coordenam pela linha do profissional. Versões dos acessos recusam comandos antigos. O aceite reconsulta o convite depois do bloqueio e antes de concluir; somente o digest SHA-256 de um segredo aleatório de 32 bytes é persistido.
@@ -56,6 +56,13 @@ Mesmo código no site, PWA e pacote local. Site/PWA compartilham o banco online;
 
 Arquivos desta instalação em D:/Projetos/AgendaClara e entregas em D:/Projetos/Entregas. Sem dependência nova, extensão obrigatória, contratação ou tarefa recorrente. Mantenha as cotas Free dos provedores.
 
-Faça backup antes de atualizar, encerre a instalação anterior e preserve data e mail-outbox.key. Ferramentas 0.15.0 aceitam esquemas 6 a 13 e mantêm ACBK0001. Restauração preserva contas, estado de acesso e digest/validade dos convites; restaurar um backup também pode recuperar acessos/convites que eram válidos naquele momento. Confira e revogue acessos necessários após uma recuperação. Convites vencidos continuam vencidos pelo relógio atual.
+Faça backup antes de atualizar, encerre a instalação anterior e preserve data e mail-outbox.key. Ferramentas 0.15.1 aceitam esquemas 6 a 13 e mantêm ACBK0001. Restauração preserva contas, estado de acesso e digest/validade dos convites; restaurar um backup também pode recuperar acessos/convites que eram válidos naquele momento. Confira e revogue acessos necessários após uma recuperação. Convites vencidos continuam vencidos pelo relógio atual.
 
 Não execute a versão 0.14.1 ou anterior sobre um banco V13 com contas profissionais: o código antigo considera todas as contas como responsáveis. Para recuperar uma versão anterior, utilize seu backup anterior compatível em destino separado e siga o procedimento de restauração; substituir apenas o JAR não desfaz a migração nem reconstitui as permissões. Encerre a instalação antiga antes de atualizar.
+
+## Revisão 0.15.1
+Consultas e recuperação recusam contas desabilitadas inclusive quando foram revogadas pela versão 0.15.0. Não é preciso revogar todas novamente após atualizar. Links de recuperação já emitidos deixam de funcionar; reativação invalida os anteriores e preserva a conta. A abertura autenticada da caixa confere novamente identidade e versão de credenciais após adquirir o bloqueio da conta.
+
+A interface só mostra o convite recém-gerado se a versão, e-mail, validade e estado conferirem após atualizar os acessos. Mudança de data, retorno à janela ou perda de conexão encerra consultas de histórico antigas; uma justificativa de resultado aberta é preservada ao retornar à janela. A tela continua exigindo conexão para consultar dados privados.
+
+Esquema V13 e formato de backup preservados. Veja [a revisão](REVISAO-ACESSOS-0.15.1.md) e [a validação](VALIDACAO-0.15.1.md).

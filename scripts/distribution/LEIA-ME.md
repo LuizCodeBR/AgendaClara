@@ -1,4 +1,4 @@
-# Agenda Clara — demonstração 0.15.0
+# Agenda Clara — demonstração 0.15.1
 
 1. Instale Java 21 ou mais recente até a versão 27, caso ainda não possua.
 2. Extraia todos os arquivos deste ZIP em uma pasta gravável.
@@ -67,4 +67,6 @@ V12 adiciona somente um índice. Faça backup, encerre a versão anterior e pres
 
 Revisão 0.14.1: consulta/CSV conferem a empresa exibida, interrompem operações após acesso negado e recusam arquivo de formato inesperado. Tempo esgotado apresenta orientação; controles Unicode são normalizados. Recarregue a página/PWA após atualizar. V12 e backups permanecem compatíveis, sem nova instalação. Preserve data/mail-outbox.key. Guia REVISAO-RELATORIOS-0.14.1.md no repositório.
 
-Acesso profissional: entre como responsável, abra Acessos da equipe, gere um convite e compartilhe o link privadamente. O profissional define a própria senha e entra no mesmo painel, que mostra somente Minha agenda. Convites valem 24 horas e podem ser revogados. Na demonstração, use dados fictícios. Um convite localhost vale apenas na instalação local; para outro aparelho, utilize a versão HTTPS. Ao atualizar, encerre a anterior e preserve data/mail-outbox.key. Ferramentas 0.15.0 aceitam esquemas 6 a 13.
+Acesso profissional: entre como responsável, abra Acessos da equipe, gere um convite e compartilhe o link privadamente. O profissional define a própria senha e entra no mesmo painel, que mostra somente Minha agenda. Convites valem 24 horas e podem ser revogados. Na demonstração, use dados fictícios. Um convite localhost vale apenas na instalação local; para outro aparelho, utilize a versão HTTPS. Ao atualizar, encerre a anterior e preserve data/mail-outbox.key. Ferramentas 0.15.1 aceitam esquemas 6 a 13.
+
+Revisão 0.15.1: a revogação invalida também caixa demo e recuperação. Reativação mantém a identidade, renova a senha e a caixa na mesma transação. Sem nova migração (V13). Nunca execute 0.14.1 ou anterior sobre banco V13: esse código antigo não reconhece contas profissionais. Use backup compatível em destino separado para recuperar uma versão anterior.

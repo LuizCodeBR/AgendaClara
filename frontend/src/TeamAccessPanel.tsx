@@ -27,7 +27,12 @@ export default function TeamAccessPanel({accountId,online,onUnauthorized,onDirty
    if(c.signal.aborted)return;
    setPeople(rows);setConfirm(false);
    // State refresh commits before the link is shown; a failed refresh requires reconciliation.
-   if(result)setLink(window.location.origin+window.location.pathname+'#/aceitar-convite?token='+encodeURIComponent(result.token));
+   if(result){
+    const current=rows.find(p=>p.professionalId===person.professionalId);
+    if(!current||!current.active||current.enabled||current.version!==person.version+1||current.email!==email.trim().toLowerCase()||current.inviteExpiresAt!==result.expiresAt)
+     throw new ApiError('O convite mudou em outra janela. Confira os acessos e gere outro se necessário.',409);
+    setLink(window.location.origin+window.location.pathname+'#/aceitar-convite?token='+encodeURIComponent(result.token));
+   }
    setNotice(action==='invite'?'Convite gerado. Válido por 24 horas; compartilhe somente com o profissional.':'Acesso e convites revogados. Cadastro e reservas foram preservados.');
   }catch(e){if(!c.signal.aborted){failed(e);setPeople([]);setError(errorMessage(e)+' Atualize os acessos antes de tentar novamente.');}}
   finally{busy.current=false;if(!c.signal.aborted)setPending(false);}

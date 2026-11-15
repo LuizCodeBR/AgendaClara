@@ -238,3 +238,6 @@ Rotas PROFESSIONAL com X-Agenda-Account obrigatório:
 - GET /api/professional/appointments/{id}/history?beforeVersion=N: events resumidos (version,action,status,actor,occurredAt),nextBeforeVersion.
 
 Divergência de conta: 412. Falta de permissão: 403. Sem sessão/revogada: 401 na próxima requisição; revalidação transacional pode retornar 403 para gravação que já estava aguardando. Registro de colega/outra empresa: 404. Versão antiga: 409. Convite inválido/expirado/usado: 400. Somente a sessão determina empresa e profissional. A API reduzida não retorna preço, telefone, referência, token, justificativa privada ou identidade de outras contas.
+
+## Revisão dos acessos — 0.15.1
+Contratos HTTP preservados. Revogação invalida também a caixa demo e ações de e-mail pendentes. Conta desabilitada não solicita nem consome ações de recuperação/verificação; a solicitação pública mantém a resposta genérica 202. O consumo retorna 400 para links inválidos. Caixa revogada retorna lista vazia. Abrir a caixa com uma identidade que ficou obsoleta enquanto aguardava o bloqueio retorna 403. A prova enviada por Set-Cookie na ativação é criada na mesma transação da conta; não é exposta no JSON. Operações sobre atendimento de colega retornam 404 antes de bloquear qualquer agenda.

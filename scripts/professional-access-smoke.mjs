@@ -59,5 +59,13 @@ try{
  const history=await staff.ok('/api/professional/appointments/'+proof.appointment.id+'/history');assert.equal(history.events.length,1);assert.ok(!JSON.stringify(history).includes('reason'));
  await staff.ok('/api/professional/appointments/'+proof.appointment.id+'/outcome','POST',{status:'COMPLETED',version:0,requestKey:randomUUID(),reason:''},409);
  if(phase==='before'){fs.writeFileSync(file,JSON.stringify(proof),{flag:'wx',mode:0o600});keep=true;console.log('OK: conta profissional, reserva própria e convite pendente preparados para preservação.');}
- else{await clean();proof=null;await staff.ok('/api/auth/me','GET',undefined,401);console.log('OK: acesso próprio, isolamento, dados mínimos, convite, prazo e revogação'+(phase==='after'?' preservados após atualização/restauração.':'.'));}
+ else{
+  await staff.ok('/api/auth/demo-mailbox/open','POST',undefined,204);
+  await staff.ok('/api/auth/password/request','POST',{email:proof.email},202);
+  const message=(await staff.ok('/api/auth/demo-mailbox')).find(m=>m.purpose==='RESET');assert.ok(message);
+  const recoveryToken=new URLSearchParams(message.actionUrl.split('?')[1]).get('token'),changedPassword=proof.password+'2';
+  await clean();proof=null;await staff.ok('/api/auth/me','GET',undefined,401);
+  assert.deepEqual(await staff.ok('/api/auth/demo-mailbox'),[]);
+  await staff.ok('/api/auth/password/reset','POST',{token:recoveryToken,password:changedPassword},400);
+  console.log('OK: acesso próprio, isolamento, dados mínimos, convite, prazo e revogação'+(phase==='after'?' preservados após atualização/restauração.':'.'));}
 }finally{if(!keep&&proof)await clean();await owner.ok('/api/auth/logout','POST',undefined,204);}

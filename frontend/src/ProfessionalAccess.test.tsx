@@ -18,7 +18,7 @@ afterEach(()=>vi.useRealTimers());
 function team(online=true){const denied=vi.fn();return{...render(<TeamAccessPanel accountId="owner-account" online={online} onUnauthorized={denied} onDirty={()=>{}}/>),denied};}
 function mine(online=true){const changed=vi.fn();return{...render(<ProfessionalAgendaPage user={staff} online={online} onUser={changed} onNavigationBlocked={()=>{}}/>),changed};}
 it('gera convite com versão e contexto da conta, exibindo link somente após reconciliação',async()=>{
- let rows=[person];mocked.mockImplementation(async(path)=>{if(path.endsWith('/invite')){rows=[{...person,version:1,inviteExpiresAt:'2030-06-05T14:00:00Z'}] as typeof rows;return{token:'a'.repeat(43),expiresAt:'2030-06-05T14:00:00Z'};}return rows;});
+ let rows=[person];mocked.mockImplementation(async(path)=>{if(path.endsWith('/invite')){rows=[{...person,version:1,email:'ana@example.test',inviteExpiresAt:'2030-06-05T14:00:00Z'}] as typeof rows;return{token:'a'.repeat(43),expiresAt:'2030-06-05T14:00:00Z'};}return rows;});
  team();await screen.findByText('Sem acesso ativo');fireEvent.change(screen.getByLabelText('E-mail do profissional'),{target:{value:'ana@example.test'}});fireEvent.click(screen.getByRole('button',{name:'Gerar convite'}));
  await screen.findByLabelText('Link privado do convite');expect((screen.getByLabelText('Link privado do convite') as HTMLTextAreaElement).value).toContain('#/aceitar-convite?token=');
  expect(mocked.mock.calls.find(c=>c[0].endsWith('/invite'))?.[1]).toMatchObject({headers:{'X-Agenda-Account':'owner-account'},body:JSON.stringify({email:'ana@example.test',version:0})});
@@ -63,4 +63,43 @@ it('sem conexão remove dados e impede consulta',async()=>{
 });
 it('histórico restrito não exige dados administrativos',async()=>{
  mocked.mockImplementation(async path=>path.includes('/history')?{events:[{version:1,action:'OUTCOME',status:'COMPLETED',actor:'Profissional',occurredAt:'2030-06-04T13:00:00Z'}],nextBeforeVersion:null}:agenda);mine();await screen.findByText('Cliente próprio');fireEvent.click(screen.getByRole('button',{name:'Histórico'}));await screen.findByText(/Profissional/);expect(mocked.mock.calls.some(c=>c[0]==='/api/professional/appointments/a/history')).toBe(true);
+});
+
+it('não compartilha um convite substituído durante a atualização dos acessos',async()=>{
+ let reads=0;mocked.mockImplementation(async path=>{
+  if(path.endsWith('/invite'))return{token:'c'.repeat(43),expiresAt:'2030-06-05T14:00:00Z'};
+  return ++reads===1?[person]:[{...person,version:2,email:'outra@example.test',inviteExpiresAt:'2030-06-05T14:00:01Z'}];
+ });
+ team();await screen.findByText('Sem acesso ativo');fireEvent.change(screen.getByLabelText('E-mail do profissional'),{target:{value:'ana@example.test'}});
+ fireEvent.click(screen.getByRole('button',{name:'Gerar convite'}));await waitFor(()=>expect(mocked.mock.calls.length).toBe(3));
+ expect(screen.queryByLabelText('Link privado do convite')).not.toBeInTheDocument();
+ await screen.findByText(/O convite mudou/);
+});
+it('trocar a data encerra o histórico e descarta a resposta que ficou em andamento',async()=>{
+ let resolve!:(a:unknown)=>void;mocked.mockImplementation(path=>path.includes('/history')?new Promise(r=>resolve=r):Promise.resolve(agenda));
+ mine();await screen.findByText('Cliente próprio');fireEvent.click(screen.getByRole('button',{name:'Histórico'}));
+ fireEvent.change(screen.getByLabelText('Data da minha agenda'),{target:{value:'2030-06-05'}});
+ await act(async()=>resolve({events:[{version:1,action:'OUTCOME',status:'COMPLETED',actor:'Registro antigo',occurredAt:'2030-06-04T13:00:00Z'}],nextBeforeVersion:null}));
+ expect(screen.queryByRole('dialog')).not.toBeInTheDocument();expect(screen.queryByText(/Registro antigo/)).not.toBeInTheDocument();
+});
+
+it('voltar à janela descarta um histórico ainda em trânsito antes de atualizar a agenda',async()=>{
+ let resolve!:(a:unknown)=>void;mocked.mockImplementation(path=>path.includes('/history')?new Promise(r=>resolve=r):Promise.resolve(agenda));
+ mine();await screen.findByText('Cliente próprio');fireEvent.click(screen.getByRole('button',{name:'Histórico'}));fireEvent(window,new Event('focus'));
+ await act(async()=>resolve({events:[{version:1,action:'OUTCOME',status:'COMPLETED',actor:'Resposta antiga',occurredAt:'2030-06-04T13:00:00Z'}],nextBeforeVersion:null}));
+ expect(screen.queryByRole('dialog')).not.toBeInTheDocument();expect(screen.queryByText(/Resposta antiga/)).not.toBeInTheDocument();
+});
+it('preserva a justificativa aberta ao voltar à janela',async()=>{
+ mine();await screen.findByText('Cliente próprio');fireEvent.click(screen.getByRole('button',{name:'Registrar resultado'}));
+ fireEvent.change(screen.getByLabelText('Justificativa (opcional)'),{target:{value:'Cliente atendido normalmente'}});
+ const before=mocked.mock.calls.length;fireEvent(window,new Event('focus'));
+ expect(mocked.mock.calls.length).toBe(before);expect(screen.getByLabelText('Justificativa (opcional)')).toHaveValue('Cliente atendido normalmente');
+});
+it('fechar um histórico lento permite abrir outro sem aguardar a resposta cancelada',async()=>{
+ let resolve!:(a:unknown)=>void;let histories=0;
+ mocked.mockImplementation(path=>path.includes('/history')?(++histories===1?new Promise(r=>resolve=r):Promise.resolve({events:[],nextBeforeVersion:null})):Promise.resolve(agenda));
+ mine();await screen.findByText('Cliente próprio');fireEvent.click(screen.getByRole('button',{name:'Histórico'}));fireEvent.click(screen.getByRole('button',{name:'Fechar'}));
+ fireEvent.click(screen.getByRole('button',{name:'Histórico'}));await waitFor(()=>expect(histories).toBe(2));
+ await act(async()=>resolve({events:[{version:1,action:'OUTCOME',status:'COMPLETED',actor:'Histórico descartado',occurredAt:'2030-06-04T13:00:00Z'}],nextBeforeVersion:null}));
+ expect(screen.queryByText(/Histórico descartado/)).not.toBeInTheDocument();
 });

@@ -29,13 +29,17 @@ public class ProfessionalAccessService {
         @Override public String toString(){return "Issued[protected]";}
     }
     public record Preview(String businessName,String professionalName,String email,Instant expiresAt){}
+    public record Accepted(String mailboxProof){
+        @Override public String toString(){return "Accepted[protected]";}
+    }
     private record Pending(UUID professional,UUID business,String email,Instant expires){}
     private final JdbcTemplate jdbc;
     private final CatalogRepository catalog;
     private final PasswordEncoder passwords;
     private final Clock clock;
-    public ProfessionalAccessService(JdbcTemplate jdbc,CatalogRepository catalog,PasswordEncoder passwords,Clock clock){
-        this.jdbc=jdbc;this.catalog=catalog;this.passwords=passwords;this.clock=clock;
+    private final AccountAccessService accounts;
+    public ProfessionalAccessService(JdbcTemplate jdbc,CatalogRepository catalog,PasswordEncoder passwords,Clock clock,AccountAccessService accounts){
+        this.jdbc=jdbc;this.catalog=catalog;this.passwords=passwords;this.clock=clock;this.accounts=accounts;
     }
     @Transactional(readOnly=true)
     public List<State> list(UUID business){
@@ -65,7 +69,7 @@ public class ProfessionalAccessService {
             throw BusinessException.conflict("Revogue o acesso antes de convidar novamente. Uma conta existente deve manter o mesmo e-mail.");
         if(jdbc.queryForObject("select count(*) from app_user where email=? and (professional_id is null or professional_id<>?)",Integer.class,request.email(),professional)>0)
             throw unavailable();
-        String token=SecretTokens.create();Instant expires=clock.instant().plus(Duration.ofHours(24));
+        String token=SecretTokens.create();Instant expires=clock.instant().plus(Duration.ofHours(24)).truncatedTo(java.time.temporal.ChronoUnit.MICROS);
         jdbc.update("update professional_access set version=version+1,invite_digest=?,invite_email=?,invite_expires_at=? where professional_id=?",
             SecretTokens.digest(token),request.email(),utc(expires),professional);
         return new Issued(token,expires);
@@ -73,7 +77,8 @@ public class ProfessionalAccessService {
     @Transactional(isolation=Isolation.READ_COMMITTED)
     public void revoke(UUID business,UUID professional,int version){
         lock(business,professional,version);
-        jdbc.update("update app_user set enabled=false,credentials_version=credentials_version+1 where professional_id=? and business_id=?",professional,business);
+        jdbc.update("update app_user set enabled=false,credentials_version=credentials_version+1,demo_mailbox_digest=null,demo_mailbox_expires_at=null where professional_id=? and business_id=?",professional,business);
+        jdbc.update("update account_action set used_at=? where user_id in (select id from app_user where professional_id=? and business_id=?) and used_at is null",utc(clock.instant()),professional,business);
         jdbc.update("update professional_access set version=version+1,invite_digest=null,invite_email=null,invite_expires_at=null where professional_id=?",professional);
     }
     private Pending pending(String token){
@@ -90,7 +95,7 @@ public class ProfessionalAccessService {
         return new Preview(catalog.business(p.business()).name(),jdbc.queryForObject("select name from professional where id=?",String.class,p.professional()),p.email(),p.expires());
     }
     @Transactional(isolation=Isolation.READ_COMMITTED)
-    public String accept(Accept request){
+    public Accepted accept(Accept request){
         PasswordPolicy.validate(request.password());
         var initial=pending(request.token());
         catalog.lockProfessional(initial.business(),initial.professional());
@@ -110,7 +115,8 @@ public class ProfessionalAccessService {
         }catch(DataIntegrityViolationException e){throw unavailable();}
         if(!p.expires().isAfter(clock.instant()))throw invalid();
         jdbc.update("update professional_access set version=version+1,invite_digest=null,invite_email=null,invite_expires_at=null where professional_id=?",p.professional());
-        return p.email();
+        // The mailbox belongs to this activation, including during a concurrent revoke/reinvite.
+        return new Accepted(accounts.openDemoMailbox(p.email(),null));
     }
     /** Called after the professional mutex: revocation and an in-flight write have a defined winner. */
     public void requireCurrent(AgendaUser user,boolean write){
